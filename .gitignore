@@ -49,3 +49,6 @@ next-env.d.ts
 
 # Impeccable
 .impeccable/
+
+# Graphify
+graphify-out/
