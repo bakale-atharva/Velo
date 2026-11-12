@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Agent Skills
 .claude/skills/
+
+# Impeccable
+.impeccable/
