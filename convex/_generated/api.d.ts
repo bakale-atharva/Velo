@@ -12,6 +12,8 @@ import type * as clerkSync from "../clerkSync.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_errors from "../lib/errors.js";
+import type * as members from "../members.js";
+import type * as organizations from "../organizations.js";
 
 import type {
   ApiFromModules,
@@ -24,6 +26,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/errors": typeof lib_errors;
+  members: typeof members;
+  organizations: typeof organizations;
 }>;
 
 /**
