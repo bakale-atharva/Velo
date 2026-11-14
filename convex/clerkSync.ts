@@ -17,6 +17,13 @@ function str(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+function skip(kind: string, data: Json, missing: string[]) {
+  console.warn(
+    `Clerk webhook ${kind}: skipped, missing ${missing.join(", ")}; ` +
+      `payload keys: ${Object.keys(data).join(", ")}`,
+  );
+}
+
 function stripOrgPrefix(role: string): string {
   return role.replace(/^org:/, "");
 }
@@ -41,6 +48,7 @@ export const handleEvent = internalMutation({
 
     const payload = asObject(data);
     if (payload === null) {
+      console.warn(`Clerk webhook ${type} (${svixId}): payload is not an object`);
       return null;
     }
 
@@ -68,6 +76,7 @@ export const handleEvent = internalMutation({
         break;
       default:
         // Other event types are not synced in this phase.
+        console.warn(`Clerk webhook ${type} (${svixId}): event type not handled`);
         break;
     }
     return null;
@@ -86,7 +95,10 @@ export const deleteOrgMemberships = internalMutation({
 
 async function upsertUser(ctx: MutationCtx, data: Json) {
   const clerkId = str(data.id);
-  if (clerkId === null) return;
+  if (clerkId === null) {
+    skip("user", data, ["id"]);
+    return;
+  }
 
   const emails = Array.isArray(data.email_addresses)
     ? data.email_addresses.map(asObject).filter((e): e is Json => e !== null)
@@ -144,7 +156,14 @@ async function upsertOrganization(ctx: MutationCtx, data: Json) {
   const clerkOrgId = str(data.id);
   const name = str(data.name);
   const slug = str(data.slug);
-  if (clerkOrgId === null || name === null || slug === null) return;
+  if (clerkOrgId === null || name === null || slug === null) {
+    skip("organization", data, [
+      ...(clerkOrgId === null ? ["id"] : []),
+      ...(name === null ? ["name"] : []),
+      ...(slug === null ? ["slug"] : []),
+    ]);
+    return;
+  }
 
   const fields = {
     clerkOrgId,
@@ -202,7 +221,14 @@ function readMembership(data: Json) {
 
 async function upsertMembership(ctx: MutationCtx, data: Json) {
   const { orgId, userId, role } = readMembership(data);
-  if (orgId === null || userId === null || role === null) return;
+  if (orgId === null || userId === null || role === null) {
+    skip("organizationMembership", data, [
+      ...(orgId === null ? ["organization.id"] : []),
+      ...(userId === null ? ["public_user_data.user_id"] : []),
+      ...(role === null ? ["role"] : []),
+    ]);
+    return;
+  }
 
   const fields = { orgId, userId, role: stripOrgPrefix(role) };
   const existing = await ctx.db
