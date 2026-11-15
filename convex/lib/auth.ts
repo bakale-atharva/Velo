@@ -1,8 +1,10 @@
 import type { UserIdentity } from "convex/server";
 import type { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
 import { appError } from "./errors";
+import { hasSeat } from "./seats";
 
 type AuthCtx = QueryCtx | MutationCtx | ActionCtx;
+type DbCtx = QueryCtx | MutationCtx;
 
 export type OrgClaims = {
   orgId: string | null;
@@ -52,15 +54,24 @@ export async function getAuth(ctx: AuthCtx): Promise<AuthInfo> {
   return { userId: identity.subject, orgId, role };
 }
 
-export async function requireMember(ctx: AuthCtx): Promise<MemberInfo> {
+/**
+ * Identity, active org and role from the token, plus the seat-limit check
+ * (members beyond the plan's seat limit get SEAT_LIMIT_REACHED).
+ * Actions have no database; they must call an internal query that does this.
+ */
+export async function requireMember(ctx: DbCtx): Promise<MemberInfo> {
   const { userId, orgId, role } = await getAuth(ctx);
   if (orgId === null) {
     throw appError("NO_ACTIVE_ORG");
   }
-  return { userId, orgId, role: role ?? "member" };
+  const member = { userId, orgId, role: role ?? "member" };
+  if (!(await hasSeat(ctx, orgId, userId, member.role))) {
+    throw appError("SEAT_LIMIT_REACHED");
+  }
+  return member;
 }
 
-export async function requireAdmin(ctx: AuthCtx): Promise<MemberInfo> {
+export async function requireAdmin(ctx: DbCtx): Promise<MemberInfo> {
   const member = await requireMember(ctx);
   if (member.role !== "admin") {
     throw appError("FORBIDDEN");
