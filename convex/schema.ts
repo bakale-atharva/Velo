@@ -29,6 +29,18 @@ export default defineSchema({
     .index("by_orgId_and_userId", ["orgId", "userId"])
     .index("by_userId", ["userId"]),
 
+  // One row per organization: its Clerk Billing subscription as last reported
+  // by webhook. `planSlug` is the slug of the active item ("free_org" if none).
+  subscriptions: defineTable({
+    orgId: v.string(),
+    clerkSubscriptionId: v.string(),
+    planSlug: v.string(),
+    // Clerk status, snake_case: "active", "past_due", "canceled", ...
+    status: v.string(),
+    // Clerk's `updated_at` (ms); older deliveries are ignored.
+    updatedAt: v.number(),
+  }).index("by_orgId", ["orgId"]),
+
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
     svixId: v.string(),
