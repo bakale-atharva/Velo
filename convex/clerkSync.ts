@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, type MutationCtx } from "./_generated/server";
+import { FREE_PLAN } from "./lib/plans";
 
 // Rows deleted per transaction when removing many memberships at once.
 const DELETE_BATCH = 500;
@@ -261,8 +262,6 @@ async function upsertMembership(ctx: MutationCtx, data: Json) {
     await ctx.db.patch("memberships", existing._id, fields);
   }
 }
-
-const FREE_PLAN = "free_org";
 
 async function upsertSubscription(ctx: MutationCtx, data: Json) {
   const orgId = str(asObject(data.payer)?.organization_id);
