@@ -14,6 +14,7 @@ import {
   toPublicIssue,
   updateIssue,
 } from "./lib/issueOps";
+import { syncProjectCounts } from "./lib/projectCounts";
 import { requireTeamAccess } from "./lib/teamAccess";
 
 const MAX_STATES = 50;
@@ -191,7 +192,9 @@ export const archive = mutation({
     const member = await requireMember(ctx);
     const { issue } = await loadIssue(ctx, member, args.issueId);
     if (issue.archivedAt === null) {
-      await ctx.db.patch("issues", issue._id, { archivedAt: Date.now() });
+      const archivedAt = Date.now();
+      await ctx.db.patch("issues", issue._id, { archivedAt });
+      await syncProjectCounts(ctx, issue, { ...issue, archivedAt });
       await logActivity(ctx, {
         orgId: member.orgId,
         issueId: issue._id,
@@ -257,6 +260,7 @@ export const remove = mutation({
     const member = await requireAdmin(ctx);
     const { issue } = await loadIssue(ctx, member, args.issueId);
     await ctx.db.delete("issues", issue._id);
+    await syncProjectCounts(ctx, issue, null);
     if (await cleanUpAfterRemoval(ctx, issue._id)) {
       await ctx.scheduler.runAfter(0, internal.issues.continueCleanup, {
         issueId: issue._id,

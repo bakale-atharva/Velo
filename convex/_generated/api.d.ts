@@ -22,6 +22,7 @@ import type * as lib_errors from "../lib/errors.js";
 import type * as lib_input from "../lib/input.js";
 import type * as lib_issueOps from "../lib/issueOps.js";
 import type * as lib_plans from "../lib/plans.js";
+import type * as lib_projectCounts from "../lib/projectCounts.js";
 import type * as lib_seats from "../lib/seats.js";
 import type * as lib_teamAccess from "../lib/teamAccess.js";
 import type * as members from "../members.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   "lib/input": typeof lib_input;
   "lib/issueOps": typeof lib_issueOps;
   "lib/plans": typeof lib_plans;
+  "lib/projectCounts": typeof lib_projectCounts;
   "lib/seats": typeof lib_seats;
   "lib/teamAccess": typeof lib_teamAccess;
   members: typeof members;

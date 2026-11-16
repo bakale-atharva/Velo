@@ -6,6 +6,7 @@ import { logActivity, type ActivityType } from "./activity";
 import type { MemberInfo } from "./auth";
 import { appError } from "./errors";
 import { cleanText } from "./input";
+import { syncProjectCounts } from "./projectCounts";
 import { isTeamMember, requireTeamAccess } from "./teamAccess";
 
 // Shared issue logic. Public functions in convex/issues.ts authenticate the
@@ -349,6 +350,7 @@ export async function createIssue(
   if (issue === null) {
     throw appError("NOT_FOUND");
   }
+  await syncProjectCounts(ctx, null, issue);
   return issue;
 }
 
@@ -490,6 +492,7 @@ export async function updateIssue(
     }`;
   }
   await ctx.db.patch("issues", issue._id, patch);
+  await syncProjectCounts(ctx, issue, { ...issue, ...patch });
   for (const change of changes) {
     await logActivity(ctx, {
       orgId: member.orgId,
@@ -513,12 +516,14 @@ export async function moveIssue(
 ): Promise<void> {
   const state = await loadState(ctx, team, stateId);
   const rank = rankBetween(beforeRank, afterRank);
-  await ctx.db.patch("issues", issue._id, {
+  const patch = {
     stateId: state._id,
     stateType: state.type,
     completedAt: completedAtFor(issue, state),
     rank,
-  });
+  };
+  await ctx.db.patch("issues", issue._id, patch);
+  await syncProjectCounts(ctx, issue, { ...issue, ...patch });
   // Reordering inside a column is not a change worth a feed entry.
   if (state._id !== issue.stateId) {
     await logActivity(ctx, {
