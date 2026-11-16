@@ -1,13 +1,14 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { requireAdmin, requireMember, type MemberInfo } from "./lib/auth";
+import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanColor, cleanText } from "./lib/input";
+import { requirePermission } from "./lib/permissions";
 import { requireTeamAccess } from "./lib/teamAccess";
 import schema, { stateType } from "./schema";
 
-// Changing a team's workflow needs `teams.manage`: admins only until B6.
+// Changing a team's workflow needs `teams.manage`.
 
 const MAX_STATES = 50;
 const MAX_NAME_LENGTH = 40;
@@ -53,7 +54,7 @@ export const create = mutation({
   },
   returns: v.id("workflowStates"),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const team = await requireTeamAccess(ctx, member, args.teamId);
     const states = await statesOfTeam(ctx, team._id);
     if (states.length >= MAX_STATES) {
@@ -80,7 +81,7 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const state = await loadState(ctx, member, args.stateId);
     await ctx.db.patch("workflowStates", state._id, {
       name:
@@ -96,7 +97,7 @@ export const reorder = mutation({
   args: { teamId: v.id("teams"), stateIds: v.array(v.id("workflowStates")) },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const team = await requireTeamAccess(ctx, member, args.teamId);
     const states = await statesOfTeam(ctx, team._id);
     const known = new Set(states.map((state) => state._id));
@@ -120,7 +121,7 @@ export const remove = mutation({
   args: { stateId: v.id("workflowStates") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const state = await loadState(ctx, member, args.stateId);
     const remaining = await ctx.db
       .query("workflowStates")

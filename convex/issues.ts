@@ -17,7 +17,7 @@ import {
 import { loadCycle } from "./cycles";
 import { assertFilter, issueFilter, matchesFilter, type IssueFilter } from "./issueFilters";
 import { logActivity } from "./lib/activity";
-import { requireAdmin, requireMember, type MemberInfo } from "./lib/auth";
+import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import {
   createIssue,
@@ -27,6 +27,7 @@ import {
   toPublicIssue,
   updateIssue,
 } from "./lib/issueOps";
+import { requirePermission } from "./lib/permissions";
 import { syncProjectCounts } from "./lib/projectCounts";
 import { filterVisibleIssues, requireTeamAccess } from "./lib/teamAccess";
 import { loadProject } from "./projects";
@@ -373,14 +374,14 @@ export const continueCleanup = internalMutation({
 });
 
 /**
- * Deletes an issue for good. Needs `issues.delete`: admins only until B6.
+ * Deletes an issue for good. Needs `issues.delete`.
  * Its comments and activity go with it; its sub-issues stay and lose their parent.
  */
 export const remove = mutation({
   args: { issueId: v.id("issues") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "issues.delete");
     const { issue } = await loadIssue(ctx, member, args.issueId);
     await ctx.db.delete("issues", issue._id);
     await syncProjectCounts(ctx, issue, null);

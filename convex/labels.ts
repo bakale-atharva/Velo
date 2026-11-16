@@ -1,13 +1,13 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
-import { requireAdmin, requireMember } from "./lib/auth";
+import { requireMember } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanColor, cleanText } from "./lib/input";
+import { requirePermission } from "./lib/permissions";
 import schema from "./schema";
 
-// Labels belong to the whole org. Changing them needs `labels.manage`:
-// admins only until B6.
+// Labels belong to the whole org. Changing them needs `labels.manage`.
 
 const MAX_LABELS = 500;
 const MAX_NAME_LENGTH = 40;
@@ -56,7 +56,7 @@ export const create = mutation({
   args: { name: v.string(), color: v.string() },
   returns: v.id("labels"),
   handler: async (ctx, args) => {
-    const { orgId } = await requireAdmin(ctx);
+    const { orgId } = await requirePermission(ctx, "labels.manage");
     const name = cleanText(args.name, MAX_NAME_LENGTH);
     const color = cleanColor(args.color);
     await assertNameFree(ctx, orgId, name, null);
@@ -79,7 +79,7 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const { orgId } = await requireAdmin(ctx);
+    const { orgId } = await requirePermission(ctx, "labels.manage");
     const label = await loadLabel(ctx, orgId, args.labelId);
     const name =
       args.name === undefined ? label.name : cleanText(args.name, MAX_NAME_LENGTH);
@@ -98,7 +98,7 @@ export const remove = mutation({
   args: { labelId: v.id("labels") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const { orgId } = await requireAdmin(ctx);
+    const { orgId } = await requirePermission(ctx, "labels.manage");
     const label = await loadLabel(ctx, orgId, args.labelId);
     await ctx.db.delete("labels", label._id);
     return null;

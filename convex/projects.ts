@@ -13,11 +13,12 @@ import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
 import { issueValidator, toPublicIssue } from "./lib/issueOps";
+import { requirePermission } from "./lib/permissions";
 import { filterVisibleIssues } from "./lib/teamAccess";
 import schema, { projectStatus } from "./schema";
 
-// Changing projects needs `projects.manage`, which every member has by
-// default (custom roles can take it away in B6).
+// Changing projects needs `projects.manage`, which members have by default
+// (a custom role can take it away).
 
 const MAX_PROJECTS = 500;
 const MAX_NAME_LENGTH = 120;
@@ -82,7 +83,7 @@ export const create = mutation({
   },
   returns: v.id("projects"),
   handler: async (ctx, args) => {
-    const { orgId } = await requireMember(ctx);
+    const { orgId } = await requirePermission(ctx, "projects.manage");
     const name = cleanText(args.name, MAX_NAME_LENGTH);
     const description = cleanDescription(args.description ?? "");
     const leadId = args.leadId ?? null;
@@ -127,7 +128,7 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireMember(ctx);
+    const member = await requirePermission(ctx, "projects.manage");
     const project = await loadProject(ctx, member, args.projectId);
     const leadId = args.leadId === undefined ? project.leadId : args.leadId;
     if (leadId !== null && leadId !== project.leadId) {
@@ -179,7 +180,7 @@ export const remove = mutation({
   args: { projectId: v.id("projects") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireMember(ctx);
+    const member = await requirePermission(ctx, "projects.manage");
     const project = await loadProject(ctx, member, args.projectId);
     await ctx.db.delete("projects", project._id);
     if (await detachIssues(ctx, project._id)) {

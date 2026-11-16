@@ -14,12 +14,13 @@ import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
 import { issueValidator, toPublicIssue } from "./lib/issueOps";
+import { requirePermission } from "./lib/permissions";
 import { requireTeamAccess } from "./lib/teamAccess";
 import schema from "./schema";
 
-// Changing cycles needs `cycles.manage`, which every member has by default
-// (custom roles can take it away in B6). Status moves on a schedule: see
-// `rollover` below.
+// Changing cycles needs `cycles.manage`, which members have by default (a
+// custom role can take it away). Status moves on a schedule: see `rollover`
+// below.
 
 const MAX_CYCLES = 200;
 const MAX_NAME_LENGTH = 80;
@@ -88,7 +89,7 @@ export const create = mutation({
   },
   returns: v.id("cycles"),
   handler: async (ctx, args) => {
-    const member = await requireMember(ctx);
+    const member = await requirePermission(ctx, "cycles.manage");
     const team = await requireTeamAccess(ctx, member, args.teamId);
     if (team.archivedAt !== null) {
       throw appError("INVALID_INPUT");
@@ -132,7 +133,7 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireMember(ctx);
+    const member = await requirePermission(ctx, "cycles.manage");
     const { cycle } = await loadCycle(ctx, member, args.cycleId);
     const name =
       args.name === undefined ? cycle.name : cleanText(args.name, MAX_NAME_LENGTH);

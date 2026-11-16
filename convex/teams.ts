@@ -1,15 +1,16 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
-import { requireAdmin, requireMember } from "./lib/auth";
+import { requireMember } from "./lib/auth";
 import { requireFeature } from "./lib/entitlements";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
+import { requirePermission } from "./lib/permissions";
 import { canAccessTeam, isTeamMember, requireTeamAccess } from "./lib/teamAccess";
 import schema from "./schema";
 
-// Managing teams needs the `teams.manage` permission. Until custom roles
-// arrive (B6) only admins have it.
+// Managing teams needs the `teams.manage` permission (admins, and members
+// whose custom role grants it).
 
 const MAX_TEAMS = 200;
 const MAX_TEAM_MEMBERS = 500;
@@ -45,7 +46,7 @@ export const create = mutation({
   },
   returns: v.id("teams"),
   handler: async (ctx, args) => {
-    const { orgId, userId } = await requireAdmin(ctx);
+    const { orgId, userId } = await requirePermission(ctx, "teams.manage");
     const name = cleanText(args.name, MAX_NAME_LENGTH);
     if (!/^[A-Z]{2,5}$/.test(args.key)) {
       throw appError("INVALID_INPUT");
@@ -138,7 +139,7 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const team = await requireTeamAccess(ctx, member, args.teamId);
     const name =
       args.name === undefined ? team.name : cleanText(args.name, MAX_NAME_LENGTH);
@@ -157,7 +158,7 @@ export const archive = mutation({
   args: { teamId: v.id("teams") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const team = await requireTeamAccess(ctx, member, args.teamId);
     if (team.archivedAt === null) {
       await ctx.db.patch("teams", team._id, { archivedAt: Date.now() });
@@ -185,7 +186,7 @@ export const addMember = mutation({
   args: { teamId: v.id("teams"), userId: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const team = await requireTeamAccess(ctx, member, args.teamId);
     const membership = await ctx.db
       .query("memberships")
@@ -205,7 +206,7 @@ export const removeMember = mutation({
   args: { teamId: v.id("teams"), userId: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "teams.manage");
     const team = await requireTeamAccess(ctx, member, args.teamId);
     const row = await ctx.db
       .query("teamMembers")

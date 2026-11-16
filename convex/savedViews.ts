@@ -5,11 +5,18 @@ import { assertFilter, issueFilter } from "./issueFilters";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
+import { hasPermission } from "./lib/permissions";
 import schema, { viewGroupBy, viewLayout } from "./schema";
 
-// Sharing a view with the org needs `views.share`, which every member has by
-// default (custom roles can take it away in B6). Only the owner edits a view;
-// the owner or an admin deletes it.
+// Sharing a view with the org needs `views.share`, which members have by
+// default (a custom role can take it away). Only the owner edits a view; the
+// owner or an admin deletes it.
+
+async function assertMayShare(ctx: MutationCtx, member: MemberInfo) {
+  if (!(await hasPermission(ctx, member, "views.share"))) {
+    throw appError("FORBIDDEN");
+  }
+}
 
 const MAX_VIEWS = 200;
 const MAX_NAME_LENGTH = 80;
@@ -79,6 +86,9 @@ export const create = mutation({
     const member = await requireMember(ctx);
     const name = cleanText(args.name, MAX_NAME_LENGTH);
     assertFilter(args.filter);
+    if (args.isShared === true) {
+      await assertMayShare(ctx, member);
+    }
     const existing = await ctx.db
       .query("savedViews")
       .withIndex("by_orgId_and_ownerId", (q) =>
@@ -119,6 +129,9 @@ export const update = mutation({
     }
     if (args.filter !== undefined) {
       assertFilter(args.filter);
+    }
+    if (args.isShared === true && !view.isShared) {
+      await assertMayShare(ctx, member);
     }
     await ctx.db.patch("savedViews", view._id, {
       name: args.name === undefined ? view.name : cleanText(args.name, MAX_NAME_LENGTH),
