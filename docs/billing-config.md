@@ -30,11 +30,11 @@ All are `publicly_visible: true` and included in the session JWT (Clerk default)
 |---|---|---|---|---|---|---|
 | `free_org` | Free | $0 | $0 | no | 3 | none |
 | `pro` | Pro | $199 | $169 | yes | 20 (hard cap) | `ai_assistant` |
-| `business` | Business | **not set yet** ($0) | **not set yet** ($0) | no | unlimited | all four |
+| `business` | Business | $190 | $175 | yes | unlimited | all four |
 | `enterprise` | Enterprise | $990 | $900 | yes | unlimited | all four |
 
 Business was meant to be $18 / $16 per seat. Clerk cannot charge per seat, so
-its price is still $0 until a flat price is chosen. Pro's planned
+it is a flat $190 / $175 (yearly per month) with unlimited seats. Pro's planned
 +$12 / $10 per seat over 20 cannot be billed either, so Pro is capped at 20.
 
 ## Seat limits (Velo-enforced)
