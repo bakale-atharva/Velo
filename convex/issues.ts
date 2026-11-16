@@ -180,6 +180,46 @@ export const listFiltered = query({
   },
 });
 
+const MY_ISSUES_LIMIT = 300;
+// Order of state types on "My issues": work in flight first, finished last.
+const STATE_ORDER: Record<Doc<"issues">["stateType"], number> = {
+  started: 0,
+  unstarted: 1,
+  backlog: 2,
+  completed: 3,
+  canceled: 4,
+};
+
+/**
+ * Issues assigned to the caller (up to 300, archived left out): open states
+ * first, then by priority (urgent first, none last), newest first within that.
+ */
+export const listMine = query({
+  args: {},
+  returns: v.array(issueValidator),
+  handler: async (ctx) => {
+    const member = await requireMember(ctx);
+    const assigned = await ctx.db
+      .query("issues")
+      .withIndex("by_orgId_and_assigneeId", (q) =>
+        q.eq("orgId", member.orgId).eq("assigneeId", member.userId),
+      )
+      .order("desc")
+      .take(MY_ISSUES_LIMIT);
+    const open = assigned.filter((issue) => issue.archivedAt === null);
+    const visible = await filterVisibleIssues(ctx, member, open);
+    const priorityRank = (priority: number) => (priority === 0 ? 5 : priority);
+    return visible
+      .sort(
+        (a, b) =>
+          STATE_ORDER[a.stateType] - STATE_ORDER[b.stateType] ||
+          priorityRank(a.priority) - priorityRank(b.priority) ||
+          b._creationTime - a._creationTime,
+      )
+      .map(toPublicIssue);
+  },
+});
+
 /** The board: every state of the team with its first 200 issues by rank. */
 export const listForBoard = query({
   args: { teamId: v.id("teams") },
