@@ -11,6 +11,7 @@
 import type * as billing from "../billing.js";
 import type * as clerkSync from "../clerkSync.js";
 import type * as http from "../http.js";
+import type * as labels from "../labels.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_entitlements from "../lib/entitlements.js";
 import type * as lib_errors from "../lib/errors.js";
@@ -21,6 +22,7 @@ import type * as lib_teamAccess from "../lib/teamAccess.js";
 import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
 import type * as teams from "../teams.js";
+import type * as workflowStates from "../workflowStates.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   clerkSync: typeof clerkSync;
   http: typeof http;
+  labels: typeof labels;
   "lib/auth": typeof lib_auth;
   "lib/entitlements": typeof lib_entitlements;
   "lib/errors": typeof lib_errors;
@@ -42,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   members: typeof members;
   organizations: typeof organizations;
   teams: typeof teams;
+  workflowStates: typeof workflowStates;
 }>;
 
 /**
