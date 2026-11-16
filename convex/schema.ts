@@ -3,6 +3,14 @@ import { v } from "convex/values";
 
 // Tenant key: every tenant table stores the Clerk organization id ("org_...")
 // in `orgId`. Users are referenced by Clerk user id ("user_...").
+export const stateType = v.union(
+  v.literal("backlog"),
+  v.literal("unstarted"),
+  v.literal("started"),
+  v.literal("completed"),
+  v.literal("canceled"),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -42,6 +50,43 @@ export default defineSchema({
     // Clerk's `updated_at` (ms); older deliveries are ignored.
     updatedAt: v.number(),
   }).index("by_orgId", ["orgId"]),
+
+  // A team inside an org. Issues are numbered per team: "<key>-<number>".
+  teams: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    // 2-5 uppercase letters, unique within the org.
+    key: v.string(),
+    isPrivate: v.boolean(),
+    nextIssueNumber: v.number(),
+    archivedAt: v.union(v.number(), v.null()),
+  })
+    .index("by_orgId", ["orgId"])
+    .index("by_orgId_and_key", ["orgId", "key"]),
+
+  // Who belongs to a team. Only private teams use it to restrict access.
+  teamMembers: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    userId: v.string(),
+  })
+    .index("by_teamId_and_userId", ["teamId", "userId"])
+    .index("by_orgId_and_userId", ["orgId", "userId"]),
+
+  workflowStates: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    name: v.string(),
+    type: stateType,
+    color: v.string(),
+    position: v.number(),
+  }).index("by_teamId_and_position", ["teamId", "position"]),
+
+  labels: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    color: v.string(),
+  }).index("by_orgId_and_name", ["orgId", "name"]),
 
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
