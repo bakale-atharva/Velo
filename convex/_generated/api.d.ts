@@ -9,6 +9,7 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as auditLogs from "../auditLogs.js";
 import type * as billing from "../billing.js";
 import type * as clerkSync from "../clerkSync.js";
 import type * as comments from "../comments.js";
@@ -19,6 +20,7 @@ import type * as issueFilters from "../issueFilters.js";
 import type * as issues from "../issues.js";
 import type * as labels from "../labels.js";
 import type * as lib_activity from "../lib/activity.js";
+import type * as lib_audit from "../lib/audit.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_entitlements from "../lib/entitlements.js";
 import type * as lib_errors from "../lib/errors.js";
@@ -46,6 +48,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  auditLogs: typeof auditLogs;
   billing: typeof billing;
   clerkSync: typeof clerkSync;
   comments: typeof comments;
@@ -56,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   issues: typeof issues;
   labels: typeof labels;
   "lib/activity": typeof lib_activity;
+  "lib/audit": typeof lib_audit;
   "lib/auth": typeof lib_auth;
   "lib/entitlements": typeof lib_entitlements;
   "lib/errors": typeof lib_errors;

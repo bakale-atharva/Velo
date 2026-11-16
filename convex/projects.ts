@@ -9,6 +9,7 @@ import {
   type MutationCtx,
   type QueryCtx,
 } from "./_generated/server";
+import { logAudit } from "./lib/audit";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
@@ -183,6 +184,12 @@ export const remove = mutation({
     const member = await requirePermission(ctx, "projects.manage");
     const project = await loadProject(ctx, member, args.projectId);
     await ctx.db.delete("projects", project._id);
+    await logAudit(ctx, member, {
+      action: "project.deleted",
+      targetType: "project",
+      targetId: project._id,
+      metadata: { name: project.name },
+    });
     if (await detachIssues(ctx, project._id)) {
       await ctx.scheduler.runAfter(0, internal.projects.continueDetach, {
         projectId: project._id,

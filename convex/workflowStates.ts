@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { logAudit } from "./lib/audit";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanColor, cleanText } from "./lib/input";
@@ -140,6 +141,12 @@ export const remove = mutation({
       throw appError("INVALID_INPUT");
     }
     await ctx.db.delete("workflowStates", state._id);
+    await logAudit(ctx, member, {
+      action: "workflow_state.deleted",
+      targetType: "workflowState",
+      targetId: state._id,
+      metadata: { name: state.name, teamId: state.teamId },
+    });
     return null;
   },
 });

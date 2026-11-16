@@ -8,6 +8,7 @@ import {
   type MutationCtx,
   type QueryCtx,
 } from "./_generated/server";
+import { logAudit } from "./lib/audit";
 import { requireAdmin, type MemberInfo } from "./lib/auth";
 import { requireFeature } from "./lib/entitlements";
 import { appError } from "./lib/errors";
@@ -72,7 +73,8 @@ export const create = mutation({
   args: { name: v.string(), permissions: v.array(permissionValidator) },
   returns: v.id("customRoles"),
   handler: async (ctx, args) => {
-    const { orgId } = await requireRoleAdmin(ctx);
+    const member = await requireRoleAdmin(ctx);
+    const { orgId } = member;
     const name = cleanText(args.name, MAX_NAME_LENGTH);
     await assertNameFree(ctx, orgId, name, null);
     const existing = await ctx.db
@@ -82,11 +84,15 @@ export const create = mutation({
     if (existing.length >= MAX_ROLES) {
       throw appError("LIMIT_REACHED");
     }
-    return await ctx.db.insert("customRoles", {
-      orgId,
-      name,
-      permissions: [...new Set(args.permissions)],
+    const permissions = [...new Set(args.permissions)];
+    const roleId = await ctx.db.insert("customRoles", { orgId, name, permissions });
+    await logAudit(ctx, member, {
+      action: "role.created",
+      targetType: "customRole",
+      targetId: roleId,
+      metadata: { name, permissions: permissions.join(",") },
     });
+    return roleId;
   },
 });
 
@@ -103,10 +109,14 @@ export const update = mutation({
     const name =
       args.name === undefined ? role.name : cleanText(args.name, MAX_NAME_LENGTH);
     await assertNameFree(ctx, member.orgId, name, role._id);
-    await ctx.db.patch("customRoles", role._id, {
-      name,
-      permissions:
-        args.permissions === undefined ? role.permissions : [...new Set(args.permissions)],
+    const permissions =
+      args.permissions === undefined ? role.permissions : [...new Set(args.permissions)];
+    await ctx.db.patch("customRoles", role._id, { name, permissions });
+    await logAudit(ctx, member, {
+      action: "role.updated",
+      targetType: "customRole",
+      targetId: role._id,
+      metadata: { name, permissions: permissions.join(",") },
     });
     return null;
   },
@@ -143,6 +153,12 @@ export const remove = mutation({
     const member = await requireRoleAdmin(ctx);
     const role = await loadRole(ctx, member, args.roleId);
     await ctx.db.delete("customRoles", role._id);
+    await logAudit(ctx, member, {
+      action: "role.deleted",
+      targetType: "customRole",
+      targetId: role._id,
+      metadata: { name: role.name },
+    });
     if (await unassignRole(ctx, role._id)) {
       await ctx.scheduler.runAfter(0, internal.roles.continueUnassign, { roleId: role._id });
     }
@@ -168,6 +184,12 @@ export const assign = mutation({
     const role = args.roleId === null ? null : await loadRole(ctx, member, args.roleId);
     await ctx.db.patch("memberships", membership._id, {
       customRoleId: role === null ? undefined : role._id,
+    });
+    await logAudit(ctx, member, {
+      action: role === null ? "role.unassigned" : "role.assigned",
+      targetType: "member",
+      targetId: args.userId,
+      metadata: role === null ? {} : { roleId: role._id, name: role.name },
     });
     return null;
   },

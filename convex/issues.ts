@@ -17,6 +17,7 @@ import {
 import { loadCycle } from "./cycles";
 import { assertFilter, issueFilter, matchesFilter, type IssueFilter } from "./issueFilters";
 import { logActivity } from "./lib/activity";
+import { logAudit } from "./lib/audit";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import {
@@ -385,6 +386,12 @@ export const remove = mutation({
     const { issue } = await loadIssue(ctx, member, args.issueId);
     await ctx.db.delete("issues", issue._id);
     await syncProjectCounts(ctx, issue, null);
+    await logAudit(ctx, member, {
+      action: "issue.deleted",
+      targetType: "issue",
+      targetId: issue._id,
+      metadata: { identifier: issue.identifier, title: issue.title },
+    });
     if (await cleanUpAfterRemoval(ctx, issue._id)) {
       await ctx.scheduler.runAfter(0, internal.issues.continueCleanup, {
         issueId: issue._id,

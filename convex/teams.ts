@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
+import { logAudit } from "./lib/audit";
 import { requireMember } from "./lib/auth";
 import { requireFeature } from "./lib/entitlements";
 import { appError } from "./lib/errors";
@@ -46,7 +47,8 @@ export const create = mutation({
   },
   returns: v.id("teams"),
   handler: async (ctx, args) => {
-    const { orgId, userId } = await requirePermission(ctx, "teams.manage");
+    const member = await requirePermission(ctx, "teams.manage");
+    const { orgId, userId } = member;
     const name = cleanText(args.name, MAX_NAME_LENGTH);
     if (!/^[A-Z]{2,5}$/.test(args.key)) {
       throw appError("INVALID_INPUT");
@@ -82,6 +84,12 @@ export const create = mutation({
       await ctx.db.insert("workflowStates", { orgId, teamId, position, ...state });
     }
     await ctx.db.insert("teamMembers", { orgId, teamId, userId });
+    await logAudit(ctx, member, {
+      action: "team.created",
+      targetType: "team",
+      targetId: teamId,
+      metadata: { name, key: args.key, isPrivate: String(isPrivate) },
+    });
     return teamId;
   },
 });
@@ -150,6 +158,14 @@ export const update = mutation({
       await addTeamMember(ctx, member.orgId, team._id, member.userId);
     }
     await ctx.db.patch("teams", team._id, { name, isPrivate });
+    if (name !== team.name || isPrivate !== team.isPrivate) {
+      await logAudit(ctx, member, {
+        action: "team.updated",
+        targetType: "team",
+        targetId: team._id,
+        metadata: { name, isPrivate: String(isPrivate) },
+      });
+    }
     return null;
   },
 });
@@ -162,6 +178,12 @@ export const archive = mutation({
     const team = await requireTeamAccess(ctx, member, args.teamId);
     if (team.archivedAt === null) {
       await ctx.db.patch("teams", team._id, { archivedAt: Date.now() });
+      await logAudit(ctx, member, {
+        action: "team.archived",
+        targetType: "team",
+        targetId: team._id,
+        metadata: { name: team.name },
+      });
     }
     return null;
   },
@@ -198,6 +220,12 @@ export const addMember = mutation({
       throw appError("NOT_FOUND");
     }
     await addTeamMember(ctx, member.orgId, team._id, args.userId);
+    await logAudit(ctx, member, {
+      action: "team.member_added",
+      targetType: "team",
+      targetId: team._id,
+      metadata: { userId: args.userId },
+    });
     return null;
   },
 });
@@ -228,6 +256,12 @@ export const removeMember = mutation({
       }
     }
     await ctx.db.delete("teamMembers", row._id);
+    await logAudit(ctx, member, {
+      action: "team.member_removed",
+      targetType: "team",
+      targetId: team._id,
+      metadata: { userId: args.userId },
+    });
     return null;
   },
 });

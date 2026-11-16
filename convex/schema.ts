@@ -269,6 +269,18 @@ export default defineSchema({
     to: v.union(v.string(), v.null()),
   }).index("by_issueId", ["issueId"]),
 
+  // Org-level changes (teams, roles, deletions, sharing). Always written, so
+  // the history exists if the org upgrades; readable only with `audit_log`.
+  auditLogs: defineTable({
+    orgId: v.string(),
+    actorId: v.string(),
+    // e.g. "team.created", "role.assigned", "issue.deleted".
+    action: v.string(),
+    targetType: v.string(),
+    targetId: v.string(),
+    metadata: v.record(v.string(), v.string()),
+  }).index("by_orgId", ["orgId"]),
+
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
     svixId: v.string(),

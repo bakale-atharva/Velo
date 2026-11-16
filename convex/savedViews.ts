@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { assertFilter, issueFilter } from "./issueFilters";
+import { logAudit } from "./lib/audit";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
@@ -11,6 +12,21 @@ import schema, { viewGroupBy, viewLayout } from "./schema";
 // Sharing a view with the org needs `views.share`, which members have by
 // default (a custom role can take it away). Only the owner edits a view; the
 // owner or an admin deletes it.
+
+async function logSharing(
+  ctx: MutationCtx,
+  member: MemberInfo,
+  viewId: Id<"savedViews">,
+  name: string,
+  shared: boolean,
+) {
+  await logAudit(ctx, member, {
+    action: shared ? "view.shared" : "view.unshared",
+    targetType: "savedView",
+    targetId: viewId,
+    metadata: { name },
+  });
+}
 
 async function assertMayShare(ctx: MutationCtx, member: MemberInfo) {
   if (!(await hasPermission(ctx, member, "views.share"))) {
@@ -98,15 +114,20 @@ export const create = mutation({
     if (existing.length >= MAX_VIEWS) {
       throw appError("LIMIT_REACHED");
     }
-    return await ctx.db.insert("savedViews", {
+    const isShared = args.isShared ?? false;
+    const viewId = await ctx.db.insert("savedViews", {
       orgId: member.orgId,
       ownerId: member.userId,
       name,
-      isShared: args.isShared ?? false,
+      isShared,
       filter: args.filter,
       layout: args.layout ?? "list",
       groupBy: args.groupBy ?? "state",
     });
+    if (isShared) {
+      await logSharing(ctx, member, viewId, name, true);
+    }
+    return viewId;
   },
 });
 
@@ -133,13 +154,18 @@ export const update = mutation({
     if (args.isShared === true && !view.isShared) {
       await assertMayShare(ctx, member);
     }
+    const name = args.name === undefined ? view.name : cleanText(args.name, MAX_NAME_LENGTH);
+    const isShared = args.isShared ?? view.isShared;
     await ctx.db.patch("savedViews", view._id, {
-      name: args.name === undefined ? view.name : cleanText(args.name, MAX_NAME_LENGTH),
+      name,
       filter: args.filter ?? view.filter,
-      isShared: args.isShared ?? view.isShared,
+      isShared,
       layout: args.layout ?? view.layout,
       groupBy: args.groupBy ?? view.groupBy,
     });
+    if (isShared !== view.isShared) {
+      await logSharing(ctx, member, view._id, name, isShared);
+    }
     return null;
   },
 });
