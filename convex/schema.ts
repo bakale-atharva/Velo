@@ -122,6 +122,15 @@ export default defineSchema({
     .index("by_parentId", ["parentId"])
     .index("by_orgId_and_identifier", ["orgId", "identifier"]),
 
+  comments: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    authorId: v.string(),
+    // Markdown.
+    body: v.string(),
+    editedAt: v.union(v.number(), v.null()),
+  }).index("by_issueId", ["issueId"]),
+
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
     svixId: v.string(),

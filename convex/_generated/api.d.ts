@@ -10,6 +10,7 @@
 
 import type * as billing from "../billing.js";
 import type * as clerkSync from "../clerkSync.js";
+import type * as comments from "../comments.js";
 import type * as http from "../http.js";
 import type * as issues from "../issues.js";
 import type * as labels from "../labels.js";
@@ -35,6 +36,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   clerkSync: typeof clerkSync;
+  comments: typeof comments;
   http: typeof http;
   issues: typeof issues;
   labels: typeof labels;

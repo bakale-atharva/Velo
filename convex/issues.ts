@@ -195,7 +195,7 @@ export const archive = mutation({
 });
 
 /**
- * Detaches what pointed at a deleted issue, one batch per table. Returns
+ * Detaches or deletes what pointed at a deleted issue, one batch per table. Returns
  * whether anything may be left.
  */
 async function cleanUpAfterRemoval(
@@ -209,7 +209,14 @@ async function cleanUpAfterRemoval(
   for (const child of children) {
     await ctx.db.patch("issues", child._id, { parentId: null });
   }
-  return children.length === CLEANUP_BATCH;
+  const comments = await ctx.db
+    .query("comments")
+    .withIndex("by_issueId", (q) => q.eq("issueId", issueId))
+    .take(CLEANUP_BATCH);
+  for (const comment of comments) {
+    await ctx.db.delete("comments", comment._id);
+  }
+  return children.length === CLEANUP_BATCH || comments.length === CLEANUP_BATCH;
 }
 
 export const continueCleanup = internalMutation({
@@ -225,7 +232,7 @@ export const continueCleanup = internalMutation({
 
 /**
  * Deletes an issue for good. Needs `issues.delete`: admins only until B6.
- * Its sub-issues stay and lose their parent.
+ * Its comments go with it; its sub-issues stay and lose their parent.
  */
 export const remove = mutation({
   args: { issueId: v.id("issues") },
