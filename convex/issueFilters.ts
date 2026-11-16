@@ -1,23 +1,12 @@
-import { v, type Infer } from "convex/values";
+import type { Infer } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { appError } from "./lib/errors";
-import { stateType } from "./schema";
+import { issueFilter } from "./schema";
 
 // The filter shared by issue lists, saved views (`savedViews.filter`) and the
 // command palette. Every field narrows the result; fields left out match all.
-// `assigneeIds` may include null for "unassigned".
-
-export const issueFilter = v.object({
-  teamId: v.optional(v.id("teams")),
-  stateTypes: v.optional(v.array(stateType)),
-  stateIds: v.optional(v.array(v.id("workflowStates"))),
-  assigneeIds: v.optional(v.array(v.union(v.string(), v.null()))),
-  labelIds: v.optional(v.array(v.id("labels"))),
-  priorities: v.optional(v.array(v.number())),
-  projectId: v.optional(v.id("projects")),
-  cycleId: v.optional(v.id("cycles")),
-  creatorId: v.optional(v.string()),
-});
+// The validator lives in schema.ts because saved views store it.
+export { issueFilter };
 
 export type IssueFilter = Infer<typeof issueFilter>;
 

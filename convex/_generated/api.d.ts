@@ -31,6 +31,7 @@ import type * as lib_teamAccess from "../lib/teamAccess.js";
 import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
 import type * as projects from "../projects.js";
+import type * as savedViews from "../savedViews.js";
 import type * as teams from "../teams.js";
 import type * as workflowStates from "../workflowStates.js";
 
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   members: typeof members;
   organizations: typeof organizations;
   projects: typeof projects;
+  savedViews: typeof savedViews;
   teams: typeof teams;
   workflowStates: typeof workflowStates;
 }>;

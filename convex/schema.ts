@@ -42,6 +42,29 @@ export const cycleStatus = v.union(
   v.literal("completed"),
 );
 
+// Issue list filter (see convex/issueFilters.ts). `assigneeIds` may include
+// null for "unassigned".
+export const issueFilter = v.object({
+  teamId: v.optional(v.id("teams")),
+  stateTypes: v.optional(v.array(stateType)),
+  stateIds: v.optional(v.array(v.id("workflowStates"))),
+  assigneeIds: v.optional(v.array(v.union(v.string(), v.null()))),
+  labelIds: v.optional(v.array(v.id("labels"))),
+  priorities: v.optional(v.array(v.number())),
+  projectId: v.optional(v.id("projects")),
+  cycleId: v.optional(v.id("cycles")),
+  creatorId: v.optional(v.string()),
+});
+
+export const viewLayout = v.union(v.literal("list"), v.literal("board"));
+export const viewGroupBy = v.union(
+  v.literal("state"),
+  v.literal("assignee"),
+  v.literal("priority"),
+  v.literal("project"),
+  v.literal("none"),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -195,6 +218,19 @@ export default defineSchema({
     .index("by_teamId_and_number", ["teamId", "number"])
     .index("by_status_and_startsAt", ["status", "startsAt"])
     .index("by_status_and_endsAt", ["status", "endsAt"]),
+
+  // A named issue filter. Private to its owner unless shared with the org.
+  savedViews: defineTable({
+    orgId: v.string(),
+    ownerId: v.string(),
+    name: v.string(),
+    isShared: v.boolean(),
+    filter: issueFilter,
+    layout: viewLayout,
+    groupBy: viewGroupBy,
+  })
+    .index("by_orgId_and_ownerId", ["orgId", "ownerId"])
+    .index("by_orgId_and_isShared", ["orgId", "isShared"]),
 
   comments: defineTable({
     orgId: v.string(),
