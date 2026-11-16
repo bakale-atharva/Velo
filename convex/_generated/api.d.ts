@@ -12,6 +12,7 @@ import type * as activities from "../activities.js";
 import type * as billing from "../billing.js";
 import type * as clerkSync from "../clerkSync.js";
 import type * as comments from "../comments.js";
+import type * as crons from "../crons.js";
 import type * as cycles from "../cycles.js";
 import type * as http from "../http.js";
 import type * as issues from "../issues.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   clerkSync: typeof clerkSync;
   comments: typeof comments;
+  crons: typeof crons;
   cycles: typeof cycles;
   http: typeof http;
   issues: typeof issues;

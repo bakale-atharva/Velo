@@ -1,7 +1,15 @@
 import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
+import {
+  internalMutation,
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
+import { logActivity } from "./lib/activity";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
@@ -11,7 +19,7 @@ import schema from "./schema";
 
 // Changing cycles needs `cycles.manage`, which every member has by default
 // (custom roles can take it away in B6). Status moves on a schedule: see
-// `rollover` (B4 commit 4).
+// `rollover` below.
 
 const MAX_CYCLES = 200;
 const MAX_NAME_LENGTH = 80;
@@ -205,5 +213,115 @@ export const listIssues = query({
       ...result,
       page: result.page.filter((issue) => issue.archivedAt === null).map(toPublicIssue),
     };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Rollover (runs every 15 minutes from convex/crons.ts)
+
+const ROLLOVER_BATCH = 20;
+const MOVE_BATCH = 100;
+
+/** The team's first cycle that starts at or after `from` and is not completed. */
+async function nextCycle(
+  ctx: MutationCtx,
+  teamId: Id<"teams">,
+  from: number,
+): Promise<Doc<"cycles"> | null> {
+  for await (const cycle of ctx.db
+    .query("cycles")
+    .withIndex("by_teamId_and_startsAt", (q) =>
+      q.eq("teamId", teamId).gte("startsAt", from),
+    )) {
+    if (cycle.status !== "completed") {
+      return cycle;
+    }
+  }
+  return null;
+}
+
+/**
+ * Moves one page (100 issues) of a finished cycle's unfinished issues to the
+ * next cycle, or out of any cycle, then schedules the next page.
+ */
+export const moveUnfinished = internalMutation({
+  args: {
+    cycleId: v.id("cycles"),
+    targetCycleId: v.union(v.id("cycles"), v.null()),
+    cursor: v.union(v.string(), v.null()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const cycle = await ctx.db.get("cycles", args.cycleId);
+    if (cycle === null) {
+      return null;
+    }
+    const target =
+      args.targetCycleId === null ? null : await ctx.db.get("cycles", args.targetCycleId);
+    const page = await ctx.db
+      .query("issues")
+      .withIndex("by_cycleId", (q) => q.eq("cycleId", cycle._id))
+      .paginate({ numItems: MOVE_BATCH, cursor: args.cursor });
+    for (const issue of page.page) {
+      const finished = issue.stateType === "completed" || issue.stateType === "canceled";
+      if (finished || issue.archivedAt !== null) {
+        continue;
+      }
+      await ctx.db.patch("issues", issue._id, {
+        cycleId: target === null ? null : target._id,
+      });
+      await logActivity(ctx, {
+        orgId: issue.orgId,
+        issueId: issue._id,
+        actorId: "system",
+        type: "cycle",
+        from: cycle.name,
+        to: target === null ? null : target.name,
+      });
+    }
+    if (!page.isDone) {
+      await ctx.scheduler.runAfter(0, internal.cycles.moveUnfinished, {
+        ...args,
+        cursor: page.continueCursor,
+      });
+    }
+    return null;
+  },
+});
+
+/** Starts cycles whose time has come and completes cycles that have ended. */
+export const rollover = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const now = Date.now();
+    const starting = await ctx.db
+      .query("cycles")
+      .withIndex("by_status_and_startsAt", (q) =>
+        q.eq("status", "upcoming").lte("startsAt", now),
+      )
+      .take(ROLLOVER_BATCH);
+    for (const cycle of starting) {
+      await ctx.db.patch("cycles", cycle._id, { status: "active" });
+    }
+    const ending = await ctx.db
+      .query("cycles")
+      .withIndex("by_status_and_endsAt", (q) =>
+        q.eq("status", "active").lte("endsAt", now),
+      )
+      .take(ROLLOVER_BATCH);
+    for (const cycle of ending) {
+      await ctx.db.patch("cycles", cycle._id, { status: "completed" });
+      const target = await nextCycle(ctx, cycle.teamId, cycle.endsAt);
+      await ctx.scheduler.runAfter(0, internal.cycles.moveUnfinished, {
+        cycleId: cycle._id,
+        targetCycleId: target === null ? null : target._id,
+        cursor: null,
+      });
+    }
+    if (starting.length === ROLLOVER_BATCH || ending.length === ROLLOVER_BATCH) {
+      await ctx.scheduler.runAfter(0, internal.cycles.rollover, {});
+    }
+    return null;
   },
 });
