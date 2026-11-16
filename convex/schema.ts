@@ -11,6 +11,23 @@ export const stateType = v.union(
   v.literal("canceled"),
 );
 
+export const activityType = v.union(
+  v.literal("created"),
+  v.literal("title"),
+  v.literal("description"),
+  v.literal("state"),
+  v.literal("priority"),
+  v.literal("assignee"),
+  v.literal("labels"),
+  v.literal("estimate"),
+  v.literal("dueDate"),
+  v.literal("parent"),
+  v.literal("project"),
+  v.literal("cycle"),
+  v.literal("comment"),
+  v.literal("archived"),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -129,6 +146,19 @@ export default defineSchema({
     // Markdown.
     body: v.string(),
     editedAt: v.union(v.number(), v.null()),
+  }).index("by_issueId", ["issueId"]),
+
+  // One row per change to an issue. `from` / `to` hold readable values
+  // (state name, label names, parent identifier, user id, ...).
+  activities: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    // Clerk user id, or "system" for scheduled jobs.
+    actorId: v.string(),
+    viaAssistant: v.boolean(),
+    type: activityType,
+    from: v.union(v.string(), v.null()),
+    to: v.union(v.string(), v.null()),
   }).index("by_issueId", ["issueId"]),
 
   // Processed Clerk webhook deliveries, for idempotency.

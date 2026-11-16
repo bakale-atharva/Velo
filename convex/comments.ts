@@ -2,6 +2,7 @@ import { paginationOptsValidator, paginationResultValidator } from "convex/serve
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
+import { logActivity } from "./lib/activity";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
@@ -24,6 +25,22 @@ async function loadComment(
   return comment;
 }
 
+/** Comment activities carry what happened to the comment in `to`. */
+async function logCommentActivity(
+  ctx: MutationCtx,
+  member: MemberInfo,
+  issueId: Id<"issues">,
+  what: "created" | "edited" | "deleted",
+) {
+  await logActivity(ctx, {
+    orgId: member.orgId,
+    issueId,
+    actorId: member.userId,
+    type: "comment",
+    to: what,
+  });
+}
+
 /** An issue's comments, oldest first. */
 export const list = query({
   args: { issueId: v.id("issues"), paginationOpts: paginationOptsValidator },
@@ -44,13 +61,15 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
     const { issue } = await loadIssue(ctx, member, args.issueId);
-    return await ctx.db.insert("comments", {
+    const commentId = await ctx.db.insert("comments", {
       orgId: member.orgId,
       issueId: issue._id,
       authorId: member.userId,
       body: cleanText(args.body, MAX_BODY_LENGTH),
       editedAt: null,
     });
+    await logCommentActivity(ctx, member, issue._id, "created");
+    return commentId;
   },
 });
 
@@ -67,6 +86,7 @@ export const update = mutation({
     const body = cleanText(args.body, MAX_BODY_LENGTH);
     if (body !== comment.body) {
       await ctx.db.patch("comments", comment._id, { body, editedAt: Date.now() });
+      await logCommentActivity(ctx, member, comment.issueId, "edited");
     }
     return null;
   },
@@ -83,6 +103,7 @@ export const remove = mutation({
       throw appError("FORBIDDEN");
     }
     await ctx.db.delete("comments", comment._id);
+    await logCommentActivity(ctx, member, comment.issueId, "deleted");
     return null;
   },
 });

@@ -2,6 +2,7 @@ import { generateKeyBetween } from "fractional-indexing";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import schema from "../schema";
+import { logActivity, type ActivityType } from "./activity";
 import type { MemberInfo } from "./auth";
 import { appError } from "./errors";
 import { cleanText } from "./input";
@@ -202,6 +203,33 @@ function completedAtFor(
   return issue?.completedAt ?? Date.now();
 }
 
+/** Whether the assistant made the change on the member's behalf (B7). */
+export type WriteOptions = { viaAssistant?: boolean };
+
+async function stateName(ctx: DbCtx, stateId: Id<"workflowStates">) {
+  const state = await ctx.db.get("workflowStates", stateId);
+  return state === null ? null : state.name;
+}
+
+/** Label names for the activity log; labels deleted since are skipped. */
+async function labelNames(ctx: DbCtx, labelIds: Id<"labels">[]) {
+  const names: string[] = [];
+  for (const labelId of labelIds) {
+    const label = await ctx.db.get("labels", labelId);
+    if (label !== null) {
+      names.push(label.name);
+    }
+  }
+  return names.length === 0 ? null : names.sort().join(", ");
+}
+
+async function issueIdentifier(ctx: DbCtx, issueId: Id<"issues"> | null) {
+  const issue = issueId === null ? null : await ctx.db.get("issues", issueId);
+  return issue === null ? null : issue.identifier;
+}
+
+const text = (value: number | null) => (value === null ? null : String(value));
+
 export type CreateIssueInput = {
   title: string;
   description?: string;
@@ -220,6 +248,7 @@ export async function createIssue(
   member: MemberInfo,
   team: Doc<"teams">,
   input: CreateIssueInput,
+  options: WriteOptions = {},
 ): Promise<Doc<"issues">> {
   if (team.archivedAt !== null) {
     throw appError("INVALID_INPUT");
@@ -272,6 +301,13 @@ export async function createIssue(
     archivedAt: null,
     searchText: `${title}\n${description}`,
   });
+  await logActivity(ctx, {
+    orgId: member.orgId,
+    issueId,
+    actorId: member.userId,
+    viaAssistant: options.viaAssistant,
+    type: "created",
+  });
   const issue = await ctx.db.get("issues", issueId);
   if (issue === null) {
     throw appError("NOT_FOUND");
@@ -298,19 +334,25 @@ export async function updateIssue(
   team: Doc<"teams">,
   issue: Doc<"issues">,
   input: UpdateIssueInput,
+  options: WriteOptions = {},
 ): Promise<void> {
   const patch: Partial<Doc<"issues">> = {};
+  // One activity per changed field.
+  const changes: { type: ActivityType; from: string | null; to: string | null }[] = [];
 
   if (input.title !== undefined) {
     const title = cleanText(input.title, MAX_TITLE_LENGTH);
     if (title !== issue.title) {
       patch.title = title;
+      changes.push({ type: "title", from: issue.title, to: title });
     }
   }
   if (input.description !== undefined) {
     const description = cleanDescription(input.description);
     if (description !== issue.description) {
       patch.description = description;
+      // Bodies are long; the feed only says that the description changed.
+      changes.push({ type: "description", from: null, to: null });
     }
   }
   if (input.stateId !== undefined && input.stateId !== issue.stateId) {
@@ -319,16 +361,27 @@ export async function updateIssue(
     patch.stateType = state.type;
     patch.completedAt = completedAtFor(issue, state);
     patch.rank = await rankAtEnd(ctx, team._id, state._id);
+    changes.push({
+      type: "state",
+      from: await stateName(ctx, issue.stateId),
+      to: state.name,
+    });
   }
   if (input.priority !== undefined && input.priority !== issue.priority) {
     assertPriority(input.priority);
     patch.priority = input.priority;
+    changes.push({
+      type: "priority",
+      from: String(issue.priority),
+      to: String(input.priority),
+    });
   }
   if (input.assigneeId !== undefined && input.assigneeId !== issue.assigneeId) {
     if (input.assigneeId !== null) {
       await assertAssignee(ctx, team, input.assigneeId);
     }
     patch.assigneeId = input.assigneeId;
+    changes.push({ type: "assignee", from: issue.assigneeId, to: input.assigneeId });
   }
   if (input.labelIds !== undefined) {
     const current = new Set(issue.labelIds);
@@ -344,21 +397,37 @@ export async function updateIssue(
         throw appError("INVALID_INPUT");
       }
       patch.labelIds = [...next];
+      changes.push({
+        type: "labels",
+        from: await labelNames(ctx, issue.labelIds),
+        to: await labelNames(ctx, patch.labelIds),
+      });
     }
   }
   if (input.estimate !== undefined && input.estimate !== issue.estimate) {
     assertEstimate(input.estimate);
     patch.estimate = input.estimate;
+    changes.push({
+      type: "estimate",
+      from: text(issue.estimate),
+      to: text(input.estimate),
+    });
   }
   if (input.dueDate !== undefined && input.dueDate !== issue.dueDate) {
     assertDueDate(input.dueDate);
     patch.dueDate = input.dueDate;
+    changes.push({ type: "dueDate", from: text(issue.dueDate), to: text(input.dueDate) });
   }
   if (input.parentId !== undefined && input.parentId !== issue.parentId) {
     if (input.parentId !== null) {
       await loadParent(ctx, team, issue._id, input.parentId);
     }
     patch.parentId = input.parentId;
+    changes.push({
+      type: "parent",
+      from: await issueIdentifier(ctx, issue.parentId),
+      to: await issueIdentifier(ctx, input.parentId),
+    });
   }
 
   if (Object.keys(patch).length === 0) {
@@ -370,11 +439,21 @@ export async function updateIssue(
     }`;
   }
   await ctx.db.patch("issues", issue._id, patch);
+  for (const change of changes) {
+    await logActivity(ctx, {
+      orgId: member.orgId,
+      issueId: issue._id,
+      actorId: member.userId,
+      viaAssistant: options.viaAssistant,
+      ...change,
+    });
+  }
 }
 
 /** Moves an issue to a position in a state column (board drag and drop). */
 export async function moveIssue(
   ctx: MutationCtx,
+  member: MemberInfo,
   team: Doc<"teams">,
   issue: Doc<"issues">,
   stateId: Id<"workflowStates">,
@@ -389,4 +468,15 @@ export async function moveIssue(
     completedAt: completedAtFor(issue, state),
     rank,
   });
+  // Reordering inside a column is not a change worth a feed entry.
+  if (state._id !== issue.stateId) {
+    await logActivity(ctx, {
+      orgId: member.orgId,
+      issueId: issue._id,
+      actorId: member.userId,
+      type: "state",
+      from: await stateName(ctx, issue.stateId),
+      to: state.name,
+    });
+  }
 }

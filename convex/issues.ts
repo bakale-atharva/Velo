@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import { logActivity } from "./lib/activity";
 import { requireAdmin, requireMember } from "./lib/auth";
 import { appError } from "./lib/errors";
 import {
@@ -176,7 +177,7 @@ export const move = mutation({
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
     const { issue, team } = await loadIssue(ctx, member, args.issueId);
-    await moveIssue(ctx, team, issue, args.stateId, args.beforeRank, args.afterRank);
+    await moveIssue(ctx, member, team, issue, args.stateId, args.beforeRank, args.afterRank);
     return null;
   },
 });
@@ -189,6 +190,12 @@ export const archive = mutation({
     const { issue } = await loadIssue(ctx, member, args.issueId);
     if (issue.archivedAt === null) {
       await ctx.db.patch("issues", issue._id, { archivedAt: Date.now() });
+      await logActivity(ctx, {
+        orgId: member.orgId,
+        issueId: issue._id,
+        actorId: member.userId,
+        type: "archived",
+      });
     }
     return null;
   },
@@ -216,7 +223,14 @@ async function cleanUpAfterRemoval(
   for (const comment of comments) {
     await ctx.db.delete("comments", comment._id);
   }
-  return children.length === CLEANUP_BATCH || comments.length === CLEANUP_BATCH;
+  const activities = await ctx.db
+    .query("activities")
+    .withIndex("by_issueId", (q) => q.eq("issueId", issueId))
+    .take(CLEANUP_BATCH);
+  for (const activity of activities) {
+    await ctx.db.delete("activities", activity._id);
+  }
+  return [children, comments, activities].some((rows) => rows.length === CLEANUP_BATCH);
 }
 
 export const continueCleanup = internalMutation({
@@ -232,7 +246,7 @@ export const continueCleanup = internalMutation({
 
 /**
  * Deletes an issue for good. Needs `issues.delete`: admins only until B6.
- * Its comments go with it; its sub-issues stay and lose their parent.
+ * Its comments and activity go with it; its sub-issues stay and lose their parent.
  */
 export const remove = mutation({
   args: { issueId: v.id("issues") },
