@@ -36,6 +36,7 @@ export const create = mutation({
     estimate: v.optional(nullableNumber),
     dueDate: v.optional(nullableNumber),
     parentId: v.optional(v.union(v.id("issues"), v.null())),
+    projectId: v.optional(v.union(v.id("projects"), v.null())),
   },
   returns: v.object({ issueId: v.id("issues"), identifier: v.string() }),
   handler: async (ctx, { teamId, ...input }) => {
@@ -152,6 +153,7 @@ export const update = mutation({
     estimate: v.optional(nullableNumber),
     dueDate: v.optional(nullableNumber),
     parentId: v.optional(v.union(v.id("issues"), v.null())),
+    projectId: v.optional(v.union(v.id("projects"), v.null())),
   },
   returns: v.null(),
   handler: async (ctx, { issueId, ...input }) => {

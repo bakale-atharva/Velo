@@ -25,7 +25,7 @@ export const issueValidator = schema.doc("issues").omit("searchText");
 export function toPublicIssue(issue: Doc<"issues">) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { searchText, ...rest } = issue;
-  return rest;
+  return { ...rest, projectId: issue.projectId ?? null };
 }
 
 /** Loads an issue the member may see, with its team. */
@@ -164,6 +164,37 @@ async function loadParent(
   return parent;
 }
 
+const MAX_PROJECT_TEAMS = 50;
+
+/**
+ * The project an issue of `team` is being put in. The team joins the
+ * project's teams if it is not one of them yet.
+ */
+async function loadProjectForIssue(
+  ctx: MutationCtx,
+  team: Doc<"teams">,
+  projectId: Id<"projects">,
+): Promise<Doc<"projects">> {
+  const project = await ctx.db.get("projects", projectId);
+  if (project === null || project.orgId !== team.orgId) {
+    throw appError("NOT_FOUND");
+  }
+  if (!project.teamIds.includes(team._id)) {
+    if (project.teamIds.length >= MAX_PROJECT_TEAMS) {
+      throw appError("LIMIT_REACHED");
+    }
+    await ctx.db.patch("projects", project._id, {
+      teamIds: [...project.teamIds, team._id],
+    });
+  }
+  return project;
+}
+
+async function projectName(ctx: DbCtx, projectId: Id<"projects"> | null) {
+  const project = projectId === null ? null : await ctx.db.get("projects", projectId);
+  return project === null ? null : project.name;
+}
+
 /** A rank after the last issue of a state column. */
 async function rankAtEnd(
   ctx: DbCtx,
@@ -240,6 +271,7 @@ export type CreateIssueInput = {
   estimate?: number | null;
   dueDate?: number | null;
   parentId?: Id<"issues"> | null;
+  projectId?: Id<"projects"> | null;
 };
 
 /** Creates an issue in a team the member can access. */
@@ -275,6 +307,10 @@ export async function createIssue(
   if (parentId !== null) {
     await loadParent(ctx, team, null, parentId);
   }
+  const projectId = input.projectId ?? null;
+  if (projectId !== null) {
+    await loadProjectForIssue(ctx, team, projectId);
+  }
 
   // Reading and bumping the counter in one mutation keeps numbers sequential.
   const number = team.nextIssueNumber;
@@ -295,6 +331,7 @@ export async function createIssue(
     labelIds,
     estimate,
     parentId,
+    projectId,
     rank: await rankAtEnd(ctx, team._id, state._id),
     dueDate,
     completedAt: completedAtFor(null, state),
@@ -325,6 +362,7 @@ export type UpdateIssueInput = {
   estimate?: number | null;
   dueDate?: number | null;
   parentId?: Id<"issues"> | null;
+  projectId?: Id<"projects"> | null;
 };
 
 /** Applies the given fields to an issue; fields left out stay as they are. */
@@ -427,6 +465,19 @@ export async function updateIssue(
       type: "parent",
       from: await issueIdentifier(ctx, issue.parentId),
       to: await issueIdentifier(ctx, input.parentId),
+    });
+  }
+  const currentProjectId = issue.projectId ?? null;
+  if (input.projectId !== undefined && input.projectId !== currentProjectId) {
+    const project =
+      input.projectId === null
+        ? null
+        : await loadProjectForIssue(ctx, team, input.projectId);
+    patch.projectId = input.projectId;
+    changes.push({
+      type: "project",
+      from: await projectName(ctx, currentProjectId),
+      to: project === null ? null : project.name,
     });
   }
 

@@ -28,6 +28,14 @@ export const activityType = v.union(
   v.literal("archived"),
 );
 
+export const projectStatus = v.union(
+  v.literal("planned"),
+  v.literal("started"),
+  v.literal("paused"),
+  v.literal("completed"),
+  v.literal("canceled"),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -124,6 +132,8 @@ export default defineSchema({
     labelIds: v.array(v.id("labels")),
     estimate: v.union(v.number(), v.null()),
     parentId: v.union(v.id("issues"), v.null()),
+    // Optional because issues written before B4 lack it; absent means none.
+    projectId: v.optional(v.union(v.id("projects"), v.null())),
     // Order within a state column (fractional-indexing key).
     rank: v.string(),
     // Timestamps in ms.
@@ -137,7 +147,26 @@ export default defineSchema({
     .index("by_teamId_and_stateId_and_rank", ["teamId", "stateId", "rank"])
     .index("by_orgId_and_assigneeId", ["orgId", "assigneeId"])
     .index("by_parentId", ["parentId"])
-    .index("by_orgId_and_identifier", ["orgId", "identifier"]),
+    .index("by_orgId_and_identifier", ["orgId", "identifier"])
+    .index("by_projectId", ["projectId"]),
+
+  // A body of work across one or more teams of the org.
+  projects: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    // Markdown.
+    description: v.string(),
+    status: projectStatus,
+    leadId: v.union(v.string(), v.null()),
+    // Teams with issues in the project; grows as issues are added.
+    teamIds: v.array(v.id("teams")),
+    // Timestamps in ms.
+    startDate: v.union(v.number(), v.null()),
+    targetDate: v.union(v.number(), v.null()),
+    // Progress, kept by the issue mutations (convex/lib/projectCounts.ts).
+    issueCount: v.number(),
+    completedIssueCount: v.number(),
+  }).index("by_orgId", ["orgId"]),
 
   comments: defineTable({
     orgId: v.string(),
