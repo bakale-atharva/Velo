@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { permissionValidator } from "./lib/permissions";
 
 // Tenant key: every tenant table stores the Clerk organization id ("org_...")
 // in `orgId`. Users are referenced by Clerk user id ("user_...").
@@ -87,8 +88,11 @@ export default defineSchema({
     userId: v.string(),
     // Clerk role with the "org:" prefix stripped, e.g. "admin", "member".
     role: v.string(),
+    // Velo custom role (B6); applies only while the plan has `custom_roles`.
+    customRoleId: v.optional(v.id("customRoles")),
   })
     .index("by_orgId_and_userId", ["orgId", "userId"])
+    .index("by_customRoleId", ["customRoleId"])
     // Members of an org in join order (seat limits seat the earliest).
     .index("by_orgId", ["orgId"])
     .index("by_userId", ["userId"]),
@@ -104,6 +108,13 @@ export default defineSchema({
     // Clerk's `updated_at` (ms); older deliveries are ignored.
     updatedAt: v.number(),
   }).index("by_orgId", ["orgId"]),
+
+  // A named set of Velo permissions an admin can give members (Business+).
+  customRoles: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    permissions: v.array(permissionValidator),
+  }).index("by_orgId_and_name", ["orgId", "name"]),
 
   // A team inside an org. Issues are numbered per team: "<key>-<number>".
   teams: defineTable({
