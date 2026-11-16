@@ -3,6 +3,31 @@ import { v } from "convex/values";
 
 // Tenant key: every tenant table stores the Clerk organization id ("org_...")
 // in `orgId`. Users are referenced by Clerk user id ("user_...").
+export const stateType = v.union(
+  v.literal("backlog"),
+  v.literal("unstarted"),
+  v.literal("started"),
+  v.literal("completed"),
+  v.literal("canceled"),
+);
+
+export const activityType = v.union(
+  v.literal("created"),
+  v.literal("title"),
+  v.literal("description"),
+  v.literal("state"),
+  v.literal("priority"),
+  v.literal("assignee"),
+  v.literal("labels"),
+  v.literal("estimate"),
+  v.literal("dueDate"),
+  v.literal("parent"),
+  v.literal("project"),
+  v.literal("cycle"),
+  v.literal("comment"),
+  v.literal("archived"),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -42,6 +67,99 @@ export default defineSchema({
     // Clerk's `updated_at` (ms); older deliveries are ignored.
     updatedAt: v.number(),
   }).index("by_orgId", ["orgId"]),
+
+  // A team inside an org. Issues are numbered per team: "<key>-<number>".
+  teams: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    // 2-5 uppercase letters, unique within the org.
+    key: v.string(),
+    isPrivate: v.boolean(),
+    nextIssueNumber: v.number(),
+    archivedAt: v.union(v.number(), v.null()),
+  })
+    .index("by_orgId", ["orgId"])
+    .index("by_orgId_and_key", ["orgId", "key"]),
+
+  // Who belongs to a team. Only private teams use it to restrict access.
+  teamMembers: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    userId: v.string(),
+  })
+    .index("by_teamId_and_userId", ["teamId", "userId"])
+    .index("by_orgId_and_userId", ["orgId", "userId"]),
+
+  workflowStates: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    name: v.string(),
+    type: stateType,
+    color: v.string(),
+    position: v.number(),
+  }).index("by_teamId_and_position", ["teamId", "position"]),
+
+  labels: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    color: v.string(),
+  }).index("by_orgId_and_name", ["orgId", "name"]),
+
+  issues: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    // Sequential per team; `identifier` is "<team key>-<number>".
+    number: v.number(),
+    identifier: v.string(),
+    title: v.string(),
+    // Markdown.
+    description: v.string(),
+    stateId: v.id("workflowStates"),
+    // Copy of the state's type, so lists can tell open from done.
+    stateType: stateType,
+    // 0 none, 1 urgent, 2 high, 3 medium, 4 low.
+    priority: v.number(),
+    assigneeId: v.union(v.string(), v.null()),
+    creatorId: v.string(),
+    labelIds: v.array(v.id("labels")),
+    estimate: v.union(v.number(), v.null()),
+    parentId: v.union(v.id("issues"), v.null()),
+    // Order within a state column (fractional-indexing key).
+    rank: v.string(),
+    // Timestamps in ms.
+    dueDate: v.union(v.number(), v.null()),
+    completedAt: v.union(v.number(), v.null()),
+    archivedAt: v.union(v.number(), v.null()),
+    // Title and description, for full-text search (B5).
+    searchText: v.string(),
+  })
+    .index("by_teamId_and_number", ["teamId", "number"])
+    .index("by_teamId_and_stateId_and_rank", ["teamId", "stateId", "rank"])
+    .index("by_orgId_and_assigneeId", ["orgId", "assigneeId"])
+    .index("by_parentId", ["parentId"])
+    .index("by_orgId_and_identifier", ["orgId", "identifier"]),
+
+  comments: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    authorId: v.string(),
+    // Markdown.
+    body: v.string(),
+    editedAt: v.union(v.number(), v.null()),
+  }).index("by_issueId", ["issueId"]),
+
+  // One row per change to an issue. `from` / `to` hold readable values
+  // (state name, label names, parent identifier, user id, ...).
+  activities: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    // Clerk user id, or "system" for scheduled jobs.
+    actorId: v.string(),
+    viaAssistant: v.boolean(),
+    type: activityType,
+    from: v.union(v.string(), v.null()),
+    to: v.union(v.string(), v.null()),
+  }).index("by_issueId", ["issueId"]),
 
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({

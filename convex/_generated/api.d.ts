@@ -8,16 +8,26 @@
  * @module
  */
 
+import type * as activities from "../activities.js";
 import type * as billing from "../billing.js";
 import type * as clerkSync from "../clerkSync.js";
+import type * as comments from "../comments.js";
 import type * as http from "../http.js";
+import type * as issues from "../issues.js";
+import type * as labels from "../labels.js";
+import type * as lib_activity from "../lib/activity.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_entitlements from "../lib/entitlements.js";
 import type * as lib_errors from "../lib/errors.js";
+import type * as lib_input from "../lib/input.js";
+import type * as lib_issueOps from "../lib/issueOps.js";
 import type * as lib_plans from "../lib/plans.js";
 import type * as lib_seats from "../lib/seats.js";
+import type * as lib_teamAccess from "../lib/teamAccess.js";
 import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
+import type * as teams from "../teams.js";
+import type * as workflowStates from "../workflowStates.js";
 
 import type {
   ApiFromModules,
@@ -26,16 +36,26 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  activities: typeof activities;
   billing: typeof billing;
   clerkSync: typeof clerkSync;
+  comments: typeof comments;
   http: typeof http;
+  issues: typeof issues;
+  labels: typeof labels;
+  "lib/activity": typeof lib_activity;
   "lib/auth": typeof lib_auth;
   "lib/entitlements": typeof lib_entitlements;
   "lib/errors": typeof lib_errors;
+  "lib/input": typeof lib_input;
+  "lib/issueOps": typeof lib_issueOps;
   "lib/plans": typeof lib_plans;
   "lib/seats": typeof lib_seats;
+  "lib/teamAccess": typeof lib_teamAccess;
   members: typeof members;
   organizations: typeof organizations;
+  teams: typeof teams;
+  workflowStates: typeof workflowStates;
 }>;
 
 /**
