@@ -36,6 +36,12 @@ export const projectStatus = v.union(
   v.literal("canceled"),
 );
 
+export const cycleStatus = v.union(
+  v.literal("upcoming"),
+  v.literal("active"),
+  v.literal("completed"),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -134,6 +140,8 @@ export default defineSchema({
     parentId: v.union(v.id("issues"), v.null()),
     // Optional because issues written before B4 lack it; absent means none.
     projectId: v.optional(v.union(v.id("projects"), v.null())),
+    // Optional for the same reason; absent means no cycle.
+    cycleId: v.optional(v.union(v.id("cycles"), v.null())),
     // Order within a state column (fractional-indexing key).
     rank: v.string(),
     // Timestamps in ms.
@@ -148,7 +156,8 @@ export default defineSchema({
     .index("by_orgId_and_assigneeId", ["orgId", "assigneeId"])
     .index("by_parentId", ["parentId"])
     .index("by_orgId_and_identifier", ["orgId", "identifier"])
-    .index("by_projectId", ["projectId"]),
+    .index("by_projectId", ["projectId"])
+    .index("by_cycleId", ["cycleId"]),
 
   // A body of work across one or more teams of the org.
   projects: defineTable({
@@ -167,6 +176,24 @@ export default defineSchema({
     issueCount: v.number(),
     completedIssueCount: v.number(),
   }).index("by_orgId", ["orgId"]),
+
+  // A team's time-boxed iteration. Cycles of a team never overlap.
+  // `convex/cycles.ts` `rollover` moves cycles through their statuses.
+  cycles: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    // Sequential per team.
+    number: v.number(),
+    name: v.string(),
+    // Timestamps in ms; the cycle covers [startsAt, endsAt).
+    startsAt: v.number(),
+    endsAt: v.number(),
+    status: cycleStatus,
+  })
+    .index("by_teamId_and_startsAt", ["teamId", "startsAt"])
+    .index("by_teamId_and_number", ["teamId", "number"])
+    .index("by_status_and_startsAt", ["status", "startsAt"])
+    .index("by_status_and_endsAt", ["status", "endsAt"]),
 
   comments: defineTable({
     orgId: v.string(),

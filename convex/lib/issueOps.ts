@@ -26,7 +26,11 @@ export const issueValidator = schema.doc("issues").omit("searchText");
 export function toPublicIssue(issue: Doc<"issues">) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { searchText, ...rest } = issue;
-  return { ...rest, projectId: issue.projectId ?? null };
+  return {
+    ...rest,
+    projectId: issue.projectId ?? null,
+    cycleId: issue.cycleId ?? null,
+  };
 }
 
 /** Loads an issue the member may see, with its team. */
@@ -191,6 +195,27 @@ async function loadProjectForIssue(
   return project;
 }
 
+/** A cycle an issue of `team` is being put in: same team, not completed. */
+async function loadCycleForIssue(
+  ctx: DbCtx,
+  team: Doc<"teams">,
+  cycleId: Id<"cycles">,
+): Promise<Doc<"cycles">> {
+  const cycle = await ctx.db.get("cycles", cycleId);
+  if (cycle === null || cycle.orgId !== team.orgId) {
+    throw appError("NOT_FOUND");
+  }
+  if (cycle.teamId !== team._id || cycle.status === "completed") {
+    throw appError("INVALID_INPUT");
+  }
+  return cycle;
+}
+
+async function cycleName(ctx: DbCtx, cycleId: Id<"cycles"> | null) {
+  const cycle = cycleId === null ? null : await ctx.db.get("cycles", cycleId);
+  return cycle === null ? null : cycle.name;
+}
+
 async function projectName(ctx: DbCtx, projectId: Id<"projects"> | null) {
   const project = projectId === null ? null : await ctx.db.get("projects", projectId);
   return project === null ? null : project.name;
@@ -273,6 +298,7 @@ export type CreateIssueInput = {
   dueDate?: number | null;
   parentId?: Id<"issues"> | null;
   projectId?: Id<"projects"> | null;
+  cycleId?: Id<"cycles"> | null;
 };
 
 /** Creates an issue in a team the member can access. */
@@ -312,6 +338,10 @@ export async function createIssue(
   if (projectId !== null) {
     await loadProjectForIssue(ctx, team, projectId);
   }
+  const cycleId = input.cycleId ?? null;
+  if (cycleId !== null) {
+    await loadCycleForIssue(ctx, team, cycleId);
+  }
 
   // Reading and bumping the counter in one mutation keeps numbers sequential.
   const number = team.nextIssueNumber;
@@ -333,6 +363,7 @@ export async function createIssue(
     estimate,
     parentId,
     projectId,
+    cycleId,
     rank: await rankAtEnd(ctx, team._id, state._id),
     dueDate,
     completedAt: completedAtFor(null, state),
@@ -365,6 +396,7 @@ export type UpdateIssueInput = {
   dueDate?: number | null;
   parentId?: Id<"issues"> | null;
   projectId?: Id<"projects"> | null;
+  cycleId?: Id<"cycles"> | null;
 };
 
 /** Applies the given fields to an issue; fields left out stay as they are. */
@@ -480,6 +512,17 @@ export async function updateIssue(
       type: "project",
       from: await projectName(ctx, currentProjectId),
       to: project === null ? null : project.name,
+    });
+  }
+  const currentCycleId = issue.cycleId ?? null;
+  if (input.cycleId !== undefined && input.cycleId !== currentCycleId) {
+    const cycle =
+      input.cycleId === null ? null : await loadCycleForIssue(ctx, team, input.cycleId);
+    patch.cycleId = input.cycleId;
+    changes.push({
+      type: "cycle",
+      from: await cycleName(ctx, currentCycleId),
+      to: cycle === null ? null : cycle.name,
     });
   }
 
