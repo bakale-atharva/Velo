@@ -32,6 +32,7 @@ import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
 import type * as projects from "../projects.js";
 import type * as savedViews from "../savedViews.js";
+import type * as search from "../search.js";
 import type * as teams from "../teams.js";
 import type * as workflowStates from "../workflowStates.js";
 
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   organizations: typeof organizations;
   projects: typeof projects;
   savedViews: typeof savedViews;
+  search: typeof search;
   teams: typeof teams;
   workflowStates: typeof workflowStates;
 }>;
