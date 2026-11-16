@@ -157,7 +157,8 @@ export default defineSchema({
     .index("by_parentId", ["parentId"])
     .index("by_orgId_and_identifier", ["orgId", "identifier"])
     .index("by_projectId", ["projectId"])
-    .index("by_cycleId", ["cycleId"]),
+    .index("by_cycleId", ["cycleId"])
+    .index("by_orgId_and_teamId", ["orgId", "teamId"]),
 
   // A body of work across one or more teams of the org.
   projects: defineTable({

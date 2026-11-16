@@ -15,6 +15,7 @@ import type * as comments from "../comments.js";
 import type * as crons from "../crons.js";
 import type * as cycles from "../cycles.js";
 import type * as http from "../http.js";
+import type * as issueFilters from "../issueFilters.js";
 import type * as issues from "../issues.js";
 import type * as labels from "../labels.js";
 import type * as lib_activity from "../lib/activity.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   cycles: typeof cycles;
   http: typeof http;
+  issueFilters: typeof issueFilters;
   issues: typeof issues;
   labels: typeof labels;
   "lib/activity": typeof lib_activity;
