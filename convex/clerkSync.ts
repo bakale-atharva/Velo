@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, type MutationCtx } from "./_generated/server";
+import { FREE_PLAN } from "./lib/plans";
 
 // Rows deleted per transaction when removing many memberships at once.
 const DELETE_BATCH = 500;
@@ -73,6 +74,17 @@ export const handleEvent = internalMutation({
         break;
       case "organizationMembership.deleted":
         await deleteMembership(ctx, payload);
+        break;
+      case "subscription.created":
+      case "subscription.updated":
+      case "subscription.active":
+      case "subscription.pastDue":
+        await upsertSubscription(ctx, payload);
+        break;
+      case "subscriptionItem.canceled":
+      case "subscriptionItem.ended":
+        // Clerk follows these with subscription.updated, which carries the
+        // new active item; nothing to do until then.
         break;
       default:
         // Other event types are not synced in this phase.
@@ -194,6 +206,13 @@ async function deleteOrganization(ctx: MutationCtx, data: Json) {
   if (existing !== null) {
     await ctx.db.delete("organizations", existing._id);
   }
+  const subscription = await ctx.db
+    .query("subscriptions")
+    .withIndex("by_orgId", (q) => q.eq("orgId", clerkOrgId))
+    .unique();
+  if (subscription !== null) {
+    await ctx.db.delete("subscriptions", subscription._id);
+  }
   await deleteMembershipsOfOrg(ctx, clerkOrgId);
 }
 
@@ -241,6 +260,41 @@ async function upsertMembership(ctx: MutationCtx, data: Json) {
     await ctx.db.insert("memberships", fields);
   } else {
     await ctx.db.patch("memberships", existing._id, fields);
+  }
+}
+
+async function upsertSubscription(ctx: MutationCtx, data: Json) {
+  const orgId = str(asObject(data.payer)?.organization_id);
+  if (orgId === null) {
+    // User (B2C) subscriptions are not used by Velo.
+    return;
+  }
+  const clerkSubscriptionId = str(data.id);
+  const status = str(data.status);
+  if (clerkSubscriptionId === null || status === null) {
+    skip("subscription", data, [
+      ...(clerkSubscriptionId === null ? ["id"] : []),
+      ...(status === null ? ["status"] : []),
+    ]);
+    return;
+  }
+  const updatedAt = typeof data.updated_at === "number" ? data.updated_at : 0;
+
+  const items = Array.isArray(data.items)
+    ? data.items.map(asObject).filter((i): i is Json => i !== null)
+    : [];
+  const activeItem = items.find((i) => i.status === "active");
+  const planSlug = str(asObject(activeItem?.plan)?.slug) ?? FREE_PLAN;
+
+  const fields = { orgId, clerkSubscriptionId, planSlug, status, updatedAt };
+  const existing = await ctx.db
+    .query("subscriptions")
+    .withIndex("by_orgId", (q) => q.eq("orgId", orgId))
+    .unique();
+  if (existing === null) {
+    await ctx.db.insert("subscriptions", fields);
+  } else if (updatedAt >= existing.updatedAt) {
+    await ctx.db.patch("subscriptions", existing._id, fields);
   }
 }
 

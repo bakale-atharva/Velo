@@ -7,6 +7,7 @@ export const ERROR_CODES = [
   "NOT_FOUND",
   "FEATURE_NOT_IN_PLAN",
   "LIMIT_REACHED",
+  "SEAT_LIMIT_REACHED",
   "INVALID_INPUT",
 ] as const;
 
