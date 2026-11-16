@@ -115,7 +115,7 @@ export const reorder = mutation({
   },
 });
 
-/** Deletes a state. A team always keeps at least one. */
+/** Deletes a state no issue uses. A team always keeps at least one. */
 export const remove = mutation({
   args: { stateId: v.id("workflowStates") },
   returns: v.null(),
@@ -127,6 +127,15 @@ export const remove = mutation({
       .withIndex("by_teamId_and_position", (q) => q.eq("teamId", state.teamId))
       .take(2);
     if (remaining.length < 2) {
+      throw appError("INVALID_INPUT");
+    }
+    const inUse = await ctx.db
+      .query("issues")
+      .withIndex("by_teamId_and_stateId_and_rank", (q) =>
+        q.eq("teamId", state.teamId).eq("stateId", state._id),
+      )
+      .first();
+    if (inUse !== null) {
       throw appError("INVALID_INPUT");
     }
     await ctx.db.delete("workflowStates", state._id);

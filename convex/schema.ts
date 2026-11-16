@@ -88,6 +88,40 @@ export default defineSchema({
     color: v.string(),
   }).index("by_orgId_and_name", ["orgId", "name"]),
 
+  issues: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    // Sequential per team; `identifier` is "<team key>-<number>".
+    number: v.number(),
+    identifier: v.string(),
+    title: v.string(),
+    // Markdown.
+    description: v.string(),
+    stateId: v.id("workflowStates"),
+    // Copy of the state's type, so lists can tell open from done.
+    stateType: stateType,
+    // 0 none, 1 urgent, 2 high, 3 medium, 4 low.
+    priority: v.number(),
+    assigneeId: v.union(v.string(), v.null()),
+    creatorId: v.string(),
+    labelIds: v.array(v.id("labels")),
+    estimate: v.union(v.number(), v.null()),
+    parentId: v.union(v.id("issues"), v.null()),
+    // Order within a state column (fractional-indexing key).
+    rank: v.string(),
+    // Timestamps in ms.
+    dueDate: v.union(v.number(), v.null()),
+    completedAt: v.union(v.number(), v.null()),
+    archivedAt: v.union(v.number(), v.null()),
+    // Title and description, for full-text search (B5).
+    searchText: v.string(),
+  })
+    .index("by_teamId_and_number", ["teamId", "number"])
+    .index("by_teamId_and_stateId_and_rank", ["teamId", "stateId", "rank"])
+    .index("by_orgId_and_assigneeId", ["orgId", "assigneeId"])
+    .index("by_parentId", ["parentId"])
+    .index("by_orgId_and_identifier", ["orgId", "identifier"]),
+
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
     svixId: v.string(),
