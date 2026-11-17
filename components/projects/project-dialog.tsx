@@ -22,7 +22,7 @@ import { errorMessage } from "@/lib/errors";
 import { PROJECT_STATUSES, type ProjectStatus } from "./project-status";
 
 const fieldClass =
-  "h-8 w-full min-w-0 rounded-[2px] border border-input bg-background px-2 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "h-9 w-full min-w-0 rounded-lg border border-input bg-popover px-2.5 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 type Draft = {
   name: string;

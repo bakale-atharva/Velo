@@ -1,6 +1,6 @@
 /**
- * Completed over total as a flat bar with the count beside it. The bar is
- * ink on a muted track; finished projects keep the same ink, no celebration.
+ * Completed over total as a rounded bar with the count beside it. The fill
+ * is the done teal on a muted track; finished projects get no celebration.
  */
 export function Progress({
   completed,
@@ -20,11 +20,11 @@ export function Progress({
         aria-valuemax={100}
         aria-valuenow={percent}
         aria-label={`${completed} of ${total} issues done`}
-        className="h-1.5 min-w-16 flex-1 bg-muted"
+        className="h-2 min-w-16 flex-1 overflow-hidden rounded-full bg-muted shadow-[inset_0_0_0_1px_var(--border)]"
       >
-        <div className="h-full bg-foreground" style={{ width: `${percent}%` }} />
+        <div className="h-full rounded-full bg-count-teal" style={{ width: `${percent}%` }} />
       </div>
-      <span className="w-20 shrink-0 text-xs text-muted-foreground tabular-nums">
+      <span className="w-24 shrink-0 text-[13px] text-muted-foreground tabular-nums">
         {completed}/{total} · {percent}%
       </span>
     </div>

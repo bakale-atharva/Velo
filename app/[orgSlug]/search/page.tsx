@@ -45,10 +45,10 @@ function Search() {
   const pending = text.trim() !== query || (query !== "" && results === undefined);
 
   return (
-    <div className="flex min-h-svh flex-col">
+    <div className="flex flex-1 flex-col">
       <TeamPageHeader title="Search" />
-      <div className="border-b border-border px-8 py-4">
-        <label className="flex max-w-2xl items-center gap-3 border-b-2 border-rule pb-2 focus-within:border-[var(--state-started)]">
+      <div className="px-3 pt-8 md:px-6">
+        <label className="panel flex h-16 max-w-2xl items-center gap-3 px-5 focus-within:shadow-[inset_0_0_0_2px_var(--ring)]">
           <SearchIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
           <input
             type="search"
@@ -61,7 +61,7 @@ function Search() {
             className="w-full bg-transparent text-lg outline-none placeholder:text-muted-foreground"
           />
         </label>
-        <p aria-live="polite" className="mt-2 h-4 text-xs text-muted-foreground tabular-nums">
+        <p aria-live="polite" className="mt-3 h-5 px-1 text-[13px] text-muted-foreground tabular-nums">
           {query === ""
             ? "Matches words in titles and descriptions across every team you can see."
             : pending
@@ -73,14 +73,14 @@ function Search() {
       </div>
 
       {query !== "" && results !== undefined && results.length === 0 && !pending && (
-        <div className="px-8 py-6">
+        <div className="px-3 pt-6 md:px-6">
           <EmptyState title={`Nothing matches “${query}”`}>
             Try fewer or different words. Archived issues aren’t searched.
           </EmptyState>
         </div>
       )}
       {results !== undefined && results.length > 0 && (
-        <ul className={`divide-y divide-border pb-12 ${pending ? "opacity-60" : ""}`}>
+        <ul className={`panel mx-3 mt-6 mb-12 flex flex-col gap-0.5 p-3 md:mx-6 ${pending ? "opacity-60" : ""}`}>
           {results.map((issue) => (
             <li key={issue._id}>
               <IssueRow issue={issue} orgSlug={orgSlug} />

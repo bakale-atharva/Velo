@@ -9,12 +9,12 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="max-w-md border-t-4 border-rule py-6">
-      <h2 className="text-xl leading-6 font-semibold">{title}</h2>
+    <div className="panel max-w-lg p-7">
+      <h2 className="text-xl leading-7 font-semibold tracking-[-0.01em]">{title}</h2>
       {children !== undefined && (
-        <p className="mt-2 text-[13px] leading-5 text-muted-foreground">{children}</p>
+        <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{children}</p>
       )}
-      {action !== undefined && <div className="mt-4">{action}</div>}
+      {action !== undefined && <div className="mt-5">{action}</div>}
     </div>
   );
 }
