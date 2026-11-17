@@ -15,7 +15,7 @@ import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
 import { issueValidator, toPublicIssue } from "./lib/issueOps";
 import { requirePermission } from "./lib/permissions";
-import { filterVisibleIssues } from "./lib/teamAccess";
+import { filterVisibleIssues, withVisibleTeams } from "./lib/teamAccess";
 import schema, { projectStatus } from "./schema";
 
 // Changing projects needs `projects.manage`, which members have by default
@@ -204,11 +204,12 @@ export const list = query({
   args: {},
   returns: v.array(projectValidator),
   handler: async (ctx) => {
-    const { orgId } = await requireMember(ctx);
-    return await ctx.db
+    const member = await requireMember(ctx);
+    const projects = await ctx.db
       .query("projects")
-      .withIndex("by_orgId", (q) => q.eq("orgId", orgId))
+      .withIndex("by_orgId", (q) => q.eq("orgId", member.orgId))
       .take(MAX_PROJECTS);
+    return await withVisibleTeams(ctx, member, projects);
   },
 });
 
@@ -217,7 +218,9 @@ export const get = query({
   returns: projectValidator,
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
-    return await loadProject(ctx, member, args.projectId);
+    const project = await loadProject(ctx, member, args.projectId);
+    const [visible] = await withVisibleTeams(ctx, member, [project]);
+    return visible;
   },
 });
 

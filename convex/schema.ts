@@ -187,6 +187,13 @@ export default defineSchema({
   })
     .index("by_teamId_and_number", ["teamId", "number"])
     .index("by_teamId_and_stateId_and_rank", ["teamId", "stateId", "rank"])
+    // Lists and the board skip archived issues without scanning them.
+    .index("by_teamId_and_archivedAt_and_stateId_and_rank", [
+      "teamId",
+      "archivedAt",
+      "stateId",
+      "rank",
+    ])
     .index("by_orgId_and_assigneeId", ["orgId", "assigneeId"])
     .index("by_parentId", ["parentId"])
     .index("by_orgId_and_identifier", ["orgId", "identifier"])

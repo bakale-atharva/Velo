@@ -17,7 +17,7 @@ const MAX_TEAMS = 200;
 const MAX_TEAM_MEMBERS = 500;
 const MAX_NAME_LENGTH = 80;
 
-const DEFAULT_STATES = [
+export const DEFAULT_STATES = [
   { name: "Backlog", type: "backlog", color: "#8b8f98" },
   { name: "Todo", type: "unstarted", color: "#c4c7cc" },
   { name: "In Progress", type: "started", color: "#e0a526" },

@@ -102,14 +102,11 @@ export const listByTeam = query({
     const { stateId } = args;
     const result = await ctx.db
       .query("issues")
-      .withIndex("by_teamId_and_stateId_and_rank", (q) =>
+      .withIndex("by_teamId_and_archivedAt_and_stateId_and_rank", (q) =>
         stateId === undefined
-          ? q.eq("teamId", team._id)
-          : q.eq("teamId", team._id).eq("stateId", stateId),
+          ? q.eq("teamId", team._id).eq("archivedAt", null)
+          : q.eq("teamId", team._id).eq("archivedAt", null).eq("stateId", stateId),
       )
-      // The index narrows to the team (and state); archived rows are a small
-      // remainder dropped here so pages stay paginated by the database.
-      .filter((q) => q.eq(q.field("archivedAt"), null))
       .paginate(args.paginationOpts);
     return { ...result, page: result.page.map(toPublicIssue) };
   },
@@ -239,10 +236,9 @@ export const listForBoard = query({
       states.map(async (state) => {
         const issues = await ctx.db
           .query("issues")
-          .withIndex("by_teamId_and_stateId_and_rank", (q) =>
-            q.eq("teamId", team._id).eq("stateId", state._id),
+          .withIndex("by_teamId_and_archivedAt_and_stateId_and_rank", (q) =>
+            q.eq("teamId", team._id).eq("archivedAt", null).eq("stateId", state._id),
           )
-          .filter((q) => q.eq(q.field("archivedAt"), null))
           .take(BOARD_COLUMN_SIZE);
         return { stateId: state._id, issues: issues.map(toPublicIssue) };
       }),
