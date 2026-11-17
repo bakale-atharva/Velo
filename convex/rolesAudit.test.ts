@@ -128,6 +128,27 @@ describe("permissions", () => {
   });
 });
 
+describe("private teams on projects", () => {
+  test("a project does not reveal private teams the caller is not in", async () => {
+    const { adminA, memberA, eng } = await setup();
+    const secret = await adminA.mutation(api.teams.create, {
+      name: "Secret",
+      key: "SEC",
+      isPrivate: true,
+    });
+    const projectId = await adminA.mutation(api.projects.create, { name: "Launch" });
+    await adminA.mutation(api.issues.create, { teamId: eng, title: "Open", projectId });
+    await adminA.mutation(api.issues.create, { teamId: secret, title: "Hidden", projectId });
+
+    expect((await adminA.query(api.projects.get, { projectId })).teamIds.sort()).toEqual(
+      [eng, secret].sort(),
+    );
+    expect((await memberA.query(api.projects.get, { projectId })).teamIds).toEqual([eng]);
+    const [listed] = await memberA.query(api.projects.list, {});
+    expect(listed.teamIds).toEqual([eng]);
+  });
+});
+
 describe("custom roles", () => {
   test("only admins on a plan with custom_roles can manage roles", async () => {
     const free = await setup(null);
