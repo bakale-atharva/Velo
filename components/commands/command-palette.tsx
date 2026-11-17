@@ -6,10 +6,14 @@ import {
   CircleDot,
   FileText,
   Flag,
+  Monitor,
+  Moon,
   Plus,
+  Sun,
   Tag,
   UserRound,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -149,6 +153,7 @@ function PaletteBody({
   onCreateIssue: (teamId?: Id<"teams">) => void;
 }) {
   const router = useRouter();
+  const { setTheme } = useTheme();
   const [query, setQuery] = useState("");
   const teams = useQuery(api.teams.list, {});
   const commands = useIssueCommands(identifier, close);
@@ -247,6 +252,15 @@ function PaletteBody({
                 { id: `team:${t._id}:issues`, label: `${t.name} issues`, icon: ArrowRight, hint: t.key, run: go(`${base}/team/${t.key}/issues`) },
                 { id: `team:${t._id}:cycles`, label: `${t.name} cycles`, icon: ArrowRight, hint: t.key, run: go(`${base}/team/${t.key}/cycles`) },
               ])}
+            />
+            <Group
+              heading="Theme"
+              query={query}
+              items={[
+                { id: "theme:light", label: "Switch to light theme", icon: Sun, run: () => { close(); setTheme("light"); } },
+                { id: "theme:dark", label: "Switch to dark theme", icon: Moon, run: () => { close(); setTheme("dark"); } },
+                { id: "theme:system", label: "Match system theme", icon: Monitor, run: () => { close(); setTheme("system"); } },
+              ]}
             />
           </>
         )}

@@ -5,6 +5,7 @@ import { ChevronRight, Command } from "lucide-react";
 import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useCommandCenter } from "@/components/commands/command-center";
+import { ThemeToggle } from "./theme-toggle";
 
 /**
  * The floating bar over the work field: a breadcrumb from the workspace to
@@ -40,10 +41,13 @@ export function TopBar({ orgSlug }: { orgSlug: string }) {
           }}
         />
       </nav>
+      <div className="ml-auto hidden sm:block">
+        <ThemeToggle />
+      </div>
       <button
         type="button"
         onClick={() => openPalette()}
-        className="iris-ring ml-auto inline-flex h-11 items-center gap-2 rounded-[14px] px-4 text-[15px] font-medium shadow-(--shadow-lift) [--iris-fill:var(--panel)] hover:[--iris-fill:var(--accent)]"
+        className="iris-ring ml-auto inline-flex sm:ml-0 h-11 items-center gap-2 rounded-[14px] px-4 text-[15px] font-medium shadow-(--shadow-lift) [--iris-fill:var(--panel)] hover:[--iris-fill:var(--accent)]"
       >
         <Command className="size-4" aria-hidden />
         Commands

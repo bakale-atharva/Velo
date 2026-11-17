@@ -192,6 +192,9 @@ Warm grey tile, 20px corners. Top: id chip; title; two-line Markdown-stripped ex
 ### Sidebar
 Wordmark with the chevron mark, a Search field-link, nav items with icons (active item gets a tile fill), teams as collapsible groups whose pages hang off a vertical rule, with a teal diamond on the current page. The member card sits at the bottom.
 
+### Theme
+Light, dark and system, chosen with the three-icon segmented control in the top bar or the palette's Theme commands; it follows the system until the member picks one. Clerk's components read the same tokens through `appearance.variables`, so they switch with the app.
+
 ### Priority ramp
 Three rounded bars of rising height; urgent fills all three in urgent red; none is all faint.
 
