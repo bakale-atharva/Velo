@@ -38,6 +38,34 @@ export async function canAccessTeam(
 }
 
 /**
+ * Keeps the issues whose team the member may see (drops issues of private
+ * teams the member is not in). Each team is checked once.
+ */
+export async function filterVisibleIssues<T extends { teamId: Id<"teams">; orgId: string }>(
+  ctx: DbCtx,
+  member: MemberInfo,
+  issues: T[],
+): Promise<T[]> {
+  const access = new Map<Id<"teams">, boolean>();
+  const visible: T[] = [];
+  for (const issue of issues) {
+    if (issue.orgId !== member.orgId) {
+      continue;
+    }
+    let allowed = access.get(issue.teamId);
+    if (allowed === undefined) {
+      const team = await ctx.db.get("teams", issue.teamId);
+      allowed = team !== null && (await canAccessTeam(ctx, member, team));
+      access.set(issue.teamId, allowed);
+    }
+    if (allowed) {
+      visible.push(issue);
+    }
+  }
+  return visible;
+}
+
+/**
  * Loads a team the member may see. A team of another org and a private team
  * the member does not belong to both look like a missing team.
  */

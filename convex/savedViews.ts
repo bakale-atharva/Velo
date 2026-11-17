@@ -1,0 +1,186 @@
+import { v } from "convex/values";
+import type { Doc, Id } from "./_generated/dataModel";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { assertFilter, issueFilter } from "./issueFilters";
+import { logAudit } from "./lib/audit";
+import { requireMember, type MemberInfo } from "./lib/auth";
+import { appError } from "./lib/errors";
+import { cleanText } from "./lib/input";
+import { hasPermission } from "./lib/permissions";
+import schema, { viewGroupBy, viewLayout } from "./schema";
+
+// Sharing a view with the org needs `views.share`, which members have by
+// default (a custom role can take it away). Only the owner edits a view; the
+// owner or an admin deletes it.
+
+async function logSharing(
+  ctx: MutationCtx,
+  member: MemberInfo,
+  viewId: Id<"savedViews">,
+  name: string,
+  shared: boolean,
+) {
+  await logAudit(ctx, member, {
+    action: shared ? "view.shared" : "view.unshared",
+    targetType: "savedView",
+    targetId: viewId,
+    metadata: { name },
+  });
+}
+
+async function assertMayShare(ctx: MutationCtx, member: MemberInfo) {
+  if (!(await hasPermission(ctx, member, "views.share"))) {
+    throw appError("FORBIDDEN");
+  }
+}
+
+const MAX_VIEWS = 200;
+const MAX_NAME_LENGTH = 80;
+
+const viewValidator = schema.doc("savedViews");
+
+type DbCtx = QueryCtx | MutationCtx;
+
+/** A view the member may see: their own, or one shared with their org. */
+async function loadVisibleView(
+  ctx: DbCtx,
+  member: MemberInfo,
+  viewId: Id<"savedViews">,
+): Promise<Doc<"savedViews">> {
+  const view = await ctx.db.get("savedViews", viewId);
+  if (
+    view === null ||
+    view.orgId !== member.orgId ||
+    (!view.isShared && view.ownerId !== member.userId)
+  ) {
+    throw appError("NOT_FOUND");
+  }
+  return view;
+}
+
+/** The caller's views, then views others shared with the org; each by age. */
+export const list = query({
+  args: {},
+  returns: v.array(viewValidator),
+  handler: async (ctx) => {
+    const member = await requireMember(ctx);
+    const mine = await ctx.db
+      .query("savedViews")
+      .withIndex("by_orgId_and_ownerId", (q) =>
+        q.eq("orgId", member.orgId).eq("ownerId", member.userId),
+      )
+      .take(MAX_VIEWS);
+    const shared = await ctx.db
+      .query("savedViews")
+      .withIndex("by_orgId_and_isShared", (q) =>
+        q.eq("orgId", member.orgId).eq("isShared", true),
+      )
+      .take(MAX_VIEWS);
+    return [...mine, ...shared.filter((view) => view.ownerId !== member.userId)];
+  },
+});
+
+export const get = query({
+  args: { viewId: v.id("savedViews") },
+  returns: viewValidator,
+  handler: async (ctx, args) => {
+    const member = await requireMember(ctx);
+    return await loadVisibleView(ctx, member, args.viewId);
+  },
+});
+
+export const create = mutation({
+  args: {
+    name: v.string(),
+    filter: issueFilter,
+    isShared: v.optional(v.boolean()),
+    layout: v.optional(viewLayout),
+    groupBy: v.optional(viewGroupBy),
+  },
+  returns: v.id("savedViews"),
+  handler: async (ctx, args) => {
+    const member = await requireMember(ctx);
+    const name = cleanText(args.name, MAX_NAME_LENGTH);
+    assertFilter(args.filter);
+    if (args.isShared === true) {
+      await assertMayShare(ctx, member);
+    }
+    const existing = await ctx.db
+      .query("savedViews")
+      .withIndex("by_orgId_and_ownerId", (q) =>
+        q.eq("orgId", member.orgId).eq("ownerId", member.userId),
+      )
+      .take(MAX_VIEWS);
+    if (existing.length >= MAX_VIEWS) {
+      throw appError("LIMIT_REACHED");
+    }
+    const isShared = args.isShared ?? false;
+    const viewId = await ctx.db.insert("savedViews", {
+      orgId: member.orgId,
+      ownerId: member.userId,
+      name,
+      isShared,
+      filter: args.filter,
+      layout: args.layout ?? "list",
+      groupBy: args.groupBy ?? "state",
+    });
+    if (isShared) {
+      await logSharing(ctx, member, viewId, name, true);
+    }
+    return viewId;
+  },
+});
+
+/** Changes the given fields of one of the caller's own views. */
+export const update = mutation({
+  args: {
+    viewId: v.id("savedViews"),
+    name: v.optional(v.string()),
+    filter: v.optional(issueFilter),
+    isShared: v.optional(v.boolean()),
+    layout: v.optional(viewLayout),
+    groupBy: v.optional(viewGroupBy),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const member = await requireMember(ctx);
+    const view = await loadVisibleView(ctx, member, args.viewId);
+    if (view.ownerId !== member.userId) {
+      throw appError("FORBIDDEN");
+    }
+    if (args.filter !== undefined) {
+      assertFilter(args.filter);
+    }
+    if (args.isShared === true && !view.isShared) {
+      await assertMayShare(ctx, member);
+    }
+    const name = args.name === undefined ? view.name : cleanText(args.name, MAX_NAME_LENGTH);
+    const isShared = args.isShared ?? view.isShared;
+    await ctx.db.patch("savedViews", view._id, {
+      name,
+      filter: args.filter ?? view.filter,
+      isShared,
+      layout: args.layout ?? view.layout,
+      groupBy: args.groupBy ?? view.groupBy,
+    });
+    if (isShared !== view.isShared) {
+      await logSharing(ctx, member, view._id, name, isShared);
+    }
+    return null;
+  },
+});
+
+/** Deletes a view: its owner may, and so may an admin if it is shared. */
+export const remove = mutation({
+  args: { viewId: v.id("savedViews") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const member = await requireMember(ctx);
+    const view = await loadVisibleView(ctx, member, args.viewId);
+    if (view.ownerId !== member.userId && member.role !== "admin") {
+      throw appError("FORBIDDEN");
+    }
+    await ctx.db.delete("savedViews", view._id);
+    return null;
+  },
+});

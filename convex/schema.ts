@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { permissionValidator } from "./lib/permissions";
 
 // Tenant key: every tenant table stores the Clerk organization id ("org_...")
 // in `orgId`. Users are referenced by Clerk user id ("user_...").
@@ -28,6 +29,43 @@ export const activityType = v.union(
   v.literal("archived"),
 );
 
+export const projectStatus = v.union(
+  v.literal("planned"),
+  v.literal("started"),
+  v.literal("paused"),
+  v.literal("completed"),
+  v.literal("canceled"),
+);
+
+export const cycleStatus = v.union(
+  v.literal("upcoming"),
+  v.literal("active"),
+  v.literal("completed"),
+);
+
+// Issue list filter (see convex/issueFilters.ts). `assigneeIds` may include
+// null for "unassigned".
+export const issueFilter = v.object({
+  teamId: v.optional(v.id("teams")),
+  stateTypes: v.optional(v.array(stateType)),
+  stateIds: v.optional(v.array(v.id("workflowStates"))),
+  assigneeIds: v.optional(v.array(v.union(v.string(), v.null()))),
+  labelIds: v.optional(v.array(v.id("labels"))),
+  priorities: v.optional(v.array(v.number())),
+  projectId: v.optional(v.id("projects")),
+  cycleId: v.optional(v.id("cycles")),
+  creatorId: v.optional(v.string()),
+});
+
+export const viewLayout = v.union(v.literal("list"), v.literal("board"));
+export const viewGroupBy = v.union(
+  v.literal("state"),
+  v.literal("assignee"),
+  v.literal("priority"),
+  v.literal("project"),
+  v.literal("none"),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -50,8 +88,11 @@ export default defineSchema({
     userId: v.string(),
     // Clerk role with the "org:" prefix stripped, e.g. "admin", "member".
     role: v.string(),
+    // Velo custom role (B6); applies only while the plan has `custom_roles`.
+    customRoleId: v.optional(v.id("customRoles")),
   })
     .index("by_orgId_and_userId", ["orgId", "userId"])
+    .index("by_customRoleId", ["customRoleId"])
     // Members of an org in join order (seat limits seat the earliest).
     .index("by_orgId", ["orgId"])
     .index("by_userId", ["userId"]),
@@ -67,6 +108,13 @@ export default defineSchema({
     // Clerk's `updated_at` (ms); older deliveries are ignored.
     updatedAt: v.number(),
   }).index("by_orgId", ["orgId"]),
+
+  // A named set of Velo permissions an admin can give members (Business+).
+  customRoles: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    permissions: v.array(permissionValidator),
+  }).index("by_orgId_and_name", ["orgId", "name"]),
 
   // A team inside an org. Issues are numbered per team: "<key>-<number>".
   teams: defineTable({
@@ -124,6 +172,10 @@ export default defineSchema({
     labelIds: v.array(v.id("labels")),
     estimate: v.union(v.number(), v.null()),
     parentId: v.union(v.id("issues"), v.null()),
+    // Optional because issues written before B4 lack it; absent means none.
+    projectId: v.optional(v.union(v.id("projects"), v.null())),
+    // Optional for the same reason; absent means no cycle.
+    cycleId: v.optional(v.union(v.id("cycles"), v.null())),
     // Order within a state column (fractional-indexing key).
     rank: v.string(),
     // Timestamps in ms.
@@ -137,7 +189,63 @@ export default defineSchema({
     .index("by_teamId_and_stateId_and_rank", ["teamId", "stateId", "rank"])
     .index("by_orgId_and_assigneeId", ["orgId", "assigneeId"])
     .index("by_parentId", ["parentId"])
-    .index("by_orgId_and_identifier", ["orgId", "identifier"]),
+    .index("by_orgId_and_identifier", ["orgId", "identifier"])
+    .index("by_projectId", ["projectId"])
+    .index("by_cycleId", ["cycleId"])
+    .index("by_orgId_and_teamId", ["orgId", "teamId"])
+    .searchIndex("search_text", {
+      searchField: "searchText",
+      filterFields: ["orgId", "teamId"],
+    }),
+
+  // A body of work across one or more teams of the org.
+  projects: defineTable({
+    orgId: v.string(),
+    name: v.string(),
+    // Markdown.
+    description: v.string(),
+    status: projectStatus,
+    leadId: v.union(v.string(), v.null()),
+    // Teams with issues in the project; grows as issues are added.
+    teamIds: v.array(v.id("teams")),
+    // Timestamps in ms.
+    startDate: v.union(v.number(), v.null()),
+    targetDate: v.union(v.number(), v.null()),
+    // Progress, kept by the issue mutations (convex/lib/projectCounts.ts).
+    issueCount: v.number(),
+    completedIssueCount: v.number(),
+  }).index("by_orgId", ["orgId"]),
+
+  // A team's time-boxed iteration. Cycles of a team never overlap.
+  // `convex/cycles.ts` `rollover` moves cycles through their statuses.
+  cycles: defineTable({
+    orgId: v.string(),
+    teamId: v.id("teams"),
+    // Sequential per team.
+    number: v.number(),
+    name: v.string(),
+    // Timestamps in ms; the cycle covers [startsAt, endsAt).
+    startsAt: v.number(),
+    endsAt: v.number(),
+    status: cycleStatus,
+  })
+    .index("by_teamId_and_startsAt", ["teamId", "startsAt"])
+    .index("by_teamId_and_number", ["teamId", "number"])
+    .index("by_status_and_startsAt", ["status", "startsAt"])
+    .index("by_status_and_endsAt", ["status", "endsAt"]),
+
+  // A named issue filter. Private to its owner unless shared with the org.
+  savedViews: defineTable({
+    orgId: v.string(),
+    ownerId: v.string(),
+    name: v.string(),
+    isShared: v.boolean(),
+    filter: issueFilter,
+    layout: viewLayout,
+    groupBy: viewGroupBy,
+  })
+    .index("by_orgId_and_ownerId", ["orgId", "ownerId"])
+    .index("by_orgId_and_isShared", ["orgId", "isShared"]),
 
   comments: defineTable({
     orgId: v.string(),
@@ -160,6 +268,18 @@ export default defineSchema({
     from: v.union(v.string(), v.null()),
     to: v.union(v.string(), v.null()),
   }).index("by_issueId", ["issueId"]),
+
+  // Org-level changes (teams, roles, deletions, sharing). Always written, so
+  // the history exists if the org upgrades; readable only with `audit_log`.
+  auditLogs: defineTable({
+    orgId: v.string(),
+    actorId: v.string(),
+    // e.g. "team.created", "role.assigned", "issue.deleted".
+    action: v.string(),
+    targetType: v.string(),
+    targetId: v.string(),
+    metadata: v.record(v.string(), v.string()),
+  }).index("by_orgId", ["orgId"]),
 
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({

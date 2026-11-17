@@ -1,10 +1,24 @@
-import { paginationOptsValidator, paginationResultValidator } from "convex/server";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+  type PaginationOptions,
+  type PaginationResult,
+} from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import {
+  internalMutation,
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
+import { loadCycle } from "./cycles";
+import { assertFilter, issueFilter, matchesFilter, type IssueFilter } from "./issueFilters";
 import { logActivity } from "./lib/activity";
-import { requireAdmin, requireMember } from "./lib/auth";
+import { logAudit } from "./lib/audit";
+import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import {
   createIssue,
@@ -14,7 +28,10 @@ import {
   toPublicIssue,
   updateIssue,
 } from "./lib/issueOps";
-import { requireTeamAccess } from "./lib/teamAccess";
+import { requirePermission } from "./lib/permissions";
+import { syncProjectCounts } from "./lib/projectCounts";
+import { filterVisibleIssues, requireTeamAccess } from "./lib/teamAccess";
+import { loadProject } from "./projects";
 
 const MAX_STATES = 50;
 const BOARD_COLUMN_SIZE = 200;
@@ -36,6 +53,8 @@ export const create = mutation({
     estimate: v.optional(nullableNumber),
     dueDate: v.optional(nullableNumber),
     parentId: v.optional(v.union(v.id("issues"), v.null())),
+    projectId: v.optional(v.union(v.id("projects"), v.null())),
+    cycleId: v.optional(v.union(v.id("cycles"), v.null())),
   },
   returns: v.object({ issueId: v.id("issues"), identifier: v.string() }),
   handler: async (ctx, { teamId, ...input }) => {
@@ -96,6 +115,113 @@ export const listByTeam = query({
   },
 });
 
+/**
+ * One page of issues read through the most selective index the filter
+ * allows: cycle, then project, then a single assignee, then team, else the
+ * whole org. The other conditions are applied by the caller.
+ */
+async function pageForFilter(
+  ctx: QueryCtx,
+  member: MemberInfo,
+  filter: IssueFilter,
+  paginationOpts: PaginationOptions,
+): Promise<PaginationResult<Doc<"issues">>> {
+  const issues = ctx.db.query("issues");
+  if (filter.cycleId !== undefined) {
+    const { cycle } = await loadCycle(ctx, member, filter.cycleId);
+    return await issues
+      .withIndex("by_cycleId", (q) => q.eq("cycleId", cycle._id))
+      .paginate(paginationOpts);
+  }
+  if (filter.projectId !== undefined) {
+    const project = await loadProject(ctx, member, filter.projectId);
+    return await issues
+      .withIndex("by_projectId", (q) => q.eq("projectId", project._id))
+      .paginate(paginationOpts);
+  }
+  if (filter.assigneeIds !== undefined && filter.assigneeIds.length === 1) {
+    const assigneeId = filter.assigneeIds[0];
+    return await issues
+      .withIndex("by_orgId_and_assigneeId", (q) =>
+        q.eq("orgId", member.orgId).eq("assigneeId", assigneeId),
+      )
+      .paginate(paginationOpts);
+  }
+  const { teamId } = filter;
+  return await issues
+    .withIndex("by_orgId_and_teamId", (q) =>
+      teamId === undefined
+        ? q.eq("orgId", member.orgId)
+        : q.eq("orgId", member.orgId).eq("teamId", teamId),
+    )
+    .paginate(paginationOpts);
+}
+
+/**
+ * Open (not archived) issues of the org matching a filter, page by page.
+ * Conditions the index cannot apply are applied to each page, so a page can
+ * be shorter than asked; keep loading while `isDone` is false. Issues of
+ * private teams the caller is not in are left out.
+ */
+export const listFiltered = query({
+  args: { filter: issueFilter, paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(issueValidator),
+  handler: async (ctx, args) => {
+    const member = await requireMember(ctx);
+    const { filter } = args;
+    assertFilter(filter);
+    if (filter.teamId !== undefined) {
+      await requireTeamAccess(ctx, member, filter.teamId);
+    }
+    const result = await pageForFilter(ctx, member, filter, args.paginationOpts);
+    const matching = result.page.filter(
+      (issue) => issue.orgId === member.orgId && issue.archivedAt === null && matchesFilter(issue, filter),
+    );
+    const visible = await filterVisibleIssues(ctx, member, matching);
+    return { ...result, page: visible.map(toPublicIssue) };
+  },
+});
+
+const MY_ISSUES_LIMIT = 300;
+// Order of state types on "My issues": work in flight first, finished last.
+const STATE_ORDER: Record<Doc<"issues">["stateType"], number> = {
+  started: 0,
+  unstarted: 1,
+  backlog: 2,
+  completed: 3,
+  canceled: 4,
+};
+
+/**
+ * Issues assigned to the caller (up to 300, archived left out): open states
+ * first, then by priority (urgent first, none last), newest first within that.
+ */
+export const listMine = query({
+  args: {},
+  returns: v.array(issueValidator),
+  handler: async (ctx) => {
+    const member = await requireMember(ctx);
+    const assigned = await ctx.db
+      .query("issues")
+      .withIndex("by_orgId_and_assigneeId", (q) =>
+        q.eq("orgId", member.orgId).eq("assigneeId", member.userId),
+      )
+      .order("desc")
+      .take(MY_ISSUES_LIMIT);
+    const open = assigned.filter((issue) => issue.archivedAt === null);
+    const visible = await filterVisibleIssues(ctx, member, open);
+    const priorityRank = (priority: number) => (priority === 0 ? 5 : priority);
+    return visible
+      .sort(
+        (a, b) =>
+          STATE_ORDER[a.stateType] - STATE_ORDER[b.stateType] ||
+          priorityRank(a.priority) - priorityRank(b.priority) ||
+          b._creationTime - a._creationTime,
+      )
+      .map(toPublicIssue);
+  },
+});
+
 /** The board: every state of the team with its first 200 issues by rank. */
 export const listForBoard = query({
   args: { teamId: v.id("teams") },
@@ -152,6 +278,8 @@ export const update = mutation({
     estimate: v.optional(nullableNumber),
     dueDate: v.optional(nullableNumber),
     parentId: v.optional(v.union(v.id("issues"), v.null())),
+    projectId: v.optional(v.union(v.id("projects"), v.null())),
+    cycleId: v.optional(v.union(v.id("cycles"), v.null())),
   },
   returns: v.null(),
   handler: async (ctx, { issueId, ...input }) => {
@@ -189,7 +317,9 @@ export const archive = mutation({
     const member = await requireMember(ctx);
     const { issue } = await loadIssue(ctx, member, args.issueId);
     if (issue.archivedAt === null) {
-      await ctx.db.patch("issues", issue._id, { archivedAt: Date.now() });
+      const archivedAt = Date.now();
+      await ctx.db.patch("issues", issue._id, { archivedAt });
+      await syncProjectCounts(ctx, issue, { ...issue, archivedAt });
       await logActivity(ctx, {
         orgId: member.orgId,
         issueId: issue._id,
@@ -245,16 +375,23 @@ export const continueCleanup = internalMutation({
 });
 
 /**
- * Deletes an issue for good. Needs `issues.delete`: admins only until B6.
+ * Deletes an issue for good. Needs `issues.delete`.
  * Its comments and activity go with it; its sub-issues stay and lose their parent.
  */
 export const remove = mutation({
   args: { issueId: v.id("issues") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const member = await requireAdmin(ctx);
+    const member = await requirePermission(ctx, "issues.delete");
     const { issue } = await loadIssue(ctx, member, args.issueId);
     await ctx.db.delete("issues", issue._id);
+    await syncProjectCounts(ctx, issue, null);
+    await logAudit(ctx, member, {
+      action: "issue.deleted",
+      targetType: "issue",
+      targetId: issue._id,
+      metadata: { identifier: issue.identifier, title: issue.title },
+    });
     if (await cleanUpAfterRemoval(ctx, issue._id)) {
       await ctx.scheduler.runAfter(0, internal.issues.continueCleanup, {
         issueId: issue._id,

@@ -9,23 +9,34 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as auditLogs from "../auditLogs.js";
 import type * as billing from "../billing.js";
 import type * as clerkSync from "../clerkSync.js";
 import type * as comments from "../comments.js";
+import type * as crons from "../crons.js";
+import type * as cycles from "../cycles.js";
 import type * as http from "../http.js";
+import type * as issueFilters from "../issueFilters.js";
 import type * as issues from "../issues.js";
 import type * as labels from "../labels.js";
 import type * as lib_activity from "../lib/activity.js";
+import type * as lib_audit from "../lib/audit.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_entitlements from "../lib/entitlements.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_input from "../lib/input.js";
 import type * as lib_issueOps from "../lib/issueOps.js";
+import type * as lib_permissions from "../lib/permissions.js";
 import type * as lib_plans from "../lib/plans.js";
+import type * as lib_projectCounts from "../lib/projectCounts.js";
 import type * as lib_seats from "../lib/seats.js";
 import type * as lib_teamAccess from "../lib/teamAccess.js";
 import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
+import type * as projects from "../projects.js";
+import type * as roles from "../roles.js";
+import type * as savedViews from "../savedViews.js";
+import type * as search from "../search.js";
 import type * as teams from "../teams.js";
 import type * as workflowStates from "../workflowStates.js";
 
@@ -37,23 +48,34 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  auditLogs: typeof auditLogs;
   billing: typeof billing;
   clerkSync: typeof clerkSync;
   comments: typeof comments;
+  crons: typeof crons;
+  cycles: typeof cycles;
   http: typeof http;
+  issueFilters: typeof issueFilters;
   issues: typeof issues;
   labels: typeof labels;
   "lib/activity": typeof lib_activity;
+  "lib/audit": typeof lib_audit;
   "lib/auth": typeof lib_auth;
   "lib/entitlements": typeof lib_entitlements;
   "lib/errors": typeof lib_errors;
   "lib/input": typeof lib_input;
   "lib/issueOps": typeof lib_issueOps;
+  "lib/permissions": typeof lib_permissions;
   "lib/plans": typeof lib_plans;
+  "lib/projectCounts": typeof lib_projectCounts;
   "lib/seats": typeof lib_seats;
   "lib/teamAccess": typeof lib_teamAccess;
   members: typeof members;
   organizations: typeof organizations;
+  projects: typeof projects;
+  roles: typeof roles;
+  savedViews: typeof savedViews;
+  search: typeof search;
   teams: typeof teams;
   workflowStates: typeof workflowStates;
 }>;

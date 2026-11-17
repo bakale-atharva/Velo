@@ -6,6 +6,7 @@ import { logActivity, type ActivityType } from "./activity";
 import type { MemberInfo } from "./auth";
 import { appError } from "./errors";
 import { cleanText } from "./input";
+import { syncProjectCounts } from "./projectCounts";
 import { isTeamMember, requireTeamAccess } from "./teamAccess";
 
 // Shared issue logic. Public functions in convex/issues.ts authenticate the
@@ -25,7 +26,11 @@ export const issueValidator = schema.doc("issues").omit("searchText");
 export function toPublicIssue(issue: Doc<"issues">) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { searchText, ...rest } = issue;
-  return rest;
+  return {
+    ...rest,
+    projectId: issue.projectId ?? null,
+    cycleId: issue.cycleId ?? null,
+  };
 }
 
 /** Loads an issue the member may see, with its team. */
@@ -164,6 +169,58 @@ async function loadParent(
   return parent;
 }
 
+const MAX_PROJECT_TEAMS = 50;
+
+/**
+ * The project an issue of `team` is being put in. The team joins the
+ * project's teams if it is not one of them yet.
+ */
+async function loadProjectForIssue(
+  ctx: MutationCtx,
+  team: Doc<"teams">,
+  projectId: Id<"projects">,
+): Promise<Doc<"projects">> {
+  const project = await ctx.db.get("projects", projectId);
+  if (project === null || project.orgId !== team.orgId) {
+    throw appError("NOT_FOUND");
+  }
+  if (!project.teamIds.includes(team._id)) {
+    if (project.teamIds.length >= MAX_PROJECT_TEAMS) {
+      throw appError("LIMIT_REACHED");
+    }
+    await ctx.db.patch("projects", project._id, {
+      teamIds: [...project.teamIds, team._id],
+    });
+  }
+  return project;
+}
+
+/** A cycle an issue of `team` is being put in: same team, not completed. */
+async function loadCycleForIssue(
+  ctx: DbCtx,
+  team: Doc<"teams">,
+  cycleId: Id<"cycles">,
+): Promise<Doc<"cycles">> {
+  const cycle = await ctx.db.get("cycles", cycleId);
+  if (cycle === null || cycle.orgId !== team.orgId) {
+    throw appError("NOT_FOUND");
+  }
+  if (cycle.teamId !== team._id || cycle.status === "completed") {
+    throw appError("INVALID_INPUT");
+  }
+  return cycle;
+}
+
+async function cycleName(ctx: DbCtx, cycleId: Id<"cycles"> | null) {
+  const cycle = cycleId === null ? null : await ctx.db.get("cycles", cycleId);
+  return cycle === null ? null : cycle.name;
+}
+
+async function projectName(ctx: DbCtx, projectId: Id<"projects"> | null) {
+  const project = projectId === null ? null : await ctx.db.get("projects", projectId);
+  return project === null ? null : project.name;
+}
+
 /** A rank after the last issue of a state column. */
 async function rankAtEnd(
   ctx: DbCtx,
@@ -240,6 +297,8 @@ export type CreateIssueInput = {
   estimate?: number | null;
   dueDate?: number | null;
   parentId?: Id<"issues"> | null;
+  projectId?: Id<"projects"> | null;
+  cycleId?: Id<"cycles"> | null;
 };
 
 /** Creates an issue in a team the member can access. */
@@ -275,6 +334,14 @@ export async function createIssue(
   if (parentId !== null) {
     await loadParent(ctx, team, null, parentId);
   }
+  const projectId = input.projectId ?? null;
+  if (projectId !== null) {
+    await loadProjectForIssue(ctx, team, projectId);
+  }
+  const cycleId = input.cycleId ?? null;
+  if (cycleId !== null) {
+    await loadCycleForIssue(ctx, team, cycleId);
+  }
 
   // Reading and bumping the counter in one mutation keeps numbers sequential.
   const number = team.nextIssueNumber;
@@ -295,6 +362,8 @@ export async function createIssue(
     labelIds,
     estimate,
     parentId,
+    projectId,
+    cycleId,
     rank: await rankAtEnd(ctx, team._id, state._id),
     dueDate,
     completedAt: completedAtFor(null, state),
@@ -312,6 +381,7 @@ export async function createIssue(
   if (issue === null) {
     throw appError("NOT_FOUND");
   }
+  await syncProjectCounts(ctx, null, issue);
   return issue;
 }
 
@@ -325,6 +395,8 @@ export type UpdateIssueInput = {
   estimate?: number | null;
   dueDate?: number | null;
   parentId?: Id<"issues"> | null;
+  projectId?: Id<"projects"> | null;
+  cycleId?: Id<"cycles"> | null;
 };
 
 /** Applies the given fields to an issue; fields left out stay as they are. */
@@ -429,6 +501,30 @@ export async function updateIssue(
       to: await issueIdentifier(ctx, input.parentId),
     });
   }
+  const currentProjectId = issue.projectId ?? null;
+  if (input.projectId !== undefined && input.projectId !== currentProjectId) {
+    const project =
+      input.projectId === null
+        ? null
+        : await loadProjectForIssue(ctx, team, input.projectId);
+    patch.projectId = input.projectId;
+    changes.push({
+      type: "project",
+      from: await projectName(ctx, currentProjectId),
+      to: project === null ? null : project.name,
+    });
+  }
+  const currentCycleId = issue.cycleId ?? null;
+  if (input.cycleId !== undefined && input.cycleId !== currentCycleId) {
+    const cycle =
+      input.cycleId === null ? null : await loadCycleForIssue(ctx, team, input.cycleId);
+    patch.cycleId = input.cycleId;
+    changes.push({
+      type: "cycle",
+      from: await cycleName(ctx, currentCycleId),
+      to: cycle === null ? null : cycle.name,
+    });
+  }
 
   if (Object.keys(patch).length === 0) {
     return;
@@ -439,6 +535,7 @@ export async function updateIssue(
     }`;
   }
   await ctx.db.patch("issues", issue._id, patch);
+  await syncProjectCounts(ctx, issue, { ...issue, ...patch });
   for (const change of changes) {
     await logActivity(ctx, {
       orgId: member.orgId,
@@ -462,12 +559,14 @@ export async function moveIssue(
 ): Promise<void> {
   const state = await loadState(ctx, team, stateId);
   const rank = rankBetween(beforeRank, afterRank);
-  await ctx.db.patch("issues", issue._id, {
+  const patch = {
     stateId: state._id,
     stateType: state.type,
     completedAt: completedAtFor(issue, state),
     rank,
-  });
+  };
+  await ctx.db.patch("issues", issue._id, patch);
+  await syncProjectCounts(ctx, issue, { ...issue, ...patch });
   // Reordering inside a column is not a change worth a feed entry.
   if (state._id !== issue.stateId) {
     await logActivity(ctx, {
