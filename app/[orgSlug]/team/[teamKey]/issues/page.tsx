@@ -1,6 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { CreateIssueDialog } from "@/components/issues/create-issue-dialog";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
 import { IssueBoard } from "@/components/issues/issue-board";
@@ -12,6 +14,7 @@ import { useIssueView, ViewToggle } from "@/components/issues/view-toggle";
 function TeamIssues() {
   const { orgSlug, team, states } = useTeamFromUrl();
   const [view, setView] = useIssueView();
+  const [creating, setCreating] = useState(false);
   if (team === undefined || states === undefined) {
     return <PageSkeleton />;
   }
@@ -20,8 +23,14 @@ function TeamIssues() {
       <TeamPageHeader
         title={team.name}
         subtitle={view === "board" ? "Board" : "Issues"}
-        actions={<ViewToggle view={view} onChange={setView} />}
+        actions={
+          <>
+            <ViewToggle view={view} onChange={setView} />
+            <Button onClick={() => setCreating(true)}>New issue</Button>
+          </>
+        }
       />
+      <CreateIssueDialog team={team} states={states} open={creating} onOpenChange={setCreating} />
       {view === "board" ? (
         <IssueBoard teamId={team._id} states={states} orgSlug={orgSlug} />
       ) : (
