@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, type QueryCtx } from "./_generated/server";
 import { requireMember } from "./lib/auth";
+import { permissionsOf, permissionValidator } from "./lib/permissions";
 
 const MAX_MEMBERS = 500;
 
@@ -24,6 +25,16 @@ async function loadProfile(ctx: QueryCtx, userId: string) {
     imageUrl: user?.imageUrl ?? null,
   };
 }
+
+/** The caller's Velo permissions, so the UI can hide what they can't do. */
+export const permissions = query({
+  args: {},
+  returns: v.array(permissionValidator),
+  handler: async (ctx) => {
+    const member = await requireMember(ctx);
+    return [...(await permissionsOf(ctx, member))];
+  },
+});
 
 /** Members of the caller's active organization. */
 export const list = query({

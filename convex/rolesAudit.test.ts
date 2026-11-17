@@ -113,6 +113,20 @@ describe("permissions", () => {
     await memberA.mutation(api.projects.create, { name: "Launch" });
   });
 
+  test("members.permissions reports what the caller may do", async () => {
+    const { adminA, memberA } = await setup();
+    expect((await memberA.query(api.members.permissions, {})).sort()).toEqual(
+      ["cycles.manage", "projects.manage", "views.share"].sort(),
+    );
+    expect(await adminA.query(api.members.permissions, {})).toHaveLength(6);
+    const roleId = await adminA.mutation(api.roles.create, {
+      name: "Reader",
+      permissions: [],
+    });
+    await adminA.mutation(api.roles.assign, { userId: "member_a", roleId });
+    expect(await memberA.query(api.members.permissions, {})).toEqual([]);
+  });
+
   test("deleting a role sends its members back to the defaults", async () => {
     const { adminA, memberA } = await setup();
     const roleId = await adminA.mutation(api.roles.create, {
