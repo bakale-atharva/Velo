@@ -1,6 +1,7 @@
 "use client";
 
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { AppSidebar } from "./app-sidebar";
 
 /** Ultramarine rail + work field for every page under `/<orgSlug>`. */
@@ -20,6 +21,7 @@ export function WorkspaceShell({
         </div>
         {children}
       </SidebarInset>
+      <Toaster position="bottom-right" />
     </SidebarProvider>
   );
 }
