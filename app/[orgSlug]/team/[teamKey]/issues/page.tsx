@@ -5,19 +5,26 @@ import { Button } from "@/components/ui/button";
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
+import { FilterBar } from "@/components/issues/filter-bar";
+import { FilteredIssues } from "@/components/issues/filtered-issues";
+import { activeCount, useIssueFilter } from "@/components/issues/filters";
 import { IssueBoard } from "@/components/issues/issue-board";
 import { IssueList } from "@/components/issues/issue-list";
 import { TeamPageHeader } from "@/components/issues/team-page-header";
 import { useTeamFromUrl } from "@/components/issues/use-team";
 import { useIssueView, ViewToggle } from "@/components/issues/view-toggle";
+import { SaveViewDialog } from "@/components/views/save-view-dialog";
 
 function TeamIssues() {
   const { orgSlug, team, states } = useTeamFromUrl();
   const [view, setView] = useIssueView();
+  const [filter, setFilter] = useIssueFilter();
   const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   if (team === undefined || states === undefined) {
     return <PageSkeleton />;
   }
+  const filtering = activeCount(filter) > 0;
   return (
     <div className="flex min-h-svh flex-col">
       <TeamPageHeader
@@ -30,8 +37,35 @@ function TeamIssues() {
           </>
         }
       />
+      <FilterBar
+        filter={filter}
+        onChange={setFilter}
+        teamId={team._id}
+        actions={
+          filtering ? (
+            <Button variant="outline" size="sm" onClick={() => setSaving(true)}>
+              Save view
+            </Button>
+          ) : undefined
+        }
+      />
+      <SaveViewDialog
+        filter={{ ...filter, teamId: team._id }}
+        layout={view}
+        orgSlug={orgSlug}
+        open={saving}
+        onOpenChange={setSaving}
+      />
       <CreateIssueDialog team={team} states={states} open={creating} onOpenChange={setCreating} />
-      {view === "board" ? (
+      {filtering ? (
+        <FilteredIssues
+          filter={{ ...filter, teamId: team._id }}
+          states={states}
+          view={view}
+          orgSlug={orgSlug}
+          onClear={() => setFilter({})}
+        />
+      ) : view === "board" ? (
         <IssueBoard teamId={team._id} states={states} orgSlug={orgSlug} />
       ) : (
         <IssueList teamId={team._id} states={states} orgSlug={orgSlug} />

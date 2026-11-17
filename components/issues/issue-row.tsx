@@ -18,6 +18,9 @@ export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) 
   return (
     <Link
       href={`/${orgSlug}/issue/${issue.identifier}`}
+      // J/K selection and S/A/P/L act on the focused row (components/commands/shortcuts.tsx).
+      data-issue-row=""
+      data-identifier={issue.identifier}
       className="grid grid-cols-[72px_16px_minmax(0,1fr)_auto] items-center gap-3 px-8 py-2 hover:bg-card focus-visible:bg-card focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring"
     >
       <span className="text-xs text-muted-foreground tabular-nums">{issue.identifier}</span>

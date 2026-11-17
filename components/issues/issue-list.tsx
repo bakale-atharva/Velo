@@ -10,6 +10,47 @@ import { IssueRow } from "./issue-row";
 
 const PAGE_SIZE = 100;
 
+type Issue = Omit<Doc<"issues">, "searchText">;
+
+/** Issues of one team in sections by workflow state, in the team's order. */
+export function StateSections({
+  states,
+  issues,
+  orgSlug,
+}: {
+  states: Doc<"workflowStates">[];
+  issues: Issue[];
+  orgSlug: string;
+}) {
+  return (
+    <>
+      {states.map((state) => {
+        const inState = issues.filter((issue) => issue.stateId === state._id);
+        if (inState.length === 0) return null;
+        return (
+          <section key={state._id} aria-labelledby={`state-${state._id}`} className="mt-6">
+            <h2
+              id={`state-${state._id}`}
+              className="mx-8 flex items-baseline justify-between border-b-2 pb-1 text-[13px] font-semibold"
+              style={{ borderColor: `var(--state-${state.type})` }}
+            >
+              {state.name}
+              <span className="text-xs font-normal text-muted-foreground tabular-nums">{inState.length}</span>
+            </h2>
+            <ul className="divide-y divide-border">
+              {inState.map((issue) => (
+                <li key={issue._id}>
+                  <IssueRow issue={issue} orgSlug={orgSlug} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </>
+  );
+}
+
 /**
  * A team's issues grouped by workflow state in the team's state order, each
  * group headed by its name and live count on a state-coloured rule.
@@ -44,29 +85,7 @@ export function IssueList({
 
   return (
     <div className="pb-12">
-      {states.map((state) => {
-        const issues = results.filter((issue) => issue.stateId === state._id);
-        if (issues.length === 0) return null;
-        return (
-          <section key={state._id} aria-labelledby={`state-${state._id}`} className="mt-6">
-            <h2
-              id={`state-${state._id}`}
-              className="mx-8 flex items-baseline justify-between border-b-2 pb-1 text-[13px] font-semibold"
-              style={{ borderColor: `var(--state-${state.type})` }}
-            >
-              {state.name}
-              <span className="text-xs font-normal text-muted-foreground tabular-nums">{issues.length}</span>
-            </h2>
-            <ul className="divide-y divide-border">
-              {issues.map((issue) => (
-                <li key={issue._id}>
-                  <IssueRow issue={issue} orgSlug={orgSlug} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+      <StateSections states={states} issues={results} orgSlug={orgSlug} />
       {status === "CanLoadMore" && (
         <div className="px-8 pt-6">
           <Button variant="outline" onClick={() => loadMore(PAGE_SIZE)}>
