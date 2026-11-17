@@ -1,11 +1,12 @@
 "use client";
 
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { CommandCenterProvider } from "@/components/commands/command-center";
 import { AppSidebar } from "./app-sidebar";
+import { TopBar } from "./top-bar";
 
-/** Ultramarine rail + work field for every page under `/<orgSlug>`. */
+/** Floating sidebar and top bar panels on the canvas, the work field below. */
 export function WorkspaceShell({
   orgSlug,
   children,
@@ -17,11 +18,9 @@ export function WorkspaceShell({
     <SidebarProvider>
       <CommandCenterProvider orgSlug={orgSlug}>
         <AppSidebar orgSlug={orgSlug} />
-        <SidebarInset className="min-w-0">
-          <div className="flex h-10 items-center px-4 md:hidden">
-            <SidebarTrigger aria-label="Open navigation" />
-          </div>
-          {children}
+        <SidebarInset className="min-w-0 bg-background p-3">
+          <TopBar orgSlug={orgSlug} />
+          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
         </SidebarInset>
       </CommandCenterProvider>
       <Toaster position="bottom-right" />

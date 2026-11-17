@@ -93,7 +93,7 @@ export function NewTeamDialog() {
           <button
             type="button"
             aria-label="New team"
-            className="grid size-6 place-items-center rounded-[2px] text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-sidebar-ring"
+            className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-sidebar-ring"
           />
         }
       >
