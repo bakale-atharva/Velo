@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/states/empty-state";
 import { PageSkeleton } from "@/components/states/page-skeleton";
 import { IssueRow } from "./issue-row";
+import { StateHeading, stateColor } from "./state-heading";
+
+/** A group of issue rows sits in its own floating panel. */
+export const GROUP_PANEL = "panel mx-3 mb-4 p-3 md:mx-6";
 
 const PAGE_SIZE = 100;
 
@@ -28,16 +32,16 @@ export function StateSections({
         const inState = issues.filter((issue) => issue.stateId === state._id);
         if (inState.length === 0) return null;
         return (
-          <section key={state._id} aria-labelledby={`state-${state._id}`} className="mt-6">
-            <h2
-              id={`state-${state._id}`}
-              className="mx-8 flex items-baseline justify-between border-b-2 pb-1 text-[13px] font-semibold"
-              style={{ borderColor: `var(--state-${state.type})` }}
-            >
-              {state.name}
-              <span className="text-xs font-normal text-muted-foreground tabular-nums">{inState.length}</span>
-            </h2>
-            <ul className="divide-y divide-border">
+          <section key={state._id} aria-labelledby={`state-${state._id}`} className={GROUP_PANEL}>
+            <div className="px-3 pt-2 pb-3">
+              <StateHeading
+                id={`state-${state._id}`}
+                name={state.name}
+                count={inState.length}
+                color={stateColor(state.type)}
+              />
+            </div>
+            <ul className="flex flex-col gap-0.5">
               {inState.map((issue) => (
                 <li key={issue._id}>
                   <IssueRow issue={issue} orgSlug={orgSlug} />
@@ -75,7 +79,7 @@ export function IssueList({
   }
   if (results.length === 0) {
     return (
-      <div className="px-8 py-6">
+      <div className="px-3 md:px-6">
         <EmptyState title="No issues yet">
           Create the first issue with <kbd className="font-semibold">C</kbd> or the New issue button.
         </EmptyState>
@@ -87,14 +91,14 @@ export function IssueList({
     <div className="pb-12">
       <StateSections states={states} issues={results} orgSlug={orgSlug} />
       {status === "CanLoadMore" && (
-        <div className="px-8 pt-6">
+        <div className="px-3 pt-2 md:px-6">
           <Button variant="outline" onClick={() => loadMore(PAGE_SIZE)}>
             Load more issues
           </Button>
         </div>
       )}
       {status === "LoadingMore" && (
-        <p className="px-8 pt-6 text-xs text-muted-foreground">Loading more…</p>
+        <p className="px-3 pt-2 text-[13px] text-muted-foreground md:px-6">Loading more…</p>
       )}
     </div>
   );

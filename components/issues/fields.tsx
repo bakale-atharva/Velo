@@ -10,7 +10,7 @@ import { displayName, PRIORITY_LABELS, type Member } from "./lookups";
 // Native selects keep them fast, accessible and fully keyboard-driven.
 
 const selectClass =
-  "h-8 w-full min-w-0 rounded-[2px] border border-input bg-background px-2 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "h-9 w-full min-w-0 rounded-lg border border-input bg-popover px-2.5 text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 export function StateSelect({
   states,
@@ -201,7 +201,7 @@ export function LabelPicker({
           <ul>
             {labels.map((label) => (
               <li key={label._id}>
-                <label className="flex cursor-pointer items-center gap-2 rounded-[2px] px-2 py-1.5 text-[13px] hover:bg-muted">
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-muted">
                   <Checkbox
                     checked={selected.has(label._id)}
                     onCheckedChange={(checked) =>

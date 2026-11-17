@@ -15,7 +15,7 @@ export function PriorityRamp({ priority }: { priority: number }) {
       {[4, 7, 10].map((height, index) => (
         <span
           key={height}
-          className="w-[3px]"
+          className="w-[3px] rounded-full"
           style={{
             height,
             background:
@@ -23,7 +23,7 @@ export function PriorityRamp({ priority }: { priority: number }) {
                 ? priority === 1
                   ? "var(--urgent)"
                   : "var(--foreground)"
-                : "var(--border)",
+                : "var(--rule)",
           }}
         />
       ))}

@@ -153,7 +153,10 @@ export function IssueTimeline({ issueId }: { issueId: Id<"issues"> }) {
 
   return (
     <section aria-label="Activity" className="mt-10">
-      <h2 className="border-b-2 border-rule pb-1 text-[13px] font-semibold">Activity</h2>
+      <h2 className="flex items-center gap-3 text-[15px] font-medium">
+        <span aria-hidden className="h-6 w-[3px] rounded-full bg-state-completed" />
+        Activity
+      </h2>
       {canLoadMore && (
         <Button
           variant="ghost"
@@ -172,13 +175,13 @@ export function IssueTimeline({ issueId }: { issueId: Id<"issues"> }) {
           entry.kind === "comment" ? (
             <CommentItem key={entry.comment._id} comment={entry.comment} me={me?.userId} />
           ) : (
-            <li key={entry.activity._id} className="flex items-baseline gap-2 py-1.5 pl-9 text-xs text-muted-foreground">
+            <li key={entry.activity._id} className="flex items-baseline gap-2 py-2 pl-9 text-[13px] text-muted-foreground">
               <span>
                 <span className="font-medium text-foreground">{actorName(entry.activity.actorId, memberById)}</span>{" "}
                 {describe(entry.activity, memberById)}
               </span>
               {entry.activity.viaAssistant && (
-                <span className="rounded-[2px] border border-brand-ink px-1 text-[11px] leading-4 text-brand-ink">
+                <span className="iris-ring rounded-full px-2 text-[12px] leading-5 text-foreground [--iris-fill:var(--panel)]">
                   via assistant
                 </span>
               )}
@@ -188,7 +191,7 @@ export function IssueTimeline({ issueId }: { issueId: Id<"issues"> }) {
         )}
       </ol>
       <form
-        className="mt-4 grid gap-2 border-t border-rule pt-4"
+        className="mt-4 grid gap-3 rounded-[18px] bg-tile p-4"
         onSubmit={async (event) => {
           event.preventDefault();
           if (body.trim() === "") return;
