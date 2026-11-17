@@ -21,6 +21,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { NewTeamDialog } from "@/components/teams/new-team-dialog";
 
 function NavLink({
   href,
@@ -86,6 +87,7 @@ export function AppSidebar({ orgSlug }: { orgSlug: string }) {
             <SidebarGroupLabel className="text-[11px] font-medium tracking-[0.08em] text-sidebar-foreground/80 uppercase">
               Teams
             </SidebarGroupLabel>
+            <NewTeamDialog />
           </div>
           <SidebarMenu>
             {teams === undefined ? (
