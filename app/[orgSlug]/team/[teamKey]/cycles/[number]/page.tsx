@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { Suspense, useState } from "react";
@@ -29,14 +28,12 @@ const STATUS_LABEL: Record<Doc<"cycles">["status"], string> = {
   completed: "Completed",
 };
 
-/** A big condensed number over its label, the board's count style. */
+/** A large number under its label. */
 function Figure({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="grid gap-1">
-      <dd className="font-display text-[40px] leading-[36px] font-extrabold tracking-[-0.03em] tabular-nums [font-stretch:75%]">
-        {value}
-      </dd>
-      <dt className="order-first text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-[32px] leading-9 font-semibold tracking-[-0.02em] tabular-nums">{value}</dd>
+      <dt className="order-first text-[13px] text-muted-foreground">{label}</dt>
     </div>
   );
 }
@@ -78,12 +75,12 @@ function CycleIssues({
 
   return (
     <>
-      <dl className="grid grid-cols-2 gap-x-8 gap-y-4 border-b border-border px-8 py-4 sm:grid-cols-[auto_auto_auto_minmax(200px,1fr)]">
+      <dl className="panel mx-3 mt-8 mb-6 grid grid-cols-2 gap-x-10 gap-y-5 p-6 md:mx-6 sm:grid-cols-[auto_auto_auto_minmax(200px,1fr)]">
         <Figure label="Scope" value={`${results.length}${more ? "+" : ""}`} />
         <Figure label="Completed" value={done} />
         <Figure label="Points" value={points === 0 ? "—" : `${donePoints}/${points}`} />
         <div className="col-span-2 grid content-end gap-1 sm:col-span-1">
-          <dt className="text-xs text-muted-foreground">Progress</dt>
+          <dt className="text-[13px] text-muted-foreground">Progress</dt>
           <dd>
             <Progress completed={done} total={results.length} />
           </dd>
@@ -91,7 +88,7 @@ function CycleIssues({
       </dl>
 
       {results.length === 0 ? (
-        <div className="px-8 py-6">
+        <div className="px-3 md:px-6">
           <EmptyState title="No issues in this cycle">
             Add issues by setting their Cycle in the issue’s properties.
           </EmptyState>
@@ -111,7 +108,7 @@ function CycleIssues({
         </div>
       )}
       {more && (
-        <div className="px-8 py-6">
+        <div className="px-3 pt-2 pb-8 md:px-6">
           <Button
             variant="outline"
             disabled={status === "LoadingMore"}
@@ -140,7 +137,7 @@ function CycleDetail() {
 
   if (!Number.isInteger(cycleNumber)) {
     return (
-      <div className="px-8 py-6">
+      <div className="px-3 pt-8 md:px-6">
         <EmptyState title="No such cycle">Cycles are numbered 1, 2, 3 within a team.</EmptyState>
       </div>
     );
@@ -151,29 +148,25 @@ function CycleDetail() {
 
   const left = daysLeft(cycle, now);
   return (
-    <div className="flex min-h-svh flex-col">
-      <nav aria-label="Breadcrumb" className="px-8 pt-4 text-xs text-muted-foreground">
-        <Link href={`/${orgSlug}/team/${teamKey}/cycles`} className="hover:text-foreground hover:underline">
-          {team.name} cycles
-        </Link>
-      </nav>
+    <div className="flex flex-1 flex-col">
       <TeamPageHeader
+        back={{ href: `/${orgSlug}/team/${teamKey}/cycles`, label: `${team.name} cycles` }}
         title={cycle.name}
         subtitle={cycleRange(cycle)}
         actions={
           <>
             <ViewToggle view={view} onChange={setView} />
             {cycle.status !== "completed" && (
-              <Button variant="outline" onClick={() => setEditing(true)}>
+              <Button variant="outline" className="h-11 rounded-xl px-4" onClick={() => setEditing(true)}>
                 Edit cycle
               </Button>
             )}
           </>
         }
       />
-      <p className="px-8 pt-3 text-xs">
+      <p className="px-3 pt-5 text-[14px] md:px-6">
         <span
-          className="mr-2 inline-block size-2"
+          className="mr-2 inline-block size-2 rounded-full"
           style={{
             background: cycle.status === "active" ? "var(--state-started)" : "var(--state-backlog)",
           }}

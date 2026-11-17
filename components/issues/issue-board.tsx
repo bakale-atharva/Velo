@@ -24,14 +24,28 @@ import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { PageSkeleton } from "@/components/states/page-skeleton";
 import { errorMessage } from "@/lib/errors";
 import { AssigneeAvatar } from "./assignee-avatar";
-import { useWorkspaceLookups } from "./lookups";
+import { DuePill } from "./due-pill";
+import { displayName, useWorkspaceLookups } from "./lookups";
+import { useNow } from "./use-now";
 import { PriorityRamp } from "./priority-ramp";
+import { StateHeading, stateColor } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
 type Column = { stateId: Id<"workflowStates">; issues: Issue[] };
 
+/** First words of a Markdown description, without the markup. */
+function excerpt(markdown: string) {
+  return markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[#>*_`~-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function BoardItem({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
   const { memberById } = useWorkspaceLookups();
+  const now = useNow();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue._id,
   });
@@ -39,6 +53,9 @@ function BoardItem({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
   };
+  const assignee = issue.assigneeId === null ? null : memberById.get(issue.assigneeId);
+  const finished = issue.stateType === "completed" || issue.stateType === "canceled";
+  const summary = excerpt(issue.description);
   return (
     <li
       ref={setNodeRef}
@@ -46,27 +63,40 @@ function BoardItem({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
       {...attributes}
       {...listeners}
       aria-roledescription="Draggable issue"
-      className={`touch-none border-b border-border bg-background py-2 outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring ${
-        isDragging ? "relative z-10 bg-card shadow-[0_8px_24px_rgb(0_0_0/0.14)]" : ""
+      className={`touch-none overflow-hidden rounded-[20px] bg-tile outline-none transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+        isDragging ? "relative z-10 shadow-(--shadow-lift)" : ""
       }`}
     >
-      <div className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
-        <span>{issue.identifier}</span>
-        <PriorityRamp priority={issue.priority} />
-        <span className="ml-auto">
-          <AssigneeAvatar member={issue.assigneeId === null ? null : memberById.get(issue.assigneeId)} size={18} />
+      <div className="px-5 pt-5 pb-4">
+        <span className="inline-flex h-7 items-center rounded-lg bg-chip px-2.5 text-[13px] font-medium text-muted-foreground tabular-nums">
+          {issue.identifier}
+        </span>
+        <Link
+          href={`/${orgSlug}/issue/${issue.identifier}`}
+          className={`mt-4 block text-[16px] leading-6 font-medium hover:underline ${finished ? "text-muted-foreground" : ""}`}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          {issue.title}
+        </Link>
+        {summary !== "" && (
+          <p className="mt-1.5 line-clamp-2 text-[14px] leading-6 tracking-[0.01em] text-muted-foreground">{summary}</p>
+        )}
+        {issue.dueDate !== null && (
+          <div className="mt-4">
+            <DuePill dueDate={issue.dueDate} finished={finished} now={now} />
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-2.5 border-t-2 border-tile-edge px-5 py-3.5">
+        <AssigneeAvatar member={assignee} size={28} />
+        <span className={`min-w-0 flex-1 truncate text-[14px] ${assignee ? "font-medium" : "text-muted-foreground"}`}>
+          {assignee ? displayName(assignee) : "Unassigned"}
+        </span>
+        <span className="flex shrink-0 items-center gap-2.5 text-[13px] text-muted-foreground tabular-nums">
+          {issue.estimate !== null && <span>{issue.estimate} pt</span>}
+          <PriorityRamp priority={issue.priority} />
         </span>
       </div>
-      <Link
-        href={`/${orgSlug}/issue/${issue.identifier}`}
-        className="mt-1 block text-[13px] leading-4 font-medium hover:underline"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        {issue.title}
-      </Link>
-      {issue.estimate !== null && (
-        <span className="mt-1 block text-xs text-muted-foreground tabular-nums">{issue.estimate} pt</span>
-      )}
     </li>
   );
 }
@@ -81,31 +111,18 @@ function BoardColumn({
   orgSlug: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: state._id });
-  const finished = state.type === "completed" || state.type === "canceled";
-  const countColor =
-    state.type === "started" ? "var(--brand-ink)" : finished ? "var(--muted-foreground)" : undefined;
   return (
     <section
       aria-label={`${state.name}, ${column.issues.length} issues`}
-      className="flex min-w-[240px] flex-col border-r border-border px-4 pt-4 last:border-r-0"
+      className={`panel flex min-w-[300px] flex-col p-5 transition-shadow ${
+        isOver ? "shadow-[inset_0_0_0_2px_var(--ring)]" : ""
+      }`}
     >
-      <header
-        className="flex items-baseline justify-between border-b-4 pb-2"
-        style={{ borderColor: finished ? "var(--state-canceled)" : `var(--state-${state.type})` }}
-      >
-        <h2 className={`text-[13px] font-semibold ${finished ? "text-muted-foreground" : ""}`}>{state.name}</h2>
-        <span
-          className="font-display text-[64px] leading-[56px] font-extrabold tracking-[-0.04em] tabular-nums [font-stretch:75%]"
-          style={{ color: countColor }}
-        >
-          {column.issues.length}
-        </span>
+      <header className="px-1">
+        <StateHeading name={state.name} count={column.issues.length} color={stateColor(state.type)} />
       </header>
       <SortableContext items={column.issues.map((issue) => issue._id)} strategy={verticalListSortingStrategy}>
-        <ul
-          ref={setNodeRef}
-          className={`min-h-24 flex-1 pb-8 ${isOver ? "bg-muted" : ""}`}
-        >
+        <ul ref={setNodeRef} className="mt-5 flex min-h-24 flex-1 flex-col gap-4">
           {column.issues.map((issue) => (
             <BoardItem key={issue._id} issue={issue} orgSlug={orgSlug} />
           ))}
@@ -228,7 +245,7 @@ export function Board({
   const byState = new Map(columns.map((column) => [column.stateId, column]));
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-      <div className="grid flex-1 auto-cols-[minmax(240px,1fr)] grid-flow-col overflow-x-auto">
+      <div className="grid flex-1 auto-cols-[minmax(300px,1fr)] grid-flow-col items-start gap-5 overflow-x-auto px-3 pb-6 md:px-6">
         {states.map((state) => (
           <BoardColumn
             key={state._id}

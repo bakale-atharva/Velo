@@ -36,10 +36,10 @@ export function UpgradePrompt({ feature }: { feature?: GatedFeature }) {
     ? COPY[feature]
     : { title: "Not in your plan", body: "This is part of a paid plan.", plan: "a paid plan" };
   return (
-    <div className="max-w-md border-t-4 border-brand py-6">
-      <h2 className="text-xl leading-6 font-semibold">{copy.title}</h2>
-      <p className="mt-2 text-[13px] leading-5 text-muted-foreground">{copy.body}</p>
-      <Link href={`/${orgSlug}/settings/billing`} className={`${buttonVariants()} mt-4`}>
+    <div className="panel iris-ring m-3 max-w-lg p-7 md:m-6">
+      <h2 className="text-xl leading-7 font-semibold">{copy.title}</h2>
+      <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{copy.body}</p>
+      <Link href={`/${orgSlug}/settings/billing`} className={`${buttonVariants({ size: "lg" })} mt-5`}>
         See {copy.plan} in Billing
       </Link>
     </div>

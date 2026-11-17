@@ -20,7 +20,7 @@ import { errorMessage } from "@/lib/errors";
 import { cycleRange, DAY, overlapping } from "./cycle-dates";
 
 const fieldClass =
-  "h-8 w-full min-w-0 rounded-[2px] border border-input bg-background px-2 text-[13px] tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "h-9 w-full min-w-0 rounded-lg border border-input bg-popover px-2.5 text-[14px] tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 const DEFAULT_LENGTH_DAYS = 14;
 

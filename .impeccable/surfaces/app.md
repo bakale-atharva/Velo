@@ -11,14 +11,14 @@ Mode: Operate. Audience: engineers triaging work all day, keyboard first. Task: 
 
 ## Direction contract
 
-THESIS: Velo is set on one strict Swiss modular grid: hierarchy comes from scale, weight and position on the grid, never from boxes, cards or shadows. It refuses the category default of grey sidebar, rounded cards and coloured status dots.
+THESIS: Velo is a calm desk of soft floating panels; issues are tactile warm grey tiles and colour only marks state. It refuses dense hairline grids and saturated status fills.
 
-OWN-WORLD: Paper ground (#f6f6f2 light, near-black #111214 dark), ink #121212, a committed ultramarine (#2433d6) shell rail, vermilion (#e8432a) reserved for urgent and destructive. Neo-grotesk UI (Geist) with tabular figures; a condensed heavy grotesk (Archivo, 75–80% width, 800) only for poster-scale numerals and page titles. Hairline rules on an 8px baseline; 4px heavy rules head columns. Square corners (2px max). Priority is one fixed bar ramp everywhere (raised from Star Atlas); ids, counts, estimates, dates are tabular and column-aligned (raised from Datamatics); every edge snaps to the visible 8px grid (raised from Crouwel).
+OWN-WORLD: Grey canvas (#e9e9e6 / #0d0e0f), near-white panels (#f8f8f6) with 20px corners, warm grey tiles (#ecebe7), ink #161818. State accents as 3px bars: orange unstarted, indigo started, teal done. One iridescent ring for dates and the Commands button; a dark green-grey gradient chip beside titles; dark pill primary. Figtree throughout.
 
-STORY: The engineer sees their team's whole state at a glance, reads counts before titles, moves an issue with a keystroke or drag and watches the count tick for everyone at once.
+STORY: The engineer sees each state as its own panel, reads ids, titles and due dates on tiles, drags a tile or presses a key to move it, and watches counts update live.
 
-FIRST VIEWPORT: Left 232px ultramarine rail: wordmark + workspace, My issues, Projects, Views, Search, Teams list, Settings and command hint at the bottom. Main: page title in condensed grotesk 48px with a hairline under it and actions right (view toggle, Filter, primary New issue in ink). A thin filter bar. Board: equal state columns, each headed by name and a 64px condensed live count on a 4px rule (started state in ultramarine, finished states greyed); issue rows separated by hairlines: identifier, priority ramp, title, labels as outlined tags, estimate, assignee initials. Selected row: white fill and a 1px ultramarine outline (no thick coloured left edge).
+FIRST VIEWPORT: Floating sidebar (mark + Velo, Search, My issues/Projects/Views, collapsible teams with diamond marker, member card). Top bar panel: Workspace pill › org switcher, iridescent Commands ⌘K right. Header: teal ring, team name, dark key chip, ◆ Issues ◇ Cycles off an L connector, avatar stack right; fading rule. "All issues" section, List/Board segmented, divider, dark New issue pill, filter pills right. Board columns as panels of tiles.
 
-FORM: Swiss Grid (International Typographic Style posters), candidate 4 of 7 on the ordered list; seed:1f22190eca198567. Signature move: poster-scale state counts that tick live as issues move (Motion number roll, instant under reduced motion).
+FORM: Brief-pinned by the user (FLOW AI task dashboard reference, Dribbble 26265463); no concept roll. seed: none (unavailable)
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

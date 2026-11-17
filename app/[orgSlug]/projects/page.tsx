@@ -1,5 +1,6 @@
 "use client";
 
+import { CirclePlus } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
@@ -18,7 +19,7 @@ import { PageSkeleton } from "@/components/states/page-skeleton";
 import { formatDate } from "@/lib/dates";
 
 const ROW =
-  "grid grid-cols-[minmax(0,1fr)_110px] items-center gap-4 px-8 md:grid-cols-[minmax(0,1fr)_110px_160px_90px_220px]";
+  "grid grid-cols-[minmax(0,1fr)_130px] items-center gap-4 px-3 md:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px]";
 
 function Projects() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
@@ -32,11 +33,16 @@ function Projects() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col">
+    <div className="flex flex-1 flex-col">
       <TeamPageHeader
         title="Projects"
-        subtitle={projects.length === 0 ? undefined : String(projects.length)}
-        actions={<Button onClick={() => setCreating(true)}>New project</Button>}
+        subtitle={projects.length === 0 ? undefined : `${projects.length} total`}
+        actions={
+          <Button size="lg" className="h-11 px-5 text-[15px]" onClick={() => setCreating(true)}>
+            <CirclePlus aria-hidden />
+            New project
+          </Button>
+        }
       />
       <ProjectDialog
         open={creating}
@@ -45,7 +51,7 @@ function Projects() {
       />
 
       {projects.length === 0 ? (
-        <div className="px-8 py-6">
+        <div className="px-3 pt-8 md:px-6">
           <EmptyState
             title="No projects yet"
             action={<Button onClick={() => setCreating(true)}>New project</Button>}
@@ -54,10 +60,10 @@ function Projects() {
           </EmptyState>
         </div>
       ) : (
-        <div role="table" aria-label="Projects" className="pb-12">
+        <div role="table" aria-label="Projects" className="panel mx-3 mt-8 mb-12 p-3 md:mx-6">
           <div
             role="row"
-            className={`${ROW} border-b border-border py-2 text-xs font-medium text-muted-foreground`}
+            className={`${ROW} pt-1 pb-3 text-[13px] font-medium text-muted-foreground`}
           >
             <span role="columnheader">Name</span>
             <span role="columnheader">Status</span>
@@ -65,7 +71,7 @@ function Projects() {
             <span role="columnheader" className="hidden md:block">Target</span>
             <span role="columnheader" className="hidden md:block">Progress</span>
           </div>
-          <div role="rowgroup" className="divide-y divide-border">
+          <div role="rowgroup" className="flex flex-col gap-0.5">
             {projects.map((project) => {
               const lead = project.leadId === null ? null : memberById.get(project.leadId);
               return (
@@ -73,15 +79,15 @@ function Projects() {
                   key={project._id}
                   role="row"
                   href={`/${orgSlug}/projects/${project._id}`}
-                  className={`${ROW} py-3 hover:bg-card focus-visible:bg-card focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring`}
+                  className={`${ROW} rounded-[14px] py-3 hover:bg-tile focus-visible:bg-tile focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring`}
                 >
-                  <span role="cell" className="truncate text-[13px] font-medium">
+                  <span role="cell" className="truncate text-[15px] font-medium">
                     {project.name}
                   </span>
                   <span role="cell">
                     <ProjectStatusTag status={project.status} />
                   </span>
-                  <span role="cell" className="hidden min-w-0 items-center gap-2 text-xs md:flex">
+                  <span role="cell" className="hidden min-w-0 items-center gap-2 text-[14px] md:flex">
                     {lead === null ? (
                       <span className="text-muted-foreground">No lead</span>
                     ) : (
@@ -91,7 +97,7 @@ function Projects() {
                       </>
                     )}
                   </span>
-                  <span role="cell" className="hidden text-xs tabular-nums md:block">
+                  <span role="cell" className="hidden text-[14px] tabular-nums md:block">
                     {project.targetDate === null ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (

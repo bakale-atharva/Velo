@@ -9,11 +9,12 @@ export default function OnboardingPage() {
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-12">
       <div className="grid w-full max-w-md gap-6">
-        <div className="border-b-4 border-rule pb-2">
-          <h1 className="font-display text-[48px] leading-[48px] font-extrabold tracking-[-0.03em] [font-stretch:80%]">
+        <div>
+          <h1 className="flex items-center gap-3 text-[36px] leading-10 font-semibold tracking-[-0.02em]">
+            <span aria-hidden className="size-[18px] rounded-full border-2 border-count-teal" />
             Workspace
           </h1>
-          <p className="mt-2 text-[13px] text-muted-foreground">
+          <p className="mt-2 text-[15px] text-muted-foreground">
             Join a workspace you were invited to, or create one for your team.
           </p>
         </div>

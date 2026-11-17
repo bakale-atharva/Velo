@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { Suspense, useState } from "react";
@@ -74,13 +73,9 @@ function ViewBody({ view, orgSlug, isOwner, isAdmin }: {
 
   const mayDelete = isOwner || (isAdmin && view.isShared);
   return (
-    <div className="flex min-h-svh flex-col">
-      <nav aria-label="Breadcrumb" className="px-8 pt-4 text-xs text-muted-foreground">
-        <Link href={`/${orgSlug}/views`} className="hover:text-foreground hover:underline">
-          Views
-        </Link>
-      </nav>
+    <div className="flex flex-1 flex-col">
       <TeamPageHeader
+        back={{ href: `/${orgSlug}/views`, label: "Views" }}
         title={view.name}
         subtitle={team === undefined ? undefined : `in ${team.key}`}
         actions={
@@ -99,6 +94,7 @@ function ViewBody({ view, orgSlug, isOwner, isAdmin }: {
           </>
         }
       />
+      <div className="px-3 pt-8 pb-6 md:px-6">
       <FilterBar
         filter={filter}
         onChange={setFilter}
@@ -123,6 +119,7 @@ function ViewBody({ view, orgSlug, isOwner, isAdmin }: {
           ) : undefined
         }
       />
+      </div>
       {teamId !== undefined && states === undefined ? (
         <PageSkeleton />
       ) : (

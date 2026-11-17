@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { usePaginatedQuery, useQuery } from "convex/react";
 import { Suspense, useState } from "react";
@@ -14,7 +13,7 @@ import { Markdown } from "@/components/issues/markdown";
 import { TeamPageHeader } from "@/components/issues/team-page-header";
 import { Progress } from "@/components/projects/progress";
 import { ProjectDialog } from "@/components/projects/project-dialog";
-import { ProjectStatusTag } from "@/components/projects/project-status";
+import { ProjectStatusTag, statusLabel } from "@/components/projects/project-status";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
@@ -26,8 +25,8 @@ const PAGE_SIZE = 100;
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid gap-1">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="flex min-h-5 items-center gap-2 text-[13px]">{children}</dd>
+      <dt className="text-[13px] text-muted-foreground">{label}</dt>
+      <dd className="flex min-h-7 items-center gap-2 text-[15px]">{children}</dd>
     </div>
   );
 }
@@ -43,7 +42,7 @@ function ProjectIssues({ project, orgSlug }: { project: Doc<"projects">; orgSlug
   }
   if (results.length === 0 && status === "Exhausted") {
     return (
-      <div className="px-8 py-6">
+      <div className="px-3 pt-8 md:px-6">
         <EmptyState title="No issues in this project">
           Add issues from any team by setting their Project in the issue’s properties.
         </EmptyState>
@@ -51,17 +50,17 @@ function ProjectIssues({ project, orgSlug }: { project: Doc<"projects">; orgSlug
     );
   }
   return (
-    <div className="pb-12">
+    <div className="pt-8 pb-12">
       <IssueGroups issues={results} orgSlug={orgSlug} />
       {status === "CanLoadMore" && (
-        <div className="px-8 pt-6">
+        <div className="px-3 pt-2 md:px-6">
           <Button variant="outline" onClick={() => loadMore(PAGE_SIZE)}>
             Load more issues
           </Button>
         </div>
       )}
       {status === "LoadingMore" && (
-        <p className="px-8 pt-6 text-xs text-muted-foreground">Loading more…</p>
+        <p className="px-3 pt-2 text-[13px] text-muted-foreground md:px-6">Loading more…</p>
       )}
     </div>
   );
@@ -79,14 +78,11 @@ function ProjectDetail() {
   const lead = project.leadId === null ? null : memberById.get(project.leadId);
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <nav aria-label="Breadcrumb" className="px-8 pt-4 text-xs text-muted-foreground">
-        <Link href={`/${orgSlug}/projects`} className="hover:text-foreground hover:underline">
-          Projects
-        </Link>
-      </nav>
+    <div className="flex flex-1 flex-col">
       <TeamPageHeader
+        back={{ href: `/${orgSlug}/projects`, label: "Projects" }}
         title={project.name}
+        subtitle={statusLabel(project.status)}
         actions={
           <Button variant="outline" onClick={() => setEditing(true)}>
             Edit project
@@ -95,7 +91,7 @@ function ProjectDetail() {
       />
       <ProjectDialog project={project} open={editing} onOpenChange={setEditing} />
 
-      <dl className="grid grid-cols-2 gap-x-8 gap-y-4 border-b border-border px-8 py-4 md:grid-cols-[auto_auto_auto_auto_minmax(200px,1fr)]">
+      <dl className="panel mx-3 mt-8 grid grid-cols-2 gap-x-10 gap-y-5 p-6 md:mx-6 md:grid-cols-[auto_auto_auto_auto_minmax(200px,1fr)]">
         <Fact label="Status">
           <ProjectStatusTag status={project.status} />
         </Fact>
@@ -129,7 +125,7 @@ function ProjectDetail() {
       </dl>
 
       {project.description.trim() !== "" && (
-        <div className="max-w-3xl px-8 pt-6">
+        <div className="max-w-3xl px-4 pt-8 md:px-7">
           <Markdown>{project.description}</Markdown>
         </div>
       )}

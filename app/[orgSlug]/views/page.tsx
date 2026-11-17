@@ -8,6 +8,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { activeCount } from "@/components/issues/filters";
 import { displayName, useWorkspaceLookups } from "@/components/issues/lookups";
+import { StateHeading } from "@/components/issues/state-heading";
 import { TeamPageHeader } from "@/components/issues/team-page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
@@ -18,13 +19,13 @@ function ViewRow({ view, orgSlug, owner }: { view: Doc<"savedViews">; orgSlug: s
   return (
     <Link
       href={`/${orgSlug}/views/${view._id}`}
-      className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 px-8 py-3 hover:bg-card focus-visible:bg-card focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_160px_120px]"
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-[14px] px-3 py-3 hover:bg-tile focus-visible:bg-tile focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_180px_140px]"
     >
-      <span className="truncate text-[13px] font-medium">{view.name}</span>
-      <span className="hidden truncate text-xs text-muted-foreground sm:block">
+      <span className="truncate text-[15px] font-medium">{view.name}</span>
+      <span className="hidden truncate text-[13px] text-muted-foreground sm:block">
         {owner ?? (view.isShared ? "Shared with workspace" : "Only you")}
       </span>
-      <span className="text-right text-xs text-muted-foreground tabular-nums">
+      <span className="text-right text-[13px] text-muted-foreground tabular-nums">
         {count} {count === 1 ? "filter" : "filters"} · {view.layout}
       </span>
     </Link>
@@ -34,15 +35,11 @@ function ViewRow({ view, orgSlug, owner }: { view: Doc<"savedViews">; orgSlug: s
 function Section({ title, children, count }: { title: string; count: number; children: React.ReactNode }) {
   const id = `views-${title.toLowerCase().replace(/\s+/g, "-")}`;
   return (
-    <section aria-labelledby={id} className="mt-6">
-      <h2
-        id={id}
-        className="mx-8 flex items-baseline justify-between border-b-2 border-rule pb-1 text-[13px] font-semibold"
-      >
-        {title}
-        <span className="text-xs font-normal text-muted-foreground tabular-nums">{count}</span>
-      </h2>
-      <ul className="divide-y divide-border">{children}</ul>
+    <section aria-labelledby={id} className="panel mx-3 mb-4 p-3 md:mx-6">
+      <div className="px-3 pt-2 pb-3">
+        <StateHeading id={id} name={title} count={count} color="var(--state-started)" />
+      </div>
+      <ul className="flex flex-col gap-0.5">{children}</ul>
     </section>
   );
 }
@@ -60,16 +57,16 @@ function Views() {
   const shared = views.filter((view) => view.ownerId !== me.userId);
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <TeamPageHeader title="Views" />
+    <div className="flex flex-1 flex-col">
+      <TeamPageHeader title="Views" subtitle={views.length === 0 ? undefined : `${views.length} saved`} />
       {views.length === 0 ? (
-        <div className="px-8 py-6">
+        <div className="px-3 pt-8 md:px-6">
           <EmptyState title="No saved views">
             Filter a team’s issues, then choose Save view to keep that filter here.
           </EmptyState>
         </div>
       ) : (
-        <div className="pb-12">
+        <div className="pt-8 pb-12">
           {mine.length > 0 && (
             <Section title="My views" count={mine.length}>
               {mine.map((view) => (

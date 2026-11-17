@@ -46,19 +46,19 @@ function MultiFilter<T extends string | number | null>({
         render={
           <button
             type="button"
-            className={`inline-flex h-7 items-center gap-1 rounded-[2px] border px-2 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+            className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3.5 text-[14px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               picked.length > 0
-                ? "border-foreground bg-foreground text-background"
-                : "border-border hover:border-foreground"
+                ? "chip-dark border-transparent"
+                : "border-rule bg-muted hover:bg-secondary"
             }`}
           />
         }
       >
-        <span className={picked.length > 0 ? "opacity-70" : ""}>{label}</span>
-        {summary !== null && <span className="max-w-32 truncate font-medium">{summary}</span>}
-        <ChevronDown className="size-3" aria-hidden />
+        <span className={picked.length > 0 ? "font-normal opacity-75" : ""}>{label}</span>
+        {summary !== null && <span className="max-w-32 truncate">{summary}</span>}
+        <ChevronDown className="size-3.5 opacity-70" aria-hidden />
       </PopoverTrigger>
-      <PopoverContent align="start" className="max-h-80 w-60 overflow-y-auto p-1">
+      <PopoverContent align="start" className="max-h-80 w-60 overflow-y-auto p-1.5">
         {options.length === 0 ? (
           <p className="p-2 text-xs text-muted-foreground">Nothing to filter by yet.</p>
         ) : (
@@ -67,7 +67,7 @@ function MultiFilter<T extends string | number | null>({
               const checked = value.includes(option.value);
               return (
                 <li key={String(option.value)}>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-[2px] px-2 py-1.5 text-[13px] hover:bg-muted">
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-muted">
                     <Checkbox
                       checked={checked}
                       onCheckedChange={(next) => {
@@ -130,7 +130,7 @@ export function FilterBar({
     <div
       role="toolbar"
       aria-label="Filters"
-      className="flex flex-wrap items-center gap-2 border-b border-border px-8 py-2"
+      className="flex flex-wrap items-center gap-2"
     >
       <MultiFilter
         label="State"
@@ -182,13 +182,13 @@ export function FilterBar({
         <button
           type="button"
           onClick={() => onChange({})}
-          className="inline-flex h-7 items-center gap-1 px-1 text-xs text-muted-foreground hover:text-foreground"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-[14px] text-muted-foreground hover:bg-muted hover:text-foreground"
         >
-          <X className="size-3" aria-hidden />
+          <X className="size-3.5" aria-hidden />
           Clear
         </button>
       )}
-      {actions !== undefined && <div className="ml-auto flex items-center gap-2">{actions}</div>}
+      {actions !== undefined && <div className="flex items-center gap-2">{actions}</div>}
     </div>
   );
 }

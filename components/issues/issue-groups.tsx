@@ -1,7 +1,9 @@
 "use client";
 
 import type { Doc } from "@/convex/_generated/dataModel";
+import { GROUP_PANEL } from "./issue-list";
 import { IssueRow } from "./issue-row";
+import { StateHeading, stateColor } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
 type StateType = Doc<"issues">["stateType"];
@@ -27,18 +29,16 @@ export function IssueGroups({ issues, orgSlug }: { issues: Issue[]; orgSlug: str
         const inGroup = issues.filter((issue) => issue.stateType === group.type);
         if (inGroup.length === 0) return null;
         return (
-          <section key={group.type} aria-labelledby={`group-${group.type}`} className="mt-6">
-            <h2
-              id={`group-${group.type}`}
-              className="mx-8 flex items-baseline justify-between border-b-2 pb-1 text-[13px] font-semibold"
-              style={{ borderColor: `var(--state-${group.type})` }}
-            >
-              {group.name}
-              <span className="text-xs font-normal text-muted-foreground tabular-nums">
-                {inGroup.length}
-              </span>
-            </h2>
-            <ul className="divide-y divide-border">
+          <section key={group.type} aria-labelledby={`group-${group.type}`} className={GROUP_PANEL}>
+            <div className="px-3 pt-2 pb-3">
+              <StateHeading
+                id={`group-${group.type}`}
+                name={group.name}
+                count={inGroup.length}
+                color={stateColor(group.type)}
+              />
+            </div>
+            <ul className="flex flex-col gap-0.5">
               {inGroup.map((issue) => (
                 <li key={issue._id}>
                   <IssueRow issue={issue} orgSlug={orgSlug} />

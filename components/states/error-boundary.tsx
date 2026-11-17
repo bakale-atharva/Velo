@@ -27,9 +27,12 @@ export class ErrorBoundary extends Component<Props, State> {
       return <UpgradePrompt />;
     }
     return (
-      <div role="alert" className="max-w-md border-t-4 border-destructive py-6">
-        <h2 className="text-xl leading-6 font-semibold">This page couldn’t load</h2>
-        <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
+      <div role="alert" className="panel m-3 max-w-lg p-7 md:m-6">
+        <h2 className="flex items-center gap-3 text-xl leading-7 font-semibold">
+          <span aria-hidden className="h-6 w-[3px] rounded-full bg-destructive" />
+          This page couldn’t load
+        </h2>
+        <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
           {errorMessage(this.state.error)}
         </p>
         <Button

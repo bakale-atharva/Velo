@@ -1,11 +1,12 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Archivo, Geist, Geist_Mono } from "next/font/google";
+import { Figtree, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Soft geometric grotesk for all UI text.
+const figtree = Figtree({
+  variable: "--font-figtree",
   subsets: ["latin"],
 });
 
@@ -14,12 +15,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Condensed heavy grotesk, only for page titles and poster-scale counts.
-const archivo = Archivo({
-  variable: "--font-archivo",
-  subsets: ["latin"],
-  axes: ["wdth"],
-});
+// Clerk's components read Velo's tokens, so they follow the light/dark theme.
+const CLERK_APPEARANCE = {
+  variables: {
+    colorBackground: "var(--popover)",
+    colorForeground: "var(--foreground)",
+    colorMutedForeground: "var(--muted-foreground)",
+    colorPrimary: "var(--primary)",
+    colorPrimaryForeground: "var(--primary-foreground)",
+    colorInput: "var(--popover)",
+    colorInputForeground: "var(--foreground)",
+    colorNeutral: "var(--foreground)",
+    colorDanger: "var(--destructive)",
+    fontFamily: "var(--font-figtree)",
+    borderRadius: "10px",
+  },
+};
 
 export const metadata: Metadata = {
   title: "Velo",
@@ -28,12 +39,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // next-themes sets the theme class on <html> before hydration.
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${figtree.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ClerkProvider>
+        <ClerkProvider appearance={CLERK_APPEARANCE}>
           <Providers>{children}</Providers>
         </ClerkProvider>
       </body>
