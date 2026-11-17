@@ -9,7 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/lib/errors";
-import { AssigneeSelect, EstimateInput, LabelPicker, PrioritySelect, StateSelect } from "./fields";
+import {
+  AssigneeSelect,
+  CycleSelect,
+  EstimateInput,
+  LabelPicker,
+  PrioritySelect,
+  ProjectSelect,
+  StateSelect,
+} from "./fields";
 import { IssueRow } from "./issue-row";
 import { useWorkspaceLookups } from "./lookups";
 import { Markdown } from "./markdown";
@@ -119,6 +127,8 @@ function Description({ issue }: { issue: Issue }) {
 function Properties({ issue, states }: { issue: Issue; states: Doc<"workflowStates">[] }) {
   const update = useUpdate(issue._id);
   const { labels, members } = useWorkspaceLookups();
+  const projects = useQuery(api.projects.list, {});
+  const cycles = useQuery(api.cycles.list, { teamId: issue.teamId });
   const id = useId();
   const due = issue.dueDate === null ? "" : new Date(issue.dueDate).toISOString().slice(0, 10);
   const row = "grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2 py-1.5 text-xs";
@@ -154,6 +164,24 @@ function Properties({ issue, states }: { issue: Issue; states: Doc<"workflowStat
             update({ dueDate: e.target.value === "" ? null : Date.parse(`${e.target.value}T00:00:00Z`) })
           }
           className="tabular-nums"
+        />
+      </label>
+      <label htmlFor={`${id}-project`} className={row}>
+        <span className="text-muted-foreground">Project</span>
+        <ProjectSelect
+          id={`${id}-project`}
+          projects={projects ?? []}
+          value={issue.projectId ?? null}
+          onChange={(projectId) => update({ projectId })}
+        />
+      </label>
+      <label htmlFor={`${id}-cycle`} className={row}>
+        <span className="text-muted-foreground">Cycle</span>
+        <CycleSelect
+          id={`${id}-cycle`}
+          cycles={cycles ?? []}
+          value={issue.cycleId ?? null}
+          onChange={(cycleId) => update({ cycleId })}
         />
       </label>
       <ParentRow issue={issue} />

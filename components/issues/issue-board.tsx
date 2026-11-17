@@ -168,29 +168,61 @@ export function IssueBoard({
       }),
     );
   });
+  if (columns === undefined) {
+    return <PageSkeleton />;
+  }
+  return (
+    <Board
+      columns={columns}
+      states={states}
+      orgSlug={orgSlug}
+      onMove={(args) => move(args).catch((error: unknown) => toast.error(errorMessage(error)))}
+    />
+  );
+}
+
+export type MoveArgs = {
+  issueId: Id<"issues">;
+  stateId: Id<"workflowStates">;
+  beforeRank: string | null;
+  afterRank: string | null;
+};
+
+/**
+ * One column per state; dragging a card calls `onMove` with the target state
+ * and the ranks of the cards it lands between. Columns hold issues in rank
+ * order.
+ */
+export function Board({
+  columns,
+  states,
+  orgSlug,
+  onMove,
+}: {
+  columns: Column[];
+  states: Doc<"workflowStates">[];
+  orgSlug: string;
+  onMove: (args: MoveArgs) => void;
+}) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  if (columns === undefined) {
-    return <PageSkeleton />;
-  }
-
   function onDragEnd(event: DragEndEvent) {
-    if (event.over === null || columns === undefined) return;
+    if (event.over === null) return;
     const activeId = String(event.active.id);
     const target = dropTarget(columns, activeId, String(event.over.id));
     if (target === null) return;
     const source = columns.find((column) => column.issues.some((issue) => issue._id === activeId));
     const sourceIndex = source?.issues.findIndex((issue) => issue._id === activeId) ?? -1;
     if (source?.stateId === target.stateId && sourceIndex === target.index) return;
-    move({
+    onMove({
       issueId: activeId as Id<"issues">,
       stateId: target.stateId,
       beforeRank: target.beforeRank,
       afterRank: target.afterRank,
-    }).catch((error: unknown) => toast.error(errorMessage(error)));
+    });
   }
 
   const byState = new Map(columns.map((column) => [column.stateId, column]));
