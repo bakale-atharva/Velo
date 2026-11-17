@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
 import { IssueDetail } from "@/components/issues/issue-detail";
+import { IssueTimeline } from "@/components/issues/issue-timeline";
 
 function IssuePage() {
   const { orgSlug, identifier } = useParams<{ orgSlug: string; identifier: string }>();
@@ -25,7 +26,9 @@ function IssuePage() {
         <span aria-hidden> / </span>
         <span className="text-foreground tabular-nums">{issue.identifier}</span>
       </nav>
-      <IssueDetail issue={issue} states={states} orgSlug={orgSlug} />
+      <IssueDetail issue={issue} states={states} orgSlug={orgSlug}>
+        <IssueTimeline issueId={issue._id} />
+      </IssueDetail>
     </>
   );
 }
