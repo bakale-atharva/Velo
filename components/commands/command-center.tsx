@@ -7,7 +7,9 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog";
+import { SHORTCUTS } from "@/lib/shortcuts";
 import { CommandPalette, type PaletteMode } from "./command-palette";
+import { Shortcuts } from "./shortcuts";
 
 type CommandCenter = {
   /** Opens the palette; a mode shows only one kind of issue command. */
@@ -86,7 +88,7 @@ export function CommandCenterProvider({
   );
 
   useHotkeys(
-    "mod+k",
+    SHORTCUTS.palette.keys,
     () => setPalette((p) => (p.open ? { ...p, open: false } : { open: true, mode: "all" })),
     { enableOnFormTags: true, preventDefault: true },
   );
@@ -96,6 +98,12 @@ export function CommandCenterProvider({
   return (
     <Context.Provider value={value}>
       {children}
+      <Shortcuts
+        orgSlug={orgSlug}
+        pathIdentifier={routeContext(pathname).identifier}
+        openPalette={openPalette}
+        openCreateIssue={openCreateIssue}
+      />
       <CommandPalette
         orgSlug={orgSlug}
         open={palette.open}

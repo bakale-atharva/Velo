@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/command";
 import { displayName, PRIORITY_LABELS, useWorkspaceLookups } from "@/components/issues/lookups";
 import { errorMessage } from "@/lib/errors";
+import { SHORTCUTS, type ShortcutId } from "@/lib/shortcuts";
 
 export type PaletteMode = "all" | "state" | "assignee" | "priority" | "labels";
 
@@ -45,6 +46,8 @@ const PLACEHOLDER: Record<PaletteMode, string> = {
   priority: "Set priority to…",
   labels: "Add or remove a label…",
 };
+
+const hint = (id: ShortcutId) => SHORTCUTS[id].display.join(" ");
 
 function matches(item: Item, query: string): boolean {
   const q = query.trim().toLowerCase();
@@ -230,10 +233,10 @@ function PaletteBody({
               heading="Go to"
               query={query}
               items={[
-                { id: "nav:my", label: "My issues", icon: ArrowRight, hint: "G I", run: go(`${base}/my-issues`) },
-                { id: "nav:projects", label: "Projects", icon: ArrowRight, hint: "G P", run: go(`${base}/projects`) },
+                { id: "nav:my", label: "My issues", icon: ArrowRight, hint: hint("goMyIssues"), run: go(`${base}/my-issues`) },
+                { id: "nav:projects", label: "Projects", icon: ArrowRight, hint: hint("goProjects"), run: go(`${base}/projects`) },
                 { id: "nav:views", label: "Views", icon: ArrowRight, run: go(`${base}/views`) },
-                { id: "nav:search", label: "Search", icon: ArrowRight, hint: "/", run: go(`${base}/search`) },
+                { id: "nav:search", label: "Search", icon: ArrowRight, hint: hint("search"), run: go(`${base}/search`) },
                 { id: "nav:settings", label: "Settings", icon: ArrowRight, run: go(`${base}/settings`) },
               ]}
             />
