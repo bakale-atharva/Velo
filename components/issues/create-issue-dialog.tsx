@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -17,7 +17,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/lib/errors";
-import { AssigneeSelect, EstimateInput, LabelPicker, PrioritySelect, StateSelect } from "./fields";
+import {
+  AssigneeSelect,
+  CycleSelect,
+  EstimateInput,
+  LabelPicker,
+  PrioritySelect,
+  ProjectSelect,
+  StateSelect,
+} from "./fields";
 import { useWorkspaceLookups } from "./lookups";
 
 type Draft = {
@@ -28,6 +36,8 @@ type Draft = {
   assigneeId: string | null;
   labelIds: Id<"labels">[];
   estimate: number | null;
+  projectId: Id<"projects"> | null;
+  cycleId: Id<"cycles"> | null;
 };
 
 const EMPTY: Draft = {
@@ -38,6 +48,8 @@ const EMPTY: Draft = {
   assigneeId: null,
   labelIds: [],
   estimate: null,
+  projectId: null,
+  cycleId: null,
 };
 
 export function CreateIssueDialog({
@@ -46,16 +58,27 @@ export function CreateIssueDialog({
   open,
   onOpenChange,
   defaultStateId,
+  defaultProjectId,
+  defaultCycleId,
 }: {
   team: Doc<"teams">;
   states: Doc<"workflowStates">[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultStateId?: Id<"workflowStates">;
+  defaultProjectId?: Id<"projects">;
+  defaultCycleId?: Id<"cycles">;
 }) {
   const create = useMutation(api.issues.create);
   const { labels, members } = useWorkspaceLookups();
-  const [draft, setDraft] = useState<Draft>({ ...EMPTY, stateId: defaultStateId ?? "" });
+  const projects = useQuery(api.projects.list, open ? {} : "skip");
+  const cycles = useQuery(api.cycles.list, open ? { teamId: team._id } : "skip");
+  const [draft, setDraft] = useState<Draft>({
+    ...EMPTY,
+    stateId: defaultStateId ?? "",
+    projectId: defaultProjectId ?? null,
+    cycleId: defaultCycleId ?? null,
+  });
   const [another, setAnother] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +100,8 @@ export function CreateIssueDialog({
         assigneeId: draft.assigneeId,
         labelIds: draft.labelIds,
         estimate: draft.estimate,
+        projectId: draft.projectId,
+        cycleId: draft.cycleId,
       });
       toast.success(`Created ${identifier}`);
       // Keep state and labels for the next one; clear the text.
@@ -142,6 +167,24 @@ export function CreateIssueDialog({
             <label htmlFor={`${id}-estimate`} className="grid gap-1 text-xs font-medium">
               Estimate
               <EstimateInput id={`${id}-estimate`} value={draft.estimate} onChange={(v) => set("estimate", v)} />
+            </label>
+            <label htmlFor={`${id}-project`} className="grid gap-1 text-xs font-medium">
+              Project
+              <ProjectSelect
+                id={`${id}-project`}
+                projects={projects ?? []}
+                value={draft.projectId}
+                onChange={(v) => set("projectId", v)}
+              />
+            </label>
+            <label htmlFor={`${id}-cycle`} className="grid gap-1 text-xs font-medium">
+              Cycle
+              <CycleSelect
+                id={`${id}-cycle`}
+                cycles={cycles ?? []}
+                value={draft.cycleId}
+                onChange={(v) => set("cycleId", v)}
+              />
             </label>
           </div>
 

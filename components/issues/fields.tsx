@@ -107,6 +107,72 @@ export function EstimateInput({
   );
 }
 
+export function ProjectSelect({
+  projects,
+  value,
+  onChange,
+  id,
+}: {
+  projects: Doc<"projects">[];
+  value: Id<"projects"> | null;
+  onChange: (value: Id<"projects"> | null) => void;
+  id?: string;
+}) {
+  // Finished projects are hidden unless the issue is already in one.
+  const choices = projects.filter(
+    (project) =>
+      project._id === value || (project.status !== "completed" && project.status !== "canceled"),
+  );
+  return (
+    <select
+      id={id}
+      className={selectClass}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value === "" ? null : (e.target.value as Id<"projects">))}
+    >
+      <option value="">No project</option>
+      {choices.map((project) => (
+        <option key={project._id} value={project._id}>
+          {project.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export function CycleSelect({
+  cycles,
+  value,
+  onChange,
+  id,
+}: {
+  cycles: Doc<"cycles">[];
+  value: Id<"cycles"> | null;
+  onChange: (value: Id<"cycles"> | null) => void;
+  id?: string;
+}) {
+  // Completed cycles take no new issues; keep the current one visible.
+  const choices = cycles
+    .filter((cycle) => cycle._id === value || cycle.status !== "completed")
+    .sort((a, b) => a.startsAt - b.startsAt);
+  return (
+    <select
+      id={id}
+      className={selectClass}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value === "" ? null : (e.target.value as Id<"cycles">))}
+    >
+      <option value="">No cycle</option>
+      {choices.map((cycle) => (
+        <option key={cycle._id} value={cycle._id} disabled={cycle.status === "completed"}>
+          {cycle.name}
+          {cycle.status === "active" ? " (current)" : ""}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export function LabelPicker({
   labels,
   value,
