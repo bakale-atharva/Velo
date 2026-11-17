@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { ConvexError } from "convex/values";
 import { Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useId, useState } from "react";
@@ -18,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { errorMessage } from "@/lib/errors";
 
 const KEY_PATTERN = /^[A-Z]{2,5}$/;
 
@@ -29,7 +29,7 @@ export function suggestKey(name: string): string {
   return words.map((word) => word[0]).join("").slice(0, 5);
 }
 
-const MESSAGES: Record<string, string> = {
+const MESSAGES = {
   FORBIDDEN: "Only admins can create teams.",
   INVALID_INPUT: "That key is taken or not 2–5 capital letters.",
   FEATURE_NOT_IN_PLAN: "Private teams need the Business plan.",
@@ -74,8 +74,7 @@ export function NewTeamDialog() {
       reset();
       router.push(`/${orgSlug}/team/${shownKey}/issues`);
     } catch (caught) {
-      const code = caught instanceof ConvexError ? String(caught.data) : "";
-      setError(MESSAGES[code] ?? "Couldn’t create the team. Try again.");
+      setError(errorMessage(caught, MESSAGES));
     } finally {
       setSaving(false);
     }
