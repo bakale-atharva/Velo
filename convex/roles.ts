@@ -69,6 +69,24 @@ export const list = query({
   },
 });
 
+const MAX_MEMBERS = 500;
+
+/** Which members hold a custom role, for the roles page. */
+export const assignments = query({
+  args: {},
+  returns: v.array(v.object({ userId: v.string(), roleId: v.id("customRoles") })),
+  handler: async (ctx) => {
+    const { orgId } = await requireRoleAdmin(ctx);
+    const memberships = await ctx.db
+      .query("memberships")
+      .withIndex("by_orgId", (q) => q.eq("orgId", orgId))
+      .take(MAX_MEMBERS);
+    return memberships.flatMap((m) =>
+      m.customRoleId === undefined ? [] : [{ userId: m.userId, roleId: m.customRoleId }],
+    );
+  },
+});
+
 export const create = mutation({
   args: { name: v.string(), permissions: v.array(permissionValidator) },
   returns: v.id("customRoles"),
