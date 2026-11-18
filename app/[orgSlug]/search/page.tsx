@@ -47,8 +47,8 @@ function Search() {
   return (
     <div className="flex flex-1 flex-col">
       <TeamPageHeader title="Search" />
-      <div className="px-3 pt-8 md:px-6">
-        <label className="panel flex h-16 max-w-2xl items-center gap-3 px-5 focus-within:shadow-[inset_0_0_0_2px_var(--ring)]">
+      <div className="border-b border-rule px-3 pt-6 pb-4 md:px-6">
+        <label className="flex h-14 max-w-3xl items-center gap-3 border-b border-input focus-within:border-foreground">
           <SearchIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
           <input
             type="search"
@@ -58,10 +58,10 @@ function Search() {
             placeholder="Search issue titles and descriptions"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="w-full bg-transparent text-lg outline-none placeholder:text-muted-foreground"
+            className="w-full bg-transparent text-[22px] tracking-[-0.02em] outline-none placeholder:text-muted-foreground"
           />
         </label>
-        <p aria-live="polite" className="mt-3 h-5 px-1 text-[13px] text-muted-foreground tabular-nums">
+        <p aria-live="polite" className="data mt-3 h-5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
           {query === ""
             ? "Matches words in titles and descriptions across every team you can see."
             : pending
@@ -80,7 +80,7 @@ function Search() {
         </div>
       )}
       {results !== undefined && results.length > 0 && (
-        <ul className={`panel mx-3 mt-6 mb-12 flex flex-col gap-0.5 p-3 md:mx-6 ${pending ? "opacity-60" : ""}`}>
+        <ul className={`mb-12 flex flex-col ${pending ? "opacity-60" : ""}`}>
           {results.map((issue) => (
             <li key={issue._id}>
               <IssueRow issue={issue} orgSlug={orgSlug} />

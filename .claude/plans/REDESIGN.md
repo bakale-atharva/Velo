@@ -57,7 +57,9 @@ Each phase ends with a check in the browser in both themes and a commit. The use
 - Create-issue dialog, field pickers, filters, live signal flash on remote changes.
 
 ### Phase 6: Planning surfaces
-- My issues, Projects list and detail, Cycles list and detail (with the overflowing capacity bar), Views, Search, command palette and shortcuts sheet.
+- My issues, Projects list and detail, Cycles list and detail, Views, Search, command palette and shortcuts sheet.
+- Done: shared table rows (`components/states/table-styles.ts`), figure strips on project and cycle detail, tick-bar progress, ruled empty, error and loading states.
+- Deferred: the overflowing cycle capacity bar. Cycles have no capacity field, so it needs a backend change; ask the user before adding one.
 
 ### Phase 7: Settings and billing
 - Settings layout and every settings page, Clerk `OrganizationProfile` and `PricingTable` appearance, upgrade prompts.

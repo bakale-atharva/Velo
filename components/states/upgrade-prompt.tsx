@@ -59,10 +59,10 @@ export function UpgradePrompt({
     );
   }
   return (
-    <div className={`panel iris-ring max-w-lg p-7 ${className}`}>
-      <h2 className="text-xl leading-7 font-semibold">{copy.title}</h2>
-      <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{copy.body}</p>
-      <Link href={href} className={`${buttonVariants({ size: "lg" })} mt-5`}>
+    <div className={`max-w-xl border border-foreground p-6 ${className}`}>
+      <h2 className="text-[20px] leading-7 font-semibold tracking-[-0.02em]">{copy.title}</h2>
+      <p className="mt-2 text-[14px] leading-6 text-muted-foreground">{copy.body}</p>
+      <Link href={href} className={`${buttonVariants()} mt-5`}>
         See {copy.plan} in Billing
       </Link>
     </div>

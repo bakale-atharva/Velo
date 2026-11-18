@@ -32,9 +32,9 @@ const STATUS_LABEL: Record<Doc<"cycles">["status"], string> = {
 /** A large number under its label. */
 function Figure({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="grid gap-1">
-      <dd className="text-[32px] leading-9 font-semibold tracking-[-0.02em] tabular-nums">{value}</dd>
-      <dt className="order-first text-[13px] text-muted-foreground">{label}</dt>
+    <div className="grid gap-2 border-r border-border px-3 py-5 md:px-6">
+      <dd className="data text-[36px] leading-none font-medium tracking-[-0.04em]">{value}</dd>
+      <dt className="signal-label order-first">{label}</dt>
     </div>
   );
 }
@@ -76,12 +76,12 @@ function CycleIssues({
 
   return (
     <>
-      <dl className="panel mx-3 mt-8 mb-6 grid grid-cols-2 gap-x-10 gap-y-5 p-6 md:mx-6 sm:grid-cols-[auto_auto_auto_minmax(200px,1fr)]">
+      <dl className="grid grid-cols-2 border-b border-rule sm:grid-cols-[minmax(140px,auto)_minmax(140px,auto)_minmax(140px,auto)_minmax(200px,1fr)]">
         <Figure label="Scope" value={`${results.length}${more ? "+" : ""}`} />
         <Figure label="Completed" value={done} />
         <Figure label="Points" value={points === 0 ? "—" : `${donePoints}/${points}`} />
-        <div className="col-span-2 grid content-end gap-1 sm:col-span-1">
-          <dt className="text-[13px] text-muted-foreground">Progress</dt>
+        <div className="col-span-2 grid content-between gap-2 px-3 py-5 sm:col-span-1 md:px-6">
+          <dt className="signal-label">Progress</dt>
           <dd>
             <Progress completed={done} total={results.length} />
           </dd>
@@ -159,16 +159,16 @@ function CycleDetail() {
             <ViewToggle view={view} onChange={setView} />
             <ReportButton kind="cycle" id={cycle._id} subject={`${team.name} ${cycle.name}`} />
             {cycle.status !== "completed" && (
-              <Button variant="outline" className="h-11 rounded-xl px-4" onClick={() => setEditing(true)}>
+              <Button variant="outline" onClick={() => setEditing(true)}>
                 Edit cycle
               </Button>
             )}
           </>
         }
       />
-      <p className="px-3 pt-5 text-[14px] md:px-6">
+      <p className="data flex h-10 items-center border-b border-rule px-3 text-[12px] uppercase md:px-6">
         <span
-          className="mr-2 inline-block size-2 rounded-full"
+          className="mr-2 inline-block size-[7px]"
           style={{
             background: cycle.status === "active" ? "var(--state-started)" : "var(--state-backlog)",
           }}

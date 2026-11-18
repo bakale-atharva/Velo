@@ -1,6 +1,9 @@
+const TICKS = 24;
+
 /**
- * Completed over total as a rounded bar with the count beside it. The fill
- * is the done teal on a muted track; finished projects get no celebration.
+ * Completed over total as a row of hairline ticks: done ticks in full ink,
+ * the rest faint, with the count beside it in the data voice. Takes the
+ * current text colour, so it inverts with a focused row.
  */
 export function Progress({
   completed,
@@ -12,6 +15,7 @@ export function Progress({
   className?: string;
 }) {
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const filled = Math.round((percent / 100) * TICKS);
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div
@@ -20,11 +24,13 @@ export function Progress({
         aria-valuemax={100}
         aria-valuenow={percent}
         aria-label={`${completed} of ${total} issues done`}
-        className="h-2 min-w-16 flex-1 overflow-hidden rounded-full bg-muted shadow-[inset_0_0_0_1px_var(--border)]"
+        className="flex h-3 min-w-16 flex-1 items-stretch justify-between"
       >
-        <div className="h-full rounded-full bg-count-teal" style={{ width: `${percent}%` }} />
+        {Array.from({ length: TICKS }, (_, index) => (
+          <span key={index} className={`w-px ${index < filled ? "bg-current" : "bg-rule"}`} />
+        ))}
       </div>
-      <span className="w-24 shrink-0 text-[13px] text-muted-foreground tabular-nums">
+      <span className="data w-24 shrink-0 text-[11px] opacity-70">
         {completed}/{total} · {percent}%
       </span>
     </div>

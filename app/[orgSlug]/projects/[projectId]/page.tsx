@@ -25,9 +25,9 @@ const PAGE_SIZE = 100;
 /** One labelled fact in the row under the header. */
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1">
-      <dt className="text-[13px] text-muted-foreground">{label}</dt>
-      <dd className="flex min-h-7 items-center gap-2 text-[15px]">{children}</dd>
+    <div className="grid content-between gap-3 border-r border-border px-3 py-5 last:border-r-0 md:px-6">
+      <dt className="signal-label">{label}</dt>
+      <dd className="flex min-h-7 items-center gap-2 text-[14px]">{children}</dd>
     </div>
   );
 }
@@ -95,7 +95,7 @@ function ProjectDetail() {
       />
       <ProjectDialog project={project} open={editing} onOpenChange={setEditing} />
 
-      <dl className="panel mx-3 mt-8 grid grid-cols-2 gap-x-10 gap-y-5 p-6 md:mx-6 md:grid-cols-[auto_auto_auto_auto_minmax(200px,1fr)]">
+      <dl className="grid grid-cols-2 border-b border-rule md:grid-cols-[minmax(140px,auto)_minmax(160px,auto)_minmax(120px,auto)_minmax(120px,auto)_minmax(200px,1fr)]">
         <Fact label="Status">
           <ProjectStatusTag status={project.status} />
         </Fact>
@@ -110,12 +110,12 @@ function ProjectDetail() {
           )}
         </Fact>
         <Fact label="Start">
-          <span className="tabular-nums">
+          <span className="data text-[13px] uppercase">
             {project.startDate === null ? "—" : formatDate(project.startDate)}
           </span>
         </Fact>
         <Fact label="Target">
-          <span className="tabular-nums">
+          <span className="data text-[13px] uppercase">
             {project.targetDate === null ? "—" : formatDate(project.targetDate)}
           </span>
         </Fact>
@@ -129,7 +129,7 @@ function ProjectDetail() {
       </dl>
 
       {project.description.trim() !== "" && (
-        <div className="max-w-3xl px-4 pt-8 md:px-7">
+        <div className="max-w-3xl border-b border-border px-3 py-8 md:px-6">
           <Markdown>{project.description}</Markdown>
         </div>
       )}

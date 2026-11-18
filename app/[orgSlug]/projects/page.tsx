@@ -1,6 +1,7 @@
 "use client";
 
-import { CirclePlus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { ROW_MUTED, TABLE, TABLE_HEAD, TABLE_ROW } from "@/components/states/table-styles";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
@@ -19,7 +20,7 @@ import { PageSkeleton } from "@/components/states/page-skeleton";
 import { formatDate } from "@/lib/dates";
 
 const ROW =
-  "grid grid-cols-[minmax(0,1fr)_130px] items-center gap-4 px-3 md:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px]";
+  "grid grid-cols-[minmax(0,1fr)_130px] gap-4 md:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px]";
 
 function Projects() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
@@ -38,8 +39,8 @@ function Projects() {
         title="Projects"
         subtitle={projects.length === 0 ? undefined : `${projects.length} total`}
         actions={
-          <Button size="lg" className="h-11 px-5 text-[15px]" onClick={() => setCreating(true)}>
-            <CirclePlus aria-hidden />
+          <Button onClick={() => setCreating(true)}>
+            <Plus aria-hidden />
             New project
           </Button>
         }
@@ -60,18 +61,15 @@ function Projects() {
           </EmptyState>
         </div>
       ) : (
-        <div role="table" aria-label="Projects" className="panel mx-3 mt-8 mb-12 p-3 md:mx-6">
-          <div
-            role="row"
-            className={`${ROW} pt-1 pb-3 text-[13px] font-medium text-muted-foreground`}
-          >
+        <div role="table" aria-label="Projects" className={TABLE}>
+          <div role="row" className={`${ROW} ${TABLE_HEAD}`}>
             <span role="columnheader">Name</span>
             <span role="columnheader">Status</span>
             <span role="columnheader" className="hidden md:block">Lead</span>
             <span role="columnheader" className="hidden md:block">Target</span>
             <span role="columnheader" className="hidden md:block">Progress</span>
           </div>
-          <div role="rowgroup" className="flex flex-col gap-0.5">
+          <div role="rowgroup" className="flex flex-col">
             {projects.map((project) => {
               const lead = project.leadId === null ? null : memberById.get(project.leadId);
               return (
@@ -79,17 +77,17 @@ function Projects() {
                   key={project._id}
                   role="row"
                   href={`/${orgSlug}/projects/${project._id}`}
-                  className={`${ROW} rounded-[14px] py-3 hover:bg-tile focus-visible:bg-tile focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring`}
+                  className={`${ROW} ${TABLE_ROW} h-11`}
                 >
-                  <span role="cell" className="truncate text-[15px] font-medium">
+                  <span role="cell" className="truncate text-[14px] font-medium">
                     {project.name}
                   </span>
                   <span role="cell">
                     <ProjectStatusTag status={project.status} />
                   </span>
-                  <span role="cell" className="hidden min-w-0 items-center gap-2 text-[14px] md:flex">
+                  <span role="cell" className="hidden min-w-0 items-center gap-2 text-[13px] md:flex">
                     {lead === null ? (
-                      <span className="text-muted-foreground">No lead</span>
+                      <span className={ROW_MUTED}>No lead</span>
                     ) : (
                       <>
                         <AssigneeAvatar member={lead} />
@@ -97,9 +95,9 @@ function Projects() {
                       </>
                     )}
                   </span>
-                  <span role="cell" className="hidden text-[14px] tabular-nums md:block">
+                  <span role="cell" className="data hidden text-[12px] uppercase md:block">
                     {project.targetDate === null ? (
-                      <span className="text-muted-foreground">—</span>
+                      <span className={ROW_MUTED}>—</span>
                     ) : (
                       formatDate(project.targetDate)
                     )}
