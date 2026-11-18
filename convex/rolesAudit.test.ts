@@ -176,6 +176,17 @@ describe("custom roles", () => {
     expect(await adminA.query(api.roles.list, {})).toEqual([]);
   });
 
+  test("assignments lists who holds which role, for admins only", async () => {
+    const { adminA, memberA } = await setup();
+    expect(await adminA.query(api.roles.assignments, {})).toEqual([]);
+    const roleId = await adminA.mutation(api.roles.create, { name: "Triager", permissions: [] });
+    await adminA.mutation(api.roles.assign, { userId: "member_a", roleId });
+    expect(await adminA.query(api.roles.assignments, {})).toEqual([{ userId: "member_a", roleId }]);
+    await expect(memberA.query(api.roles.assignments, {})).rejects.toThrow(/FORBIDDEN/);
+    await adminA.mutation(api.roles.assign, { userId: "member_a", roleId: null });
+    expect(await adminA.query(api.roles.assignments, {})).toEqual([]);
+  });
+
   test("role names are unique and roles stay inside their org", async () => {
     const { t, adminA, adminB } = await setup();
     await setPlan(t, ORG_B, "business");

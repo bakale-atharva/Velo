@@ -29,17 +29,40 @@ const COPY: Record<GatedFeature, { title: string; body: string; plan: string }> 
   },
 };
 
-/** Shown wherever a feature isn't in the workspace's plan. Links to billing. */
-export function UpgradePrompt({ feature }: { feature?: GatedFeature }) {
+/**
+ * Shown wherever a feature isn't in the workspace's plan; links to billing.
+ * The full form replaces a page or panel; `compact` is one line for a
+ * disabled control (e.g. the private-team checkbox).
+ */
+export function UpgradePrompt({
+  feature,
+  compact = false,
+  className = "",
+}: {
+  feature?: GatedFeature;
+  compact?: boolean;
+  className?: string;
+}) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const copy = feature
     ? COPY[feature]
     : { title: "Not in your plan", body: "This is part of a paid plan.", plan: "a paid plan" };
+  const href = `/${orgSlug}/settings/billing`;
+  if (compact) {
+    return (
+      <span className={`text-[13px] text-muted-foreground ${className}`}>
+        {copy.title}.{" "}
+        <Link href={href} className="font-medium text-foreground underline underline-offset-2 hover:text-ring">
+          See {copy.plan} in Billing
+        </Link>
+      </span>
+    );
+  }
   return (
-    <div className="panel iris-ring m-3 max-w-lg p-7 md:m-6">
+    <div className={`panel iris-ring max-w-lg p-7 ${className}`}>
       <h2 className="text-xl leading-7 font-semibold">{copy.title}</h2>
       <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{copy.body}</p>
-      <Link href={`/${orgSlug}/settings/billing`} className={`${buttonVariants({ size: "lg" })} mt-5`}>
+      <Link href={href} className={`${buttonVariants({ size: "lg" })} mt-5`}>
         See {copy.plan} in Billing
       </Link>
     </div>
