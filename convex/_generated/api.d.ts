@@ -9,6 +9,7 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as ai_guard from "../ai/guard.js";
 import type * as ai_models from "../ai/models.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as billing from "../billing.js";
@@ -50,6 +51,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  "ai/guard": typeof ai_guard;
   "ai/models": typeof ai_models;
   auditLogs: typeof auditLogs;
   billing: typeof billing;
