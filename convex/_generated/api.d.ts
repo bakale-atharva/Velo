@@ -9,6 +9,7 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as ai_models from "../ai/models.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as billing from "../billing.js";
 import type * as clerkSync from "../clerkSync.js";
@@ -49,6 +50,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  "ai/models": typeof ai_models;
   auditLogs: typeof auditLogs;
   billing: typeof billing;
   clerkSync: typeof clerkSync;
@@ -108,4 +110,7 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};
