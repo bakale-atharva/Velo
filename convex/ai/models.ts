@@ -7,7 +7,7 @@ export const CHAT_MODEL = "google/gemma-4-31b-it:free";
 export const FALLBACK_CHAT_MODEL = "google/gemma-4-26b-a4b-it:free";
 export const EMBEDDING_MODEL = "nvidia/nemotron-3-embed-1b:free";
 /** Length of every vector EMBEDDING_MODEL returns; the vector index is fixed to it. */
-export const EMBEDDING_DIMENSIONS = 2048;
+export { EMBEDDING_DIMENSIONS } from "./embeddingConfig";
 
 /** True when the OpenRouter key is set on the deployment. */
 export function aiConfigured(): boolean {

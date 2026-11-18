@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { EMBEDDING_DIMENSIONS } from "./ai/embeddingConfig";
 import { permissionValidator } from "./lib/permissions";
 
 // Tenant key: every tenant table stores the Clerk organization id ("org_...")
@@ -359,6 +360,19 @@ export default defineSchema({
     }),
     status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
   }).index("by_issueId", ["issueId"]),
+
+  // One vector per issue (title + description) for duplicate detection.
+  issueEmbeddings: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    embedding: v.array(v.float64()),
+  })
+    .index("by_issueId", ["issueId"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: EMBEDDING_DIMENSIONS,
+      filterFields: ["orgId"],
+    }),
 
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
