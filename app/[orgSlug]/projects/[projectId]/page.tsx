@@ -11,6 +11,7 @@ import { IssueGroups } from "@/components/issues/issue-groups";
 import { displayName, useWorkspaceLookups } from "@/components/issues/lookups";
 import { Markdown } from "@/components/issues/markdown";
 import { TeamPageHeader } from "@/components/issues/team-page-header";
+import { ReportButton } from "@/components/assistant/report-dialog";
 import { Progress } from "@/components/projects/progress";
 import { ProjectDialog } from "@/components/projects/project-dialog";
 import { ProjectStatusTag, statusLabel } from "@/components/projects/project-status";
@@ -84,9 +85,12 @@ function ProjectDetail() {
         title={project.name}
         subtitle={statusLabel(project.status)}
         actions={
-          <Button variant="outline" onClick={() => setEditing(true)}>
-            Edit project
-          </Button>
+          <>
+            <ReportButton kind="project" id={project._id} subject={project.name} />
+            <Button variant="outline" onClick={() => setEditing(true)}>
+              Edit project
+            </Button>
+          </>
         }
       />
       <ProjectDialog project={project} open={editing} onOpenChange={setEditing} />

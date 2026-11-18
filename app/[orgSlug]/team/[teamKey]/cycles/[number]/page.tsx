@@ -12,6 +12,7 @@ import { CycleDialog } from "@/components/cycles/cycle-dialog";
 import { Board } from "@/components/issues/issue-board";
 import { IssueGroups } from "@/components/issues/issue-groups";
 import { TeamPageHeader } from "@/components/issues/team-page-header";
+import { ReportButton } from "@/components/assistant/report-dialog";
 import { useTeamFromUrl } from "@/components/issues/use-team";
 import { useIssueView, ViewToggle } from "@/components/issues/view-toggle";
 import { Progress } from "@/components/projects/progress";
@@ -156,6 +157,7 @@ function CycleDetail() {
         actions={
           <>
             <ViewToggle view={view} onChange={setView} />
+            <ReportButton kind="cycle" id={cycle._id} subject={`${team.name} ${cycle.name}`} />
             {cycle.status !== "completed" && (
               <Button variant="outline" className="h-11 rounded-xl px-4" onClick={() => setEditing(true)}>
                 Edit cycle

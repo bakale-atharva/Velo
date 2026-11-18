@@ -17,6 +17,7 @@ import { Markdown } from "@/components/issues/markdown";
 import { UpgradePrompt } from "@/components/states/upgrade-prompt";
 import { errorMessage } from "@/lib/errors";
 import { ProposalCard } from "./proposal-card";
+import { StandupButton } from "./standup-button";
 
 const PAGE_SIZE = 40;
 const MAX_LENGTH = 4000;
@@ -170,6 +171,7 @@ function Chat() {
           <Plus aria-hidden />
           New chat
         </Button>
+        <StandupButton />
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
