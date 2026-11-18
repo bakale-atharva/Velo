@@ -36,7 +36,8 @@ const MESSAGES = {
   LIMIT_REACHED: "This workspace has reached its team limit.",
 };
 
-export function NewTeamDialog() {
+/** `trigger` replaces the sidebar's small plus button, e.g. with a labelled button. */
+export function NewTeamDialog({ trigger }: { trigger?: React.ReactElement } = {}) {
   const router = useRouter();
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const createTeam = useMutation(api.teams.create);
@@ -88,17 +89,21 @@ export function NewTeamDialog() {
         if (!next) reset();
       }}
     >
-      <DialogTrigger
-        render={
-          <button
-            type="button"
-            aria-label="New team"
-            className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-sidebar-ring"
-          />
-        }
-      >
-        <Plus className="size-4" aria-hidden />
-      </DialogTrigger>
+      {trigger !== undefined ? (
+        <DialogTrigger render={trigger} />
+      ) : (
+        <DialogTrigger
+          render={
+            <button
+              type="button"
+              aria-label="New team"
+              className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-sidebar-ring"
+            />
+          }
+        >
+          <Plus className="size-4" aria-hidden />
+        </DialogTrigger>
+      )}
       <DialogContent>
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
