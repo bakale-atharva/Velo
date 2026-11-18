@@ -22,7 +22,7 @@ import { appError } from "../lib/errors";
 import schema from "../schema";
 import { buildAgent, withFallback } from "./agent";
 import { requireAiAccess } from "./guard";
-import { readTools } from "./tools";
+import { readTools, writeTools } from "./tools";
 
 // Assistant conversations. A member sees and writes only their own threads.
 
@@ -145,7 +145,7 @@ export const sendMessage = action({
       ...threadOpts,
       prompt: text,
     });
-    const tools = readTools(member);
+    const tools = { ...readTools(member), ...writeTools(member, thread._id) };
     const result = await withFallback((model) =>
       buildAgent(model, tools).generateText(ctx, threadOpts, { promptMessageId: messageId }),
     );

@@ -1,8 +1,10 @@
-import { createTool } from "@convex-dev/agent";
+import { createTool, type ToolCtx } from "@convex-dev/agent";
 import type { ToolSet } from "ai";
 import { z } from "zod";
 import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 import type { MemberInfo } from "../lib/auth";
+import type { ProposedAction } from "./proposals";
 
 /**
  * The assistant's read-only tools, bound to the member who sent the message.
@@ -46,6 +48,70 @@ export function readTools(member: MemberInfo): ToolSet {
       description: "The workspace's issue labels.",
       inputSchema: z.object({}),
       execute: async (ctx) => await ctx.runQuery(internal.ai.data.listLabels, caller),
+    }),
+  };
+}
+
+const priority = z
+  .number()
+  .int()
+  .min(0)
+  .max(4)
+  .describe("0 none, 1 urgent, 2 high, 3 medium, 4 low");
+const assignee = z
+  .string()
+  .nullable()
+  .describe("A userId from listMembers, or null for unassigned");
+
+/**
+ * Write tools. None of them changes anything: each records a proposal in the
+ * thread that the member reviews and applies. They report "proposed" or the
+ * reason the proposal was refused (NOT_FOUND, INVALID_INPUT, ...).
+ */
+export function writeTools(member: MemberInfo, threadId: Id<"aiThreads">): ToolSet {
+  const caller = { orgId: member.orgId, userId: member.userId, role: member.role };
+  const propose = async (ctx: ToolCtx, action: ProposedAction) => {
+    const result = await ctx.runMutation(internal.ai.proposals.create, { ...caller, threadId, action });
+    return result.ok
+      ? { proposed: result.description, note: "Waiting for the user to apply it." }
+      : { refused: result.error };
+  };
+  return {
+    proposeCreateIssue: createTool({
+      description: "Propose a new issue. The user must apply it.",
+      inputSchema: z.object({
+        teamKey: z.string().describe("Team key such as ENG"),
+        title: z.string(),
+        description: z.string().describe("Markdown; may be empty"),
+        priority,
+        assigneeId: assignee,
+      }),
+      execute: async (ctx, input) => await propose(ctx, { kind: "createIssue", ...input }),
+    }),
+    proposeUpdateIssue: createTool({
+      description: "Propose changing an issue's title, description or state (by state name). The user must apply it.",
+      inputSchema: z.object({
+        identifier: z.string(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        stateName: z.string().optional().describe("Name of a workflow state of the issue's team"),
+      }),
+      execute: async (ctx, input) => await propose(ctx, { kind: "updateIssue", ...input }),
+    }),
+    proposeAssignIssue: createTool({
+      description: "Propose assigning or unassigning an issue. The user must apply it.",
+      inputSchema: z.object({ identifier: z.string(), assigneeId: assignee }),
+      execute: async (ctx, input) => await propose(ctx, { kind: "assignIssue", ...input }),
+    }),
+    proposeSetPriority: createTool({
+      description: "Propose an issue's priority. The user must apply it.",
+      inputSchema: z.object({ identifier: z.string(), priority }),
+      execute: async (ctx, input) => await propose(ctx, { kind: "setPriority", ...input }),
+    }),
+    proposeAddComment: createTool({
+      description: "Propose a comment on an issue. The user must apply it.",
+      inputSchema: z.object({ identifier: z.string(), body: z.string() }),
+      execute: async (ctx, input) => await propose(ctx, { kind: "addComment", ...input }),
     }),
   };
 }

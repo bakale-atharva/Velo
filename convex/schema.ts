@@ -66,6 +66,34 @@ export const viewGroupBy = v.union(
   v.literal("none"),
 );
 
+// One change the assistant proposes (aiProposals). Issues are named by
+// identifier and teams by key, as the model knows them; they are resolved
+// and checked again when the member applies the proposal.
+export const proposedAction = v.union(
+  v.object({
+    kind: v.literal("createIssue"),
+    teamKey: v.string(),
+    title: v.string(),
+    description: v.string(),
+    priority: v.number(),
+    assigneeId: v.union(v.string(), v.null()),
+  }),
+  v.object({
+    kind: v.literal("updateIssue"),
+    identifier: v.string(),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    stateName: v.optional(v.string()),
+  }),
+  v.object({
+    kind: v.literal("assignIssue"),
+    identifier: v.string(),
+    assigneeId: v.union(v.string(), v.null()),
+  }),
+  v.object({ kind: v.literal("setPriority"), identifier: v.string(), priority: v.number() }),
+  v.object({ kind: v.literal("addComment"), identifier: v.string(), body: v.string() }),
+);
+
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
@@ -296,6 +324,19 @@ export default defineSchema({
     agentThreadId: v.string(),
     title: v.string(),
   }).index("by_orgId_and_userId", ["orgId", "userId"]),
+
+  // Changes the assistant proposed. Nothing is written until the member who
+  // asked applies the proposal; each action is described in plain words.
+  aiProposals: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    threadId: v.id("aiThreads"),
+    actions: v.array(proposedAction),
+    descriptions: v.array(v.string()),
+    status: v.union(v.literal("pending"), v.literal("applied"), v.literal("rejected")),
+    // Issues created or changed when applied, for links in the thread.
+    appliedIdentifiers: v.array(v.string()),
+  }).index("by_threadId", ["threadId"]),
 
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
