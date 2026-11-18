@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import { useHotkeys } from "react-hotkeys-hook";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog";
 import { SHORTCUTS } from "@/lib/shortcuts";
 import { CommandPalette, type PaletteMode } from "./command-palette";
@@ -16,6 +17,8 @@ type CommandCenter = {
   openPalette: (mode?: PaletteMode, identifier?: string) => void;
   /** Opens New issue for a team, or for the team in the URL, or the first. */
   openCreateIssue: (teamId?: Id<"teams">) => void;
+  /** Opens the assistant panel (also Cmd/Ctrl+J). */
+  openAssistant: () => void;
 };
 
 const Context = createContext<CommandCenter | null>(null);
@@ -93,7 +96,17 @@ export function CommandCenterProvider({
     { enableOnFormTags: true, preventDefault: true },
   );
 
-  const value = useMemo(() => ({ openPalette, openCreateIssue }), [openPalette, openCreateIssue]);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const openAssistant = useCallback(() => setAssistantOpen(true), []);
+  useHotkeys(SHORTCUTS.assistant.keys, () => setAssistantOpen((open) => !open), {
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  const value = useMemo(
+    () => ({ openPalette, openCreateIssue, openAssistant }),
+    [openPalette, openCreateIssue, openAssistant],
+  );
 
   return (
     <Context.Provider value={value}>
@@ -115,6 +128,7 @@ export function CommandCenterProvider({
       {createFor !== null && (
         <CreateIssueHost teamId={createFor} open={creating} onOpenChange={setCreating} />
       )}
+      <AssistantPanel open={assistantOpen} onOpenChange={setAssistantOpen} />
     </Context.Provider>
   );
 }

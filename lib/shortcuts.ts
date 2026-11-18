@@ -8,6 +8,7 @@
 
 export const SHORTCUTS = {
   palette: { keys: "mod+k", display: ["⌘/Ctrl", "K"], label: "Open command palette", group: "General" },
+  assistant: { keys: "mod+j", display: ["⌘/Ctrl", "J"], label: "Open the assistant", group: "General" },
   help: { keys: "shift+slash", display: ["?"], label: "Show keyboard shortcuts", group: "General" },
   create: { keys: "c", display: ["C"], label: "Create issue", group: "General" },
   search: { keys: "slash", display: ["/"], label: "Search", group: "General" },
