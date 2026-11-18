@@ -28,7 +28,7 @@ import { DuePill } from "./due-pill";
 import { displayName, useWorkspaceLookups } from "./lookups";
 import { useNow } from "./use-now";
 import { PriorityRamp } from "./priority-ramp";
-import { StateHeading, stateColor } from "./state-heading";
+import { StateHeading } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
 type Column = { stateId: Id<"workflowStates">; issues: Issue[] };
@@ -119,7 +119,7 @@ function BoardColumn({
       }`}
     >
       <header className="px-1">
-        <StateHeading name={state.name} count={column.issues.length} color={stateColor(state.type)} />
+        <StateHeading name={state.name} count={column.issues.length} type={state.type} />
       </header>
       <SortableContext items={column.issues.map((issue) => issue._id)} strategy={verticalListSortingStrategy}>
         <ul ref={setNodeRef} className="mt-5 flex min-h-24 flex-1 flex-col gap-4">

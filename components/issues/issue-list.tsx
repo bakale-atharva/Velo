@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/states/empty-state";
 import { PageSkeleton } from "@/components/states/page-skeleton";
 import { IssueRow } from "./issue-row";
-import { StateHeading, stateColor } from "./state-heading";
+import { StateHeading } from "./state-heading";
 
-/** A group of issue rows sits in its own floating panel. */
-export const GROUP_PANEL = "panel mx-3 mb-4 p-3 md:mx-6";
+/** A group of issue rows: full width, opened by a hairline rule. */
+export const GROUP_PANEL = "border-t border-rule first:border-t-0";
 
 const PAGE_SIZE = 100;
 
@@ -33,15 +33,10 @@ export function StateSections({
         if (inState.length === 0) return null;
         return (
           <section key={state._id} aria-labelledby={`state-${state._id}`} className={GROUP_PANEL}>
-            <div className="px-3 pt-2 pb-3">
-              <StateHeading
-                id={`state-${state._id}`}
-                name={state.name}
-                count={inState.length}
-                color={stateColor(state.type)}
-              />
+            <div className="px-3 pt-5 pb-2 md:px-6">
+              <StateHeading id={`state-${state._id}`} name={state.name} count={inState.length} type={state.type} />
             </div>
-            <ul className="flex flex-col gap-0.5">
+            <ul className="flex flex-col pb-2">
               {inState.map((issue) => (
                 <li key={issue._id}>
                   <IssueRow issue={issue} orgSlug={orgSlug} />
@@ -57,7 +52,7 @@ export function StateSections({
 
 /**
  * A team's issues grouped by workflow state in the team's state order, each
- * group headed by its name and live count on a state-coloured rule.
+ * group headed by its name, gauge and live count.
  */
 export function IssueList({
   teamId,
@@ -81,7 +76,7 @@ export function IssueList({
     return (
       <div className="px-3 md:px-6">
         <EmptyState title="No issues yet">
-          Create the first issue with <kbd className="font-semibold">C</kbd> or the New issue button.
+          Create the first issue with <kbd className="data font-medium">C</kbd> or the New issue button.
         </EmptyState>
       </div>
     );
@@ -98,7 +93,7 @@ export function IssueList({
         </div>
       )}
       {status === "LoadingMore" && (
-        <p className="px-3 pt-2 text-[13px] text-muted-foreground md:px-6">Loading more…</p>
+        <p className="data px-3 pt-2 text-[13px] text-muted-foreground md:px-6">Loading more…</p>
       )}
     </div>
   );

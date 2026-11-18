@@ -49,13 +49,10 @@ export function useIssueView(): [IssueView, (view: IssueView) => void] {
   return [view, setView];
 }
 
+/** List / Board as a hairline segmented control; the chosen half inverts. */
 export function ViewToggle({ view, onChange }: { view: IssueView; onChange: (view: IssueView) => void }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label="Layout"
-      className="flex gap-1 rounded-[14px] bg-muted p-1 shadow-[inset_0_0_0_1px_var(--border)]"
-    >
+    <div role="radiogroup" aria-label="Layout" className="flex border border-rule">
       {(["list", "board"] as const).map((option) => (
         <button
           key={option}
@@ -63,10 +60,8 @@ export function ViewToggle({ view, onChange }: { view: IssueView; onChange: (vie
           role="radio"
           aria-checked={view === option}
           onClick={() => onChange(option)}
-          className={`h-9 rounded-[10px] px-3.5 text-[14px] capitalize transition-colors ${
-            view === option
-              ? "bg-panel font-medium text-foreground shadow-[0_1px_2px_rgb(20_22_22/0.08),0_4px_10px_-4px_rgb(20_22_22/0.18)]"
-              : "text-muted-foreground hover:text-foreground"
+          className={`data h-8 px-3 text-[12px] uppercase ${
+            view === option ? "inverted" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {option}

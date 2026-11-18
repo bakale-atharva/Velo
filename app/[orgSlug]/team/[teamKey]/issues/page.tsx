@@ -1,6 +1,7 @@
 "use client";
 
-import { CirclePlus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { ActivityBarcode } from "@/components/issues/activity-barcode";
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -34,33 +35,35 @@ function TeamIssues() {
       <TeamPageHeader
         title={team.name}
         subtitle={team.key}
+        meta={<>Created and completed<br />last 7 days</>}
         nav={teamNav(orgSlug, team.key, pathname)}
         actions={<MemberStack />}
+        signal={<ActivityBarcode teamId={team._id} />}
       />
       <PageSection
         title={filtering ? "Filtered issues" : view === "board" ? "Board" : "All issues"}
         controls={
           <>
             <ViewToggle view={view} onChange={setView} />
-            <span aria-hidden className="mx-1 hidden h-7 w-px bg-rule sm:block" />
-            <Button size="lg" className="h-11 px-5 text-[15px]" onClick={() => setCreating(true)}>
-              <CirclePlus aria-hidden />
-              New issue
-            </Button>
-            <div className="ml-auto">
+            <div className="ml-2">
               <FilterBar
                 filter={filter}
                 onChange={setFilter}
                 teamId={team._id}
                 actions={
                   filtering ? (
-                    <Button variant="outline" className="h-10 rounded-xl" onClick={() => setSaving(true)}>
+                    <Button variant="outline" onClick={() => setSaving(true)}>
                       Save view
                     </Button>
                   ) : undefined
                 }
               />
             </div>
+            <Button className="ml-auto" onClick={() => setCreating(true)}>
+              <Plus aria-hidden />
+              New issue
+              <kbd className="data ml-1 text-[11px] opacity-60">C</kbd>
+            </Button>
           </>
         }
       >
@@ -72,7 +75,7 @@ function TeamIssues() {
           onOpenChange={setSaving}
         />
         <CreateIssueDialog team={team} states={states} open={creating} onOpenChange={setCreating} />
-        <div className="-mx-3 flex flex-1 flex-col pt-6 md:-mx-6">
+        <div className="flex flex-1 flex-col">
           {filtering ? (
             <FilteredIssues
               filter={{ ...filter, teamId: team._id }}
