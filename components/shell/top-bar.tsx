@@ -1,30 +1,32 @@
 "use client";
 
 import { OrganizationSwitcher } from "@clerk/nextjs";
-import { ChevronRight, Command } from "lucide-react";
+import { Command } from "lucide-react";
 import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useCommandCenter } from "@/components/commands/command-center";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
- * The floating bar over the work field: a breadcrumb from the workspace to
- * the active organization (which doubles as the org switcher), and the
- * command palette button on the right.
+ * A slim strip over the work field, closed by a hairline: the workspace path
+ * (the organization doubles as the switcher) on the left, theme and the
+ * command palette on the right.
  */
 export function TopBar({ orgSlug }: { orgSlug: string }) {
   const { openPalette } = useCommandCenter();
   return (
-    <div className="panel flex h-[68px] shrink-0 items-center gap-2 px-3 md:px-4">
+    <div className="flex h-12 shrink-0 items-center gap-2 border-b border-rule px-3 md:px-6">
       <SidebarTrigger aria-label="Open navigation" className="md:hidden" />
       <nav aria-label="Workspace" className="flex min-w-0 items-center gap-2">
         <Link
           href={`/${orgSlug}/my-issues`}
-          className="hidden h-10 items-center rounded-xl bg-muted px-3.5 text-[15px] text-muted-foreground hover:bg-secondary hover:text-foreground sm:inline-flex"
+          className="signal-label hidden hover:text-foreground sm:inline"
         >
           Workspace
         </Link>
-        <ChevronRight className="hidden size-4 text-muted-foreground sm:block" aria-hidden />
+        <span aria-hidden className="data hidden text-[12px] text-faint sm:inline">
+          /
+        </span>
         <OrganizationSwitcher
           hidePersonal
           afterSelectOrganizationUrl="/:slug/my-issues"
@@ -33,9 +35,9 @@ export function TopBar({ orgSlug }: { orgSlug: string }) {
             elements: {
               rootBox: "min-w-0",
               organizationSwitcherTrigger:
-                "h-10 rounded-xl px-2 text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
+                "h-8 rounded-sm px-2 text-foreground hover:bg-muted focus-visible:outline-1 focus-visible:outline-ring",
               organizationPreviewAvatarBox: "hidden",
-              organizationPreviewMainIdentifier: "text-[15px] font-medium text-foreground",
+              organizationPreviewMainIdentifier: "text-[13.5px] font-medium text-foreground",
               organizationSwitcherTriggerIcon: "text-muted-foreground",
             },
           }}
@@ -47,13 +49,11 @@ export function TopBar({ orgSlug }: { orgSlug: string }) {
       <button
         type="button"
         onClick={() => openPalette()}
-        className="iris-ring ml-auto inline-flex sm:ml-0 h-11 items-center gap-2 rounded-[14px] px-4 text-[15px] font-medium shadow-(--shadow-lift) [--iris-fill:var(--panel)] hover:[--iris-fill:var(--accent)]"
+        className="ml-auto inline-flex h-8 items-center gap-2 border border-rule px-3 text-[13px] hover:border-foreground sm:ml-0"
       >
-        <Command className="size-4" aria-hidden />
+        <Command className="size-3.5" aria-hidden />
         Commands
-        <kbd className="ml-1 hidden rounded-md bg-muted px-1.5 font-sans text-xs text-muted-foreground sm:inline">
-          ⌘K
-        </kbd>
+        <kbd className="data hidden text-[11px] text-muted-foreground sm:inline">⌘K</kbd>
       </button>
     </div>
   );
