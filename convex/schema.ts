@@ -288,6 +288,15 @@ export default defineSchema({
     metadata: v.record(v.string(), v.string()),
   }).index("by_orgId", ["orgId"]),
 
+  // A member's assistant conversation. Messages live in the agent component's
+  // thread (`agentThreadId`); this row ties it to the org and its owner.
+  aiThreads: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    agentThreadId: v.string(),
+    title: v.string(),
+  }).index("by_orgId_and_userId", ["orgId", "userId"]),
+
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
     svixId: v.string(),

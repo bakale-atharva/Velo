@@ -9,6 +9,8 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as ai_agent from "../ai/agent.js";
+import type * as ai_chat from "../ai/chat.js";
 import type * as ai_guard from "../ai/guard.js";
 import type * as ai_models from "../ai/models.js";
 import type * as auditLogs from "../auditLogs.js";
@@ -51,6 +53,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  "ai/agent": typeof ai_agent;
+  "ai/chat": typeof ai_chat;
   "ai/guard": typeof ai_guard;
   "ai/models": typeof ai_models;
   auditLogs: typeof auditLogs;
