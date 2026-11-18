@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { EMBEDDING_DIMENSIONS } from "./ai/embeddingConfig";
 import { permissionValidator } from "./lib/permissions";
 
 // Tenant key: every tenant table stores the Clerk organization id ("org_...")
@@ -64,6 +65,34 @@ export const viewGroupBy = v.union(
   v.literal("priority"),
   v.literal("project"),
   v.literal("none"),
+);
+
+// One change the assistant proposes (aiProposals). Issues are named by
+// identifier and teams by key, as the model knows them; they are resolved
+// and checked again when the member applies the proposal.
+export const proposedAction = v.union(
+  v.object({
+    kind: v.literal("createIssue"),
+    teamKey: v.string(),
+    title: v.string(),
+    description: v.string(),
+    priority: v.number(),
+    assigneeId: v.union(v.string(), v.null()),
+  }),
+  v.object({
+    kind: v.literal("updateIssue"),
+    identifier: v.string(),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    stateName: v.optional(v.string()),
+  }),
+  v.object({
+    kind: v.literal("assignIssue"),
+    identifier: v.string(),
+    assigneeId: v.union(v.string(), v.null()),
+  }),
+  v.object({ kind: v.literal("setPriority"), identifier: v.string(), priority: v.number() }),
+  v.object({ kind: v.literal("addComment"), identifier: v.string(), body: v.string() }),
 );
 
 export default defineSchema({
@@ -287,6 +316,63 @@ export default defineSchema({
     targetId: v.string(),
     metadata: v.record(v.string(), v.string()),
   }).index("by_orgId", ["orgId"]),
+
+  // A member's assistant conversation. Messages live in the agent component's
+  // thread (`agentThreadId`); this row ties it to the org and its owner.
+  aiThreads: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    agentThreadId: v.string(),
+    title: v.string(),
+  }).index("by_orgId_and_userId", ["orgId", "userId"]),
+
+  // Changes the assistant proposed. Nothing is written until the member who
+  // asked applies the proposal; each action is described in plain words.
+  aiProposals: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    threadId: v.id("aiThreads"),
+    actions: v.array(proposedAction),
+    descriptions: v.array(v.string()),
+    status: v.union(v.literal("pending"), v.literal("applied"), v.literal("rejected")),
+    // Issues created or changed when applied, for links in the thread.
+    appliedIdentifiers: v.array(v.string()),
+  }).index("by_threadId", ["threadId"]),
+
+  // What the assistant suggests for an issue: a summary, labels or a priority
+  // to accept, or likely duplicates. Accepting labels or a priority applies
+  // them to the issue (marked `viaAssistant`).
+  aiSuggestions: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    kind: v.union(
+      v.literal("summary"),
+      v.literal("labels"),
+      v.literal("priority"),
+      v.literal("duplicate"),
+    ),
+    payload: v.object({
+      text: v.optional(v.string()),
+      labelIds: v.optional(v.array(v.id("labels"))),
+      priority: v.optional(v.number()),
+      issueIds: v.optional(v.array(v.id("issues"))),
+      scores: v.optional(v.array(v.number())),
+    }),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
+  }).index("by_issueId", ["issueId"]),
+
+  // One vector per issue (title + description) for duplicate detection.
+  issueEmbeddings: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    embedding: v.array(v.float64()),
+  })
+    .index("by_issueId", ["issueId"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: EMBEDDING_DIMENSIONS,
+      filterFields: ["orgId"],
+    }),
 
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({

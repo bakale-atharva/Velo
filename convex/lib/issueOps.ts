@@ -1,9 +1,11 @@
 import { generateKeyBetween } from "fractional-indexing";
+import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import schema from "../schema";
 import { logActivity, type ActivityType } from "./activity";
 import type { MemberInfo } from "./auth";
+import { hasFeature } from "./entitlements";
 import { appError } from "./errors";
 import { cleanText } from "./input";
 import { syncProjectCounts } from "./projectCounts";
@@ -382,7 +384,15 @@ export async function createIssue(
     throw appError("NOT_FOUND");
   }
   await syncProjectCounts(ctx, null, issue);
+  await scheduleEmbedding(ctx, issue);
   return issue;
+}
+
+/** Re-embeds an issue's text for duplicate detection, in orgs with the assistant. */
+async function scheduleEmbedding(ctx: MutationCtx, issue: Doc<"issues">) {
+  if (await hasFeature(ctx, issue.orgId, "ai_assistant")) {
+    await ctx.scheduler.runAfter(0, internal.ai.embeddings.embedIssue, { issueId: issue._id });
+  }
 }
 
 export type UpdateIssueInput = {
@@ -536,6 +546,9 @@ export async function updateIssue(
   }
   await ctx.db.patch("issues", issue._id, patch);
   await syncProjectCounts(ctx, issue, { ...issue, ...patch });
+  if (patch.title !== undefined || patch.description !== undefined) {
+    await scheduleEmbedding(ctx, issue);
+  }
   for (const change of changes) {
     await logActivity(ctx, {
       orgId: member.orgId,
