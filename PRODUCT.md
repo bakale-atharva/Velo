@@ -37,7 +37,20 @@ Speed and keyboard. Every change appears instantly and live for everyone (Convex
 
 ## Brand Commitments
 
-Name: Velo. No logo or other brand assets exist yet. The identity must be original, not a copy of any existing product's look (Linear included).
+Name: Velo. No logo or other brand assets exist yet; the redesign creates them (mark, display face, signature motif).
+
+Borrowing from Linear is allowed (user's explicit permission, 2026-11-18): its interaction patterns, density, layout conventions and finish level may be adopted directly. Velo still carries its own name, mark and signature motif; never Linear's logo, wordmark or copy.
+
+Taste references (user-chosen, `.impeccable/references/`): Linear, OpenClaw, OpenRouter and Convex marketing sites. What they share and Velo adopts:
+
+- Dark-first, inky ground with depth (near-black or warm brown-black, never flat grey). Light theme stays first-class for accessibility.
+- One signature move used with conviction. Chosen world (2026-11-18): "Datamatics", pure black and white at data density; the signature is full inversion for the active path and a live activity barcode. The user's colour rule: no accent hue; the five workflow states get small, muted tints, always paired with a non-colour cue.
+- Big, tightly tracked, confident display type.
+- A monospace voice for engineering data: issue ids, estimates, shortcuts, timestamps, small uppercase section labels.
+- One signature visual the brand owns, tied to Velo's mechanism (speed, keyboard, live sync). Dark plus one accent without that signature reads as generic and is not acceptable.
+- Product UI framed as an object (window, panel) on persuasive surfaces.
+
+The user wants the redesign to be bold, not safe: "professional and modern" alone produced results they found uncool.
 
 ## Evidence on Hand
 
