@@ -7,6 +7,7 @@ import { DuePill } from "./due-pill";
 import { useNow } from "./use-now";
 import { useWorkspaceLookups } from "./lookups";
 import { PriorityRamp } from "./priority-ramp";
+import { SignalFlash } from "./signal-flash";
 import { StageGauge } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
@@ -26,7 +27,7 @@ export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) 
       // J/K selection and S/A/P/L act on the focused row (components/commands/shortcuts.tsx).
       data-issue-row=""
       data-identifier={issue.identifier}
-      className="group grid h-10 grid-cols-[84px_56px_14px_minmax(0,1fr)_auto] items-center gap-4 border-b border-border px-3 hover:bg-tile focus-visible:bg-foreground focus-visible:text-background focus-visible:outline-none md:px-6"
+      className="group relative grid h-10 grid-cols-[84px_56px_14px_minmax(0,1fr)_auto] items-center gap-4 border-b border-border px-3 hover:bg-tile focus-visible:bg-foreground focus-visible:text-background focus-visible:outline-none md:px-6"
     >
       <span className="data text-[12px] text-muted-foreground group-focus-visible:text-background">
         {issue.identifier}
@@ -59,6 +60,9 @@ export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) 
         <span className="hidden w-8 text-right sm:inline">{issue.estimate === null ? "—" : `${issue.estimate}p`}</span>
         <AssigneeAvatar member={issue.assigneeId === null ? null : memberById.get(issue.assigneeId)} size={22} />
       </span>
+      <SignalFlash
+        signature={[issue.title, issue.stateId, issue.priority, issue.assigneeId, issue.estimate, issue.dueDate, issue.labelIds.join()].join("|")}
+      />
     </Link>
   );
 }

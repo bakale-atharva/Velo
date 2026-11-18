@@ -22,7 +22,7 @@ import {
 import { IssueRow } from "./issue-row";
 import { useWorkspaceLookups } from "./lookups";
 import { Markdown } from "./markdown";
-import { StateHeading } from "./state-heading";
+import { StageGauge, StateHeading } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
 type Patch = Omit<Parameters<ReturnType<typeof useMutation<typeof api.issues.update>>>[0], "issueId">;
@@ -61,7 +61,7 @@ function Title({ issue }: { issue: Issue }) {
           e.currentTarget.blur();
         }
       }}
-      className="field-sizing-content w-full resize-none rounded-lg bg-transparent text-[30px] leading-9 font-semibold tracking-[-0.02em] outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+      className="field-sizing-content w-full resize-none bg-transparent text-[34px] leading-10 font-semibold tracking-[-0.035em] outline-none focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-ring"
     />
   );
 }
@@ -117,8 +117,8 @@ function Description({ issue }: { issue: Issue }) {
         </Button>
       </div>
       {draft.trim() !== "" && (
-        <div className="mt-2 rounded-[14px] bg-tile p-4">
-          <p className="mb-2 text-[13px] font-medium text-muted-foreground">Preview</p>
+        <div className="mt-2 border border-rule p-4">
+          <p className="signal-label mb-3">Preview</p>
           <Markdown>{draft}</Markdown>
         </div>
       )}
@@ -133,11 +133,12 @@ function Properties({ issue, states }: { issue: Issue; states: Doc<"workflowStat
   const cycles = useQuery(api.cycles.list, { teamId: issue.teamId });
   const id = useId();
   const due = issue.dueDate === null ? "" : new Date(issue.dueDate).toISOString().slice(0, 10);
-  const row = "grid grid-cols-[92px_minmax(0,1fr)] items-center gap-3 py-1.5 text-[14px]";
+  const row =
+    "grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3 border-b border-border py-1.5 text-[13.5px] [&>span:first-child]:data [&>span:first-child]:text-[11px] [&>span:first-child]:tracking-[0.14em] [&>span:first-child]:uppercase";
   return (
-    <aside aria-label="Properties" className="panel p-5">
-      <h2 className="mb-2 flex items-center gap-3 text-[15px] font-medium">
-        <span aria-hidden className="h-6 w-[3px] rounded-full" style={{ background: `var(--state-${issue.stateType})` }} />
+    <aside aria-label="Properties">
+      <h2 className="signal-label mb-3 flex items-center gap-3 text-foreground">
+        <StageGauge type={issue.stateType} />
         Properties
       </h2>
       <label htmlFor={`${id}-state`} className={row}>
@@ -202,8 +203,8 @@ function Properties({ issue, states }: { issue: Issue; states: Doc<"workflowStat
 function ParentRow({ issue }: { issue: Issue }) {
   const update = useUpdate(issue._id);
   return (
-    <div className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-3 py-1.5 text-[14px]">
-      <span className="text-muted-foreground">Parent</span>
+    <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-3 border-b border-border py-2.5 text-[13.5px]">
+      <span className="data text-[11px] tracking-[0.14em] text-muted-foreground uppercase">Parent</span>
       {issue.parentId === null ? (
         <span className="text-muted-foreground">None</span>
       ) : (
@@ -223,9 +224,9 @@ function SubIssues({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
   const create = useMutation(api.issues.create);
   const [title, setTitle] = useState("");
   return (
-    <section aria-label="Sub-issues" className="mt-10">
-      <StateHeading name="Sub-issues" count={children?.length ?? 0} color="var(--state-started)" />
-      <ul className="-mx-3 mt-3 flex flex-col gap-0.5">
+    <section aria-label="Sub-issues" className="mt-10 border-t border-rule pt-5">
+      <StateHeading name="Sub-issues" count={children?.length ?? 0} />
+      <ul className="-mx-3 mt-3 flex flex-col md:-mx-6">
         {children?.map((child) => (
           <li key={child._id}>
             <IssueRow issue={child} orgSlug={orgSlug} />
@@ -266,19 +267,17 @@ export function IssueDetail({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="grid items-start gap-5 px-3 pt-5 pb-12 md:px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <article className="panel min-w-0 p-6 md:p-8">
-        <span className="inline-flex h-7 items-center rounded-lg bg-chip px-2.5 text-[13px] font-medium text-muted-foreground tabular-nums">
-          {issue.identifier}
-        </span>
-        <div className="mt-4">
+    <div className="grid flex-1 items-stretch lg:grid-cols-[minmax(0,1fr)_320px]">
+      <article className="min-w-0 px-3 pt-8 pb-12 md:px-6 lg:px-10">
+        <span className="data text-[12px] text-muted-foreground">{issue.identifier}</span>
+        <div className="mt-3">
           <Title key={issue._id} issue={issue} />
         </div>
         <Description key={`d-${issue._id}`} issue={issue} />
         <SubIssues issue={issue} orgSlug={orgSlug} />
         {children}
       </article>
-      <div className="grid min-w-0 gap-5">
+      <div className="grid min-w-0 content-start gap-8 border-t border-rule px-3 py-8 md:px-6 lg:border-t-0 lg:border-l">
         <Properties issue={issue} states={states} />
         <IssueAssist issueId={issue._id} />
       </div>

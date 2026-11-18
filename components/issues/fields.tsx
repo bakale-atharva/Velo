@@ -201,14 +201,14 @@ export function LabelPicker({
           <ul>
             {labels.map((label) => (
               <li key={label._id}>
-                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-muted">
+                <label className="flex cursor-pointer items-center gap-2.5 px-2 py-1.5 text-[13.5px] hover:bg-muted">
                   <Checkbox
                     checked={selected.has(label._id)}
                     onCheckedChange={(checked) =>
                       onChange(checked ? [...value, label._id] : value.filter((id) => id !== label._id))
                     }
                   />
-                  <span className="size-2 rounded-full" style={{ background: label.color }} aria-hidden />
+                  <span className="size-[7px]" style={{ background: label.color }} aria-hidden />
                   {label.name}
                   {selected.has(label._id) && <Check className="ml-auto size-3.5" aria-hidden />}
                 </label>

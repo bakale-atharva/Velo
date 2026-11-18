@@ -80,23 +80,20 @@
   --shadow-press: none;
   /* Motion: one move, a single-frame inversion when a live change lands. */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-signal: signal 420ms steps(1, end);
+  --animate-signal: signal 480ms steps(1, end) forwards;
   @keyframes signal {
     0% {
-      background: var(--foreground);
-      color: var(--background);
+      opacity: 1;
     }
-    40% {
-      background: transparent;
-      color: inherit;
+    35% {
+      opacity: 0;
     }
     55% {
-      background: var(--foreground);
-      color: var(--background);
+      opacity: 1;
     }
+    75%,
     100% {
-      background: transparent;
-      color: inherit;
+      opacity: 0;
     }
   }
 }
@@ -239,14 +236,14 @@
 
 /* Data voice: monospace, tabular, slightly open. */
 @utility data {
-  font-family: var(--font-mono);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
 
 /* Section labels: small tracked uppercase mono. */
 @utility signal-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 11px;
   line-height: 1;
   letter-spacing: 0.18em;

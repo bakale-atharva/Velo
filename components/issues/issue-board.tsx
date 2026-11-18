@@ -28,7 +28,7 @@ import { DuePill } from "./due-pill";
 import { displayName, useWorkspaceLookups } from "./lookups";
 import { useNow } from "./use-now";
 import { PriorityRamp } from "./priority-ramp";
-import { StateHeading } from "./state-heading";
+import { StageGauge, StateHeading } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
 type Column = { stateId: Id<"workflowStates">; issues: Issue[] };
@@ -63,39 +63,36 @@ function BoardItem({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
       {...attributes}
       {...listeners}
       aria-roledescription="Draggable issue"
-      className={`touch-none overflow-hidden rounded-[20px] bg-tile outline-none transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-        isDragging ? "relative z-10 shadow-(--shadow-lift)" : ""
+      className={`group touch-none border border-rule bg-background outline-none hover:border-input focus-visible:bg-foreground focus-visible:text-background ${
+        isDragging ? "relative z-10 bg-foreground text-background" : ""
       }`}
     >
-      <div className="px-5 pt-5 pb-4">
-        <span className="inline-flex h-7 items-center rounded-lg bg-chip px-2.5 text-[13px] font-medium text-muted-foreground tabular-nums">
-          {issue.identifier}
-        </span>
+      <div className="px-3.5 pt-3 pb-3">
+        <div className="flex items-center gap-3">
+          <span className="data text-[12px] text-muted-foreground group-focus-visible:text-background">
+            {issue.identifier}
+          </span>
+          <StageGauge type={issue.stateType} className="ml-auto" />
+        </div>
         <Link
           href={`/${orgSlug}/issue/${issue.identifier}`}
-          className={`mt-4 block text-[16px] leading-6 font-medium hover:underline ${finished ? "text-muted-foreground" : ""}`}
+          className={`mt-2 block text-[14px] leading-5 font-medium hover:underline ${finished ? "text-muted-foreground" : ""}`}
           onPointerDown={(event) => event.stopPropagation()}
         >
           {issue.title}
         </Link>
         {summary !== "" && (
-          <p className="mt-1.5 line-clamp-2 text-[14px] leading-6 tracking-[0.01em] text-muted-foreground">{summary}</p>
-        )}
-        {issue.dueDate !== null && (
-          <div className="mt-4">
-            <DuePill dueDate={issue.dueDate} finished={finished} now={now} />
-          </div>
+          <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-muted-foreground group-focus-visible:text-background">
+            {summary}
+          </p>
         )}
       </div>
-      <div className="flex items-center gap-2.5 border-t-2 border-tile-edge px-5 py-3.5">
-        <AssigneeAvatar member={assignee} size={28} />
-        <span className={`min-w-0 flex-1 truncate text-[14px] ${assignee ? "font-medium" : "text-muted-foreground"}`}>
-          {assignee ? displayName(assignee) : "Unassigned"}
-        </span>
-        <span className="flex shrink-0 items-center gap-2.5 text-[13px] text-muted-foreground tabular-nums">
-          {issue.estimate !== null && <span>{issue.estimate} pt</span>}
-          <PriorityRamp priority={issue.priority} />
-        </span>
+      <div className="data flex items-center gap-3 border-t border-border px-3.5 py-2 text-[12px] text-muted-foreground group-focus-visible:text-background">
+        <AssigneeAvatar member={assignee} size={20} />
+        <span className="min-w-0 flex-1 truncate">{assignee ? displayName(assignee) : "Unassigned"}</span>
+        {issue.dueDate !== null && <DuePill dueDate={issue.dueDate} finished={finished} now={now} />}
+        {issue.estimate !== null && <span>{issue.estimate}p</span>}
+        <PriorityRamp priority={issue.priority} />
       </div>
     </li>
   );
@@ -114,15 +111,15 @@ function BoardColumn({
   return (
     <section
       aria-label={`${state.name}, ${column.issues.length} issues`}
-      className={`panel flex min-w-[300px] flex-col p-5 transition-shadow ${
-        isOver ? "shadow-[inset_0_0_0_2px_var(--ring)]" : ""
+      className={`flex min-w-[280px] flex-col border-r border-border px-3 pt-4 last:border-r-0 ${
+        isOver ? "bg-tile" : ""
       }`}
     >
-      <header className="px-1">
+      <header className="px-0.5">
         <StateHeading name={state.name} count={column.issues.length} type={state.type} />
       </header>
       <SortableContext items={column.issues.map((issue) => issue._id)} strategy={verticalListSortingStrategy}>
-        <ul ref={setNodeRef} className="mt-5 flex min-h-24 flex-1 flex-col gap-4">
+        <ul ref={setNodeRef} className="mt-3 flex min-h-24 flex-1 flex-col gap-2 pb-6">
           {column.issues.map((issue) => (
             <BoardItem key={issue._id} issue={issue} orgSlug={orgSlug} />
           ))}
@@ -245,7 +242,7 @@ export function Board({
   const byState = new Map(columns.map((column) => [column.stateId, column]));
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-      <div className="grid flex-1 auto-cols-[minmax(300px,1fr)] grid-flow-col items-start gap-5 overflow-x-auto px-3 pb-6 md:px-6">
+      <div className="grid flex-1 auto-cols-[minmax(280px,1fr)] grid-flow-col items-stretch overflow-x-auto">
         {states.map((state) => (
           <BoardColumn
             key={state._id}

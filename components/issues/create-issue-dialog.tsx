@@ -120,7 +120,7 @@ export function CreateIssueDialog({
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>
-              New issue <span className="font-normal text-muted-foreground">in {team.key}</span>
+              New issue <span className="data ml-1 text-[12px] font-normal text-muted-foreground">{team.key}</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -132,7 +132,7 @@ export function CreateIssueDialog({
             placeholder="Issue title"
             value={draft.title}
             onChange={(e) => set("title", e.target.value)}
-            className="h-10 text-base font-medium"
+            className="h-11 text-[18px] font-medium tracking-[-0.02em]"
           />
           <Textarea
             aria-label="Description"
@@ -143,15 +143,15 @@ export function CreateIssueDialog({
           />
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <label htmlFor={`${id}-state`} className="grid gap-1 text-xs font-medium">
+            <label htmlFor={`${id}-state`} className="data grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               State
               <StateSelect id={`${id}-state`} states={states} value={draft.stateId} onChange={(v) => set("stateId", v)} />
             </label>
-            <label htmlFor={`${id}-priority`} className="grid gap-1 text-xs font-medium">
+            <label htmlFor={`${id}-priority`} className="data grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               Priority
               <PrioritySelect id={`${id}-priority`} value={draft.priority} onChange={(v) => set("priority", v)} />
             </label>
-            <label htmlFor={`${id}-assignee`} className="grid gap-1 text-xs font-medium">
+            <label htmlFor={`${id}-assignee`} className="data grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               Assignee
               <AssigneeSelect
                 id={`${id}-assignee`}
@@ -160,15 +160,15 @@ export function CreateIssueDialog({
                 onChange={(v) => set("assigneeId", v)}
               />
             </label>
-            <div className="col-span-2 grid gap-1 text-xs font-medium">
+            <div className="data col-span-2 grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               Labels
               <LabelPicker labels={labels} value={draft.labelIds} onChange={(v) => set("labelIds", v)} />
             </div>
-            <label htmlFor={`${id}-estimate`} className="grid gap-1 text-xs font-medium">
+            <label htmlFor={`${id}-estimate`} className="data grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               Estimate
               <EstimateInput id={`${id}-estimate`} value={draft.estimate} onChange={(v) => set("estimate", v)} />
             </label>
-            <label htmlFor={`${id}-project`} className="grid gap-1 text-xs font-medium">
+            <label htmlFor={`${id}-project`} className="data grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               Project
               <ProjectSelect
                 id={`${id}-project`}
@@ -177,7 +177,7 @@ export function CreateIssueDialog({
                 onChange={(v) => set("projectId", v)}
               />
             </label>
-            <label htmlFor={`${id}-cycle`} className="grid gap-1 text-xs font-medium">
+            <label htmlFor={`${id}-cycle`} className="data grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
               Cycle
               <CycleSelect
                 id={`${id}-cycle`}

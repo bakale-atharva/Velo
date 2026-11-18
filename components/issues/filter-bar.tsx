@@ -46,10 +46,10 @@ function MultiFilter<T extends string | number | null>({
         render={
           <button
             type="button"
-            className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3.5 text-[14px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+            className={`inline-flex h-8 items-center gap-1.5 border px-2.5 text-[13px] focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               picked.length > 0
-                ? "chip-dark border-transparent"
-                : "border-rule bg-muted hover:bg-secondary"
+                ? "inverted border-foreground"
+                : "border-rule text-muted-foreground hover:border-foreground hover:text-foreground"
             }`}
           />
         }
@@ -67,7 +67,7 @@ function MultiFilter<T extends string | number | null>({
               const checked = value.includes(option.value);
               return (
                 <li key={String(option.value)}>
-                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] hover:bg-muted">
+                  <label className="flex cursor-pointer items-center gap-2.5 px-2 py-1.5 text-[13.5px] hover:bg-muted">
                     <Checkbox
                       checked={checked}
                       onCheckedChange={(next) => {
@@ -82,7 +82,7 @@ function MultiFilter<T extends string | number | null>({
                     />
                     {option.swatch !== undefined && (
                       <span
-                        className="size-2 shrink-0 rounded-full"
+                        className="size-[7px] shrink-0"
                         style={{ background: option.swatch }}
                         aria-hidden
                       />
@@ -182,7 +182,7 @@ export function FilterBar({
         <button
           type="button"
           onClick={() => onChange({})}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-[14px] text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="inline-flex h-8 items-center gap-1.5 px-2 text-[13px] text-muted-foreground hover:text-foreground"
         >
           <X className="size-3.5" aria-hidden />
           Clear
