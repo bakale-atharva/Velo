@@ -1,6 +1,6 @@
 # Velo redesign: Datamatics
 
-> **One branch for the whole redesign.** Every phase below is done on `design/redesign`. No phase gets its own branch, and nothing is merged to `main` until the whole redesign is finished and the user approves one PR. Commit per step inside that branch as usual (tsc, lint, test before each commit; commits end with the `Co-Authored-By` line).
+> **One branch for the whole redesign.** Every phase below is done on `design/redesign`. No phase gets its own branch, and nothing is merged to `main` until the whole redesign is finished and the user approves one PR. Commit per step inside that branch (tsc and lint before each commit, no test runs; commits end with the `Co-Authored-By` line).
 
 ## Why
 
