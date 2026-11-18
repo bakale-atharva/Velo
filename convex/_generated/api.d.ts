@@ -15,6 +15,7 @@ import type * as ai_data from "../ai/data.js";
 import type * as ai_guard from "../ai/guard.js";
 import type * as ai_models from "../ai/models.js";
 import type * as ai_proposals from "../ai/proposals.js";
+import type * as ai_suggestions from "../ai/suggestions.js";
 import type * as ai_tools from "../ai/tools.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as billing from "../billing.js";
@@ -62,6 +63,7 @@ declare const fullApi: ApiFromModules<{
   "ai/guard": typeof ai_guard;
   "ai/models": typeof ai_models;
   "ai/proposals": typeof ai_proposals;
+  "ai/suggestions": typeof ai_suggestions;
   "ai/tools": typeof ai_tools;
   auditLogs: typeof auditLogs;
   billing: typeof billing;

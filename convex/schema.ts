@@ -338,6 +338,28 @@ export default defineSchema({
     appliedIdentifiers: v.array(v.string()),
   }).index("by_threadId", ["threadId"]),
 
+  // What the assistant suggests for an issue: a summary, labels or a priority
+  // to accept, or likely duplicates. Accepting labels or a priority applies
+  // them to the issue (marked `viaAssistant`).
+  aiSuggestions: defineTable({
+    orgId: v.string(),
+    issueId: v.id("issues"),
+    kind: v.union(
+      v.literal("summary"),
+      v.literal("labels"),
+      v.literal("priority"),
+      v.literal("duplicate"),
+    ),
+    payload: v.object({
+      text: v.optional(v.string()),
+      labelIds: v.optional(v.array(v.id("labels"))),
+      priority: v.optional(v.number()),
+      issueIds: v.optional(v.array(v.id("issues"))),
+      scores: v.optional(v.array(v.number())),
+    }),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
+  }).index("by_issueId", ["issueId"]),
+
   // Processed Clerk webhook deliveries, for idempotency.
   webhookEvents: defineTable({
     svixId: v.string(),

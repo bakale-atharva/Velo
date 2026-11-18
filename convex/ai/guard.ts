@@ -60,6 +60,26 @@ export const begin = internalMutation({
   handler: async (ctx) => await requireAi(ctx),
 });
 
+/**
+ * For background work with no signed-in user (suggestions on a new issue,
+ * embeddings): takes one request from the org's allowance if its plan has
+ * the assistant. False means skip quietly.
+ */
+export const consumeForOrg = internalMutation({
+  args: { orgId: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const plan = await getPlan(ctx, args.orgId);
+    const limit = AI_DAILY_LIMIT[plan];
+    if (limit === 0) return false;
+    const status = await rateLimiter.limit(ctx, LIMIT_NAME, {
+      key: args.orgId,
+      config: dailyConfig(limit),
+    });
+    return status.ok;
+  },
+});
+
 /** Requests used today by the active org, and its daily allowance. */
 export const usage = query({
   args: {},

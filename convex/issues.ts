@@ -19,6 +19,7 @@ import { assertFilter, issueFilter, matchesFilter, type IssueFilter } from "./is
 import { logActivity } from "./lib/activity";
 import { logAudit } from "./lib/audit";
 import { requireMember, type MemberInfo } from "./lib/auth";
+import { hasFeature } from "./lib/entitlements";
 import { appError } from "./lib/errors";
 import {
   createIssue,
@@ -61,6 +62,9 @@ export const create = mutation({
     const member = await requireMember(ctx);
     const team = await requireTeamAccess(ctx, member, teamId);
     const issue = await createIssue(ctx, member, team, input);
+    if (await hasFeature(ctx, member.orgId, "ai_assistant")) {
+      await ctx.scheduler.runAfter(0, internal.ai.suggestions.suggestForIssue, { issueId: issue._id });
+    }
     return { issueId: issue._id, identifier: issue.identifier };
   },
 });
