@@ -16,6 +16,7 @@ import {
 import { Markdown } from "@/components/issues/markdown";
 import { UpgradePrompt } from "@/components/states/upgrade-prompt";
 import { errorMessage } from "@/lib/errors";
+import { ProposalCard } from "./proposal-card";
 
 const PAGE_SIZE = 40;
 const MAX_LENGTH = 4000;
@@ -34,14 +35,24 @@ function Messages({ threadId }: { threadId: Id<"aiThreads"> }) {
     { threadId },
     { initialNumItems: PAGE_SIZE },
   );
+  const proposals = useQuery(api.ai.proposals.listForThread, { threadId });
   const end = useRef<HTMLDivElement>(null);
   const messages = [...results].reverse().filter(
     (m) => m.status === "pending" || (m.text ?? "").trim() !== "",
   );
-  const last = messages.at(-1)?._id;
+  // Proposals sit in the conversation where they were made.
+  const oldestLoaded = messages[0]?._creationTime ?? 0;
+  const timeline = [
+    ...messages.map((m) => ({ kind: "message" as const, at: m._creationTime, message: m })),
+    ...(proposals ?? [])
+      .filter((p) => status === "Exhausted" || p._creationTime >= oldestLoaded)
+      .map((p) => ({ kind: "proposal" as const, at: p._creationTime, proposal: p })),
+  ].sort((a, b) => a.at - b.at);
+  const last = timeline.at(-1);
+  const lastKey = last === undefined ? undefined : last.kind === "message" ? last.message._id : last.proposal._id;
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
-  }, [last]);
+  }, [lastKey]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -54,7 +65,11 @@ function Messages({ threadId }: { threadId: Id<"aiThreads"> }) {
           Load earlier messages
         </button>
       )}
-      {messages.map((m) => {
+      {timeline.map((item) => {
+        if (item.kind === "proposal") {
+          return <ProposalCard key={item.proposal._id} proposal={item.proposal} />;
+        }
+        const m = item.message;
         const role = m.message?.role;
         if (role === "user") {
           return (
