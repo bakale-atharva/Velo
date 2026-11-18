@@ -12,6 +12,7 @@ import type * as activities from "../activities.js";
 import type * as ai_agent from "../ai/agent.js";
 import type * as ai_chat from "../ai/chat.js";
 import type * as ai_data from "../ai/data.js";
+import type * as ai_duplicates from "../ai/duplicates.js";
 import type * as ai_embeddingConfig from "../ai/embeddingConfig.js";
 import type * as ai_embeddings from "../ai/embeddings.js";
 import type * as ai_guard from "../ai/guard.js";
@@ -62,6 +63,7 @@ declare const fullApi: ApiFromModules<{
   "ai/agent": typeof ai_agent;
   "ai/chat": typeof ai_chat;
   "ai/data": typeof ai_data;
+  "ai/duplicates": typeof ai_duplicates;
   "ai/embeddingConfig": typeof ai_embeddingConfig;
   "ai/embeddings": typeof ai_embeddings;
   "ai/guard": typeof ai_guard;
