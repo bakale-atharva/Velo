@@ -15,8 +15,13 @@ import {
 } from "@/components/ui/sheet";
 import { Markdown } from "@/components/issues/markdown";
 import { UpgradePrompt } from "@/components/states/upgrade-prompt";
-import { errorMessage } from "@/lib/errors";
+import { ConvexError } from "convex/values";
+import { aiErrorMessage } from "./ai-errors";
 import { ProposalCard } from "./proposal-card";
+import { UsageMeter, useAllowanceSpent } from "./usage-meter";
+
+// Shown under the composer once the day's allowance is used.
+const LIMIT_ERROR = new ConvexError("LIMIT_REACHED");
 import { StandupButton } from "./standup-button";
 
 const PAGE_SIZE = 40;
@@ -118,6 +123,7 @@ function Chat() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
+  const spent = useAllowanceSpent();
 
   // Open the latest conversation until the member picks or starts one.
   const current = threadId ?? threads?.[0]?._id ?? null;
@@ -133,11 +139,11 @@ function Chat() {
       setThreadId(id);
       const result = await send({ threadId: id, text: message });
       if (!result.ok) {
-        setNotice({ tone: "error", text: "The assistant’s models are busy right now. Try again in a minute." });
+        setNotice({ tone: "error", text: aiErrorMessage(result.reason) });
       }
     } catch (error) {
       setText(message);
-      setNotice({ tone: "error", text: errorMessage(error) });
+      setNotice({ tone: "error", text: aiErrorMessage(error) });
     } finally {
       setSending(false);
     }
@@ -226,11 +232,16 @@ function Chat() {
             }}
             className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-1.5 text-[15px] outline-none placeholder:text-muted-foreground"
           />
-          <Button type="submit" size="icon" aria-label="Send" disabled={sending || text.trim() === ""} className="rounded-full">
+          <Button type="submit" size="icon" aria-label="Send" disabled={sending || spent || text.trim() === ""} className="rounded-full">
             <ArrowUp aria-hidden />
           </Button>
         </div>
-        <p className="mt-1.5 px-1 text-[12px] text-muted-foreground">Enter to send, Shift+Enter for a new line.</p>
+        {spent ? (
+          <p className="mt-1.5 px-1 text-[12px] text-destructive">{aiErrorMessage(LIMIT_ERROR)}</p>
+        ) : (
+          <p className="mt-1.5 px-1 text-[12px] text-muted-foreground">Enter to send, Shift+Enter for a new line.</p>
+        )}
+        <UsageMeter className="mt-2 px-1" />
       </form>
     </div>
   );
