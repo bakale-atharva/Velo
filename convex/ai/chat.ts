@@ -89,6 +89,9 @@ export const listMessages = query({
       threadId: thread.agentThreadId,
       paginationOpts: args.paginationOpts,
       excludeToolMessages: true,
+      // Pending replies show the "thinking" state; failed attempts (a model
+      // that was rate limited before the fallback answered) are hidden.
+      statuses: ["success", "pending"],
     });
   },
 });

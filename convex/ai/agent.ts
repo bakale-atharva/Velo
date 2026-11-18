@@ -1,7 +1,7 @@
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import type { ToolSet } from "ai";
 import { components } from "../_generated/api";
-import { aiConfigured, chatModel, fallbackChatModel } from "./models";
+import { aiConfigured, CHAT_CHAIN, type chatModel } from "./models";
 
 const INSTRUCTIONS = `You are the assistant inside Velo, an issue tracker for product teams.
 Answer questions about the user's workspace using the tools: search and read issues, and list teams, members, projects, cycles and labels. Never invent issue identifiers, people or data you did not get from a tool.
@@ -23,9 +23,9 @@ export function buildAgent(languageModel: ReturnType<typeof chatModel>, tools: T
 export type ModelResult<T> = { ok: true; value: T } | { ok: false; reason: "MODEL_UNAVAILABLE" };
 
 /**
- * Runs `attempt` with the primary model, then once with the fallback when the
- * primary fails (rate limits and provider errors are common on free models).
- * Reports MODEL_UNAVAILABLE instead of throwing when both fail or no key is set.
+ * Runs `attempt` with each model of CHAT_CHAIN in turn until one succeeds
+ * (rate limits and provider errors are common on free models). Reports
+ * MODEL_UNAVAILABLE instead of throwing when all fail or no key is set.
  */
 export async function withFallback<T>(
   attempt: (model: ReturnType<typeof chatModel>) => Promise<T>,
@@ -33,7 +33,7 @@ export async function withFallback<T>(
   if (!aiConfigured()) {
     return { ok: false, reason: "MODEL_UNAVAILABLE" };
   }
-  for (const model of [chatModel, fallbackChatModel]) {
+  for (const model of CHAT_CHAIN) {
     try {
       return { ok: true, value: await attempt(model()) };
     } catch (error) {

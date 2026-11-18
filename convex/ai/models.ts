@@ -4,7 +4,10 @@ import { env } from "../_generated/server";
 // Models and why they were chosen: docs/ai-models.md. All free on OpenRouter.
 
 export const CHAT_MODEL = "google/gemma-4-31b-it:free";
-export const FALLBACK_CHAT_MODEL = "google/gemma-4-26b-a4b-it:free";
+// Fallbacks come from other providers: a rate limit upstream at Google
+// would hit a second Gemma model too.
+export const FALLBACK_CHAT_MODEL = "inclusionai/ling-3.2-flash:free";
+export const LAST_RESORT_CHAT_MODEL = "baidu/ernie-5.5-flash-preview:free";
 export const EMBEDDING_MODEL = "nvidia/nemotron-3-embed-1b:free";
 /** Length of every vector EMBEDDING_MODEL returns; the vector index is fixed to it. */
 export { EMBEDDING_DIMENSIONS } from "./embeddingConfig";
@@ -30,3 +33,7 @@ function provider() {
 // Built per call so a key set after deploy is picked up without a redeploy.
 export const chatModel = () => provider().chat(CHAT_MODEL);
 export const fallbackChatModel = () => provider().chat(FALLBACK_CHAT_MODEL);
+export const lastResortChatModel = () => provider().chat(LAST_RESORT_CHAT_MODEL);
+
+/** Tried in order until one answers. */
+export const CHAT_CHAIN = [chatModel, fallbackChatModel, lastResortChatModel];
