@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return this.props.children;
     }
     if (errorCode(this.state.error) === "FEATURE_NOT_IN_PLAN") {
-      return <UpgradePrompt />;
+      return <UpgradePrompt className="m-3 md:m-6" />;
     }
     return (
       <div role="alert" className="panel m-3 max-w-lg p-7 md:m-6">

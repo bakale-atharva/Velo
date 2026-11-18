@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { UpgradePrompt } from "@/components/states/upgrade-prompt";
 import { errorMessage } from "@/lib/errors";
 
 const KEY_PATTERN = /^[A-Z]{2,5}$/;
@@ -154,11 +155,11 @@ export function NewTeamDialog({ trigger }: { trigger?: React.ReactElement } = {}
               />
               Private team
             </label>
-            <span className="pl-6 text-muted-foreground">
-              {canBePrivate
-                ? "Only members of the team can see its issues."
-                : "Private teams are part of the Business plan."}
-            </span>
+            {canBePrivate ? (
+              <span className="pl-6 text-muted-foreground">Only members of the team can see its issues.</span>
+            ) : (
+              <UpgradePrompt feature="private_teams" compact className="pl-6" />
+            )}
           </div>
 
           {error !== null && (

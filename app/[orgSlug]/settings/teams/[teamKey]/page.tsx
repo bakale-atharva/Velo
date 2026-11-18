@@ -26,6 +26,7 @@ import { WorkflowStates } from "@/components/settings/workflow-states";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
+import { UpgradePrompt } from "@/components/states/upgrade-prompt";
 import { usePermission } from "@/components/views/use-permission";
 import { errorMessage } from "@/lib/errors";
 
@@ -74,11 +75,13 @@ function Details({ team, canManage }: { team: Doc<"teams">; canManage: boolean }
           />
           Private team
         </label>
-        <span className="pl-6 text-[13px] text-muted-foreground">
-          {team.isPrivate || canBePrivate
-            ? "Only members of the team can see its issues. Making it private adds you as a member."
-            : "Private teams are part of the Business plan."}
-        </span>
+        {team.isPrivate || canBePrivate ? (
+          <span className="pl-6 text-[13px] text-muted-foreground">
+            Only members of the team can see its issues. Making it private adds you as a member.
+          </span>
+        ) : (
+          <UpgradePrompt feature="private_teams" compact className="pl-6" />
+        )}
       </div>
     </SettingsPanel>
   );
