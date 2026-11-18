@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/lib/errors";
+import { IssueAssist } from "@/components/assistant/issue-assist";
 import {
   AssigneeSelect,
   CycleSelect,
@@ -277,7 +278,10 @@ export function IssueDetail({
         <SubIssues issue={issue} orgSlug={orgSlug} />
         {children}
       </article>
-      <Properties issue={issue} states={states} />
+      <div className="grid min-w-0 gap-5">
+        <Properties issue={issue} states={states} />
+        <IssueAssist issueId={issue._id} />
+      </div>
     </div>
   );
 }
