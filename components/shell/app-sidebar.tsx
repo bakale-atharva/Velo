@@ -2,7 +2,8 @@
 
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
-import { ChevronDown, CircleUser, FolderKanban, Layers, Search, Settings } from "lucide-react";
+import { ChevronDown, CircleUser, FolderKanban, Layers, Search, Settings, Sparkles } from "lucide-react";
+import { useCommandCenter } from "@/components/commands/command-center";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -122,6 +123,7 @@ function ProfileCard() {
 export function AppSidebar({ orgSlug }: { orgSlug: string }) {
   const pathname = usePathname();
   const teams = useQuery(api.teams.list, {});
+  const { openAssistant } = useCommandCenter();
   const base = `/${orgSlug}`;
   const is = (path: string) => pathname === `${base}${path}` || pathname.startsWith(`${base}${path}/`);
 
@@ -147,6 +149,15 @@ export function AppSidebar({ orgSlug }: { orgSlug: string }) {
             <NavLink href={`${base}/my-issues`} icon={CircleUser} label="My issues" active={is("/my-issues")} />
             <NavLink href={`${base}/projects`} icon={FolderKanban} label="Projects" active={is("/projects")} />
             <NavLink href={`${base}/views`} icon={Layers} label="Views" active={is("/views")} />
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={openAssistant}>
+                <Sparkles aria-hidden />
+                <span>Assistant</span>
+                <kbd className="ml-auto hidden rounded-md bg-muted px-1.5 font-sans text-xs text-muted-foreground sm:inline">
+                  ⌘J
+                </kbd>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
 

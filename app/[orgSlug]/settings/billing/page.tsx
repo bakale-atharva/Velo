@@ -6,6 +6,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 import { Suspense, useEffect } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { UsageMeter } from "@/components/assistant/usage-meter";
 import { featureName, planName } from "@/components/settings/plans";
 import { SettingsFact, SettingsPanel } from "@/components/settings/settings-panel";
 import { EmptyState } from "@/components/states/empty-state";
@@ -62,7 +63,10 @@ function Billing() {
             {plan.aiDailyLimit === 0 ? (
               <span className="text-muted-foreground">Not included</span>
             ) : (
-              `${plan.aiDailyLimit} requests a day for the workspace`
+              <span className="grid gap-1.5 py-1">
+                {plan.aiDailyLimit} requests a day for the workspace
+                <UsageMeter className="max-w-sm" />
+              </span>
             )}
           </SettingsFact>
           <SettingsFact label="Features">
