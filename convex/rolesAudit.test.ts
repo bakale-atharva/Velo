@@ -2,6 +2,7 @@
 import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import { api, internal } from "./_generated/api";
+import { PERMISSIONS } from "./lib/permissions";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -118,7 +119,7 @@ describe("permissions", () => {
     expect((await memberA.query(api.members.permissions, {})).sort()).toEqual(
       ["cycles.manage", "projects.manage", "views.share"].sort(),
     );
-    expect(await adminA.query(api.members.permissions, {})).toHaveLength(6);
+    expect(await adminA.query(api.members.permissions, {})).toEqual([...PERMISSIONS]);
     const roleId = await adminA.mutation(api.roles.create, {
       name: "Reader",
       permissions: [],

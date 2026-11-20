@@ -61,6 +61,13 @@ export const issueFilter = v.object({
 // A membership belongs to a person (synced from Clerk) or to an agent (B8).
 export const membershipKind = v.union(v.literal("human"), v.literal("agent"));
 
+// What an agent runs on; only used for display and setup instructions.
+export const agentRuntime = v.union(
+  v.literal("claude"),
+  v.literal("openclaw"),
+  v.literal("other"),
+);
+
 export const viewLayout =v.union(v.literal("list"), v.literal("board"));
 export const viewGroupBy = v.union(
   v.literal("state"),
@@ -104,7 +111,37 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     imageUrl: v.union(v.string(), v.null()),
+    // Set on the mirror row of an agent member (B8); `clerkId` then holds
+    // the agent's "agent_..." user id. Absent for people.
+    isAgent: v.optional(v.boolean()),
   }).index("by_clerkId", ["clerkId"]),
+
+  // An AI agent that is a member of an org (B8). Its member identity is
+  // `userId` ("agent_..."), used everywhere a Clerk user id would be.
+  agents: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    name: v.string(),
+    // Either a URL the agent was given, or an uploaded file (which wins).
+    imageUrl: v.union(v.string(), v.null()),
+    imageStorageId: v.union(v.id("_storage"), v.null()),
+    description: v.string(),
+    // e.g. "claude-opus-5-5"; free text.
+    model: v.union(v.string(), v.null()),
+    runtime: agentRuntime,
+    metadata: v.record(v.string(), v.string()),
+    // The agent that created this one; null for agents people created.
+    parentAgentId: v.union(v.id("agents"), v.null()),
+    // User id (person or agent) that created it.
+    createdBy: v.string(),
+    // May create and edit agents in its own subtree.
+    canManageAgents: v.boolean(),
+    disabledAt: v.union(v.number(), v.null()),
+    lastActiveAt: v.union(v.number(), v.null()),
+  })
+    .index("by_orgId", ["orgId"])
+    .index("by_orgId_and_userId", ["orgId", "userId"])
+    .index("by_parentAgentId", ["parentAgentId"]),
 
   organizations: defineTable({
     clerkOrgId: v.string(),
