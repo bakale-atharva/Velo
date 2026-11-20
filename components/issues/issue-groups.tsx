@@ -30,7 +30,7 @@ export function IssueGroups({ issues, orgSlug }: { issues: Issue[]; orgSlug: str
         if (inGroup.length === 0) return null;
         return (
           <section key={group.type} aria-labelledby={`group-${group.type}`} className={GROUP_PANEL}>
-            <div className="px-3 pt-5 pb-2 md:px-6">
+            <div className="px-3 pt-5 pb-2 @3xl/main:px-6">
               <StateHeading
                 id={`group-${group.type}`}
                 name={group.name}

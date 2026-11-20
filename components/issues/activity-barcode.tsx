@@ -34,7 +34,7 @@ export function ActivityBarcode({ teamId }: { teamId: Id<"teams"> }) {
   const days = Array.from({ length: DAYS }, (_, index) => DAY_NAME.format(start + index * DAY));
 
   return (
-    <figure className="px-3 md:px-6" aria-label={`${events} issues created or completed in the last 7 days`}>
+    <figure className="px-3 @3xl/main:px-6" aria-label={`${events} issues created or completed in the last 7 days`}>
       <div className="relative h-16 overflow-hidden border-y border-rule">
         {/* Faint scan lines keep the field alive when the week is quiet. */}
         <div

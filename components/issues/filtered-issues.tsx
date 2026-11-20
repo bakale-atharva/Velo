@@ -59,7 +59,7 @@ export function FilteredIssues({
   }
   if (results.length === 0 && status === "Exhausted") {
     return (
-      <div className="px-8 py-6">
+      <div className="px-3 py-6 @3xl/main:px-8">
         <EmptyState
           title="No issues match"
           action={
@@ -98,7 +98,7 @@ export function FilteredIssues({
         </div>
       )}
       {(status === "CanLoadMore" || status === "LoadingMore") && (
-        <div className="px-8 pb-12">
+        <div className="px-3 pb-12 @3xl/main:px-8">
           <Button
             variant="outline"
             disabled={status === "LoadingMore"}
