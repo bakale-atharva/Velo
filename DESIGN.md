@@ -1,213 +1,227 @@
 ---
 name: Velo
-description: Keyboard-first issue tracker on soft floating panels; issues are warm grey tiles, colour marks state.
+description: Datamatics. Pure black and white at data density; the team's work is visible as signal, and the active path inverts.
 colors:
-  canvas: "#e9e9e6"
-  panel: "#f8f8f6"
-  tile: "#ecebe7"
-  tile-edge: "#f6f6f3"
-  chip: "#e0dfda"
-  popover: "#ffffff"
-  ink: "#161818"
-  primary: "#1b1d1d"
-  muted: "#e9e8e4"
-  muted-ink: "#62635e"
-  border: "#e1e0dc"
-  rule: "#d6d5d0"
-  control-edge: "#8a8a84"
-  ring: "#4f52c9"
-  teal: "#12705f"
-  orange: "#c8551a"
-  urgent: "#e0442e"
-  destructive: "#c4321b"
-  state-backlog: "#a3a39d"
-  state-unstarted: "#e9603f"
-  state-started: "#6366d6"
-  state-completed: "#12806f"
-  night-canvas: "#0d0e0f"
-  night-panel: "#161719"
-  night-tile: "#1f2023"
-  night-ink: "#ececea"
-  night-muted-ink: "#a3a49e"
-  night-ring: "#9c9eff"
+  ground: "#000000"
+  ink: "#ffffff"
+  tile: "#0d0d0d"
+  popover: "#0a0a0a"
+  chip: "#1a1a1a"
+  muted: "#141414"
+  border: "#1f1f1f"
+  rule: "#333333"
+  input: "#737373"
+  faint: "#6b6b6b"
+  muted-ink: "#a3a3a3"
+  destructive: "#e07a6c"
+  state-backlog: "#6b6b6b"
+  state-unstarted: "#b8a27a"
+  state-started: "#8aa3c7"
+  state-completed: "#86b29a"
+  state-canceled: "#4d4d4d"
+  light-ground: "#ffffff"
+  light-ink: "#000000"
+  light-muted-ink: "#5c5c5c"
+  light-rule: "#cccccc"
+  light-destructive: "#a8372a"
+  light-state-unstarted: "#8a7550"
+  light-state-started: "#4f6a8f"
+  light-state-completed: "#4e7a62"
 typography:
   page-title:
-    fontFamily: "Figtree, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "36px"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "64px"
+    fontWeight: 600
+    lineHeight: 0.95
+    letterSpacing: "-0.04em"
+  issue-title:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "34px"
     fontWeight: 600
     lineHeight: "40px"
+    letterSpacing: "-0.035em"
+  section-title:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "17px"
+    fontWeight: 600
+    lineHeight: "24px"
     letterSpacing: "-0.02em"
-  section:
-    fontFamily: "Figtree, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "22px"
-    fontWeight: 500
-    lineHeight: "28px"
-  tile-title:
-    fontFamily: "Figtree, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "16px"
-    fontWeight: 500
-    lineHeight: "24px"
   body:
-    fontFamily: "Figtree, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "15px"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: "24px"
-    fontFeature: "'tnum' 1"
-  meta:
-    fontFamily: "Figtree, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "13px"
+    letterSpacing: "0em"
+  data:
+    fontFamily: "Geist Mono, ui-monospace, monospace"
+    fontSize: "12px"
     fontWeight: 400
-    lineHeight: "20px"
+    lineHeight: "16px"
+    letterSpacing: "0.02em"
+  signal-label:
+    fontFamily: "Geist Mono, ui-monospace, monospace"
+    fontSize: "11px"
+    fontWeight: 400
+    lineHeight: 1
+    letterSpacing: "0.18em"
 rounded:
-  control: "10px"
-  row: "14px"
-  tile: "20px"
-  panel: "20px"
-  dialog: "22px"
-  pill: "999px"
+  none: "0px"
+  sm: "1px"
+  md: "2px"
+  avatar: "9999px"
 spacing:
-  shell-gap: "12px"
-  page-x: "24px"
-  panel-pad: "20px"
-  tile-gap: "16px"
-  column-gap: "20px"
+  gutter-mobile: "12px"
+  gutter: "24px"
+  row: "40px"
+  row-table: "44px"
+  section: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.panel}"
-    rounded: "{rounded.pill}"
-    height: "44px"
-    padding: "0 20px"
-  button-outline:
-    backgroundColor: "{colors.muted}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.ground}"
+    rounded: "{rounded.md}"
     height: "36px"
-  panel:
-    backgroundColor: "{colors.panel}"
-    rounded: "{rounded.panel}"
-  issue-tile:
-    backgroundColor: "{colors.tile}"
-    rounded: "{rounded.tile}"
-    padding: "20px"
-  id-chip:
-    backgroundColor: "{colors.chip}"
+    padding: "0 14px"
+  button-outline:
+    backgroundColor: "{colors.ground}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: "36px"
+  issue-row:
+    backgroundColor: "{colors.ground}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    height: "{spacing.row}"
+  issue-row-active:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.ground}"
+    height: "{spacing.row}"
+  table-head:
     textColor: "{colors.muted-ink}"
-    rounded: "8px"
-    height: "28px"
-  title-chip:
-    backgroundColor: "linear-gradient(160deg, #56645c, #2c3832)"
-    textColor: "#f4f5f2"
-    rounded: "10px"
-    height: "32px"
+    typography: "{typography.signal-label}"
+    height: "36px"
+  key-block:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.ground}"
+    typography: "{typography.data}"
+    height: "24px"
+    padding: "0 8px"
 ---
 
 # Design System: Velo
 
 ## Overview
 
-**Creative North Star: "Soft Panels"**
+Velo is an issue tracker that engineers run their day in, so the screens are working tools: dense, keyboard-first, live. The visual world is **Datamatics**, after Ryoji Ikeda's data-sublime installations: pure black and white, hairline rules, monospace data, and the team's own activity drawn as signal. Dark is the default theme; light is the exact inversion and equally first-class.
 
-Velo is a calm desk: a cool grey canvas with a few near-white panels floating on it, and the team's work laid out as warm grey tiles inside them. The sidebar, the top bar and every board column are separate panels with generous corners and a 12px gap of canvas between them. Nothing is boxed for the sake of it; a panel exists because it holds one thing (navigation, the breadcrumb, a state column, a group of rows).
+The system has three signature moves and everything else stays quiet:
 
-Colour is rationed to jobs. Each workflow state owns one accent colour, shown as a short vertical bar beside its name. One iridescent ring (blue, violet, pink, peach, mint) marks dates and the Commands button, and the member card at the foot of the sidebar carries a warm wash behind the avatar. Everything else is greys and ink.
+1. **The activity barcode.** Each team page opens with the last seven days drawn as hairline bars, one for every issue created or completed. The Velo mark is the same signal shaped into a V.
+2. **Inversion is the active path.** The focused or selected row, the chosen segment, the drag card and primary marks become a white block with black text. Nothing else uses inversion.
+3. **The signal flash.** When a live change lands on a row, it inverts for two frames (about half a second) through a difference-blend layer.
 
-The visual direction follows the FLOW AI task dashboard reference the user chose (Dribbble shot 26265463). Velo keeps its own name, mark, content and keyboard-first behaviour.
-
-**Key Characteristics:**
-- Floating panels on a canvas, 12px apart; panels 20px radius, tiles 20px, rows 14px, controls 10px, primary buttons fully round.
-- State is shown by a 3×24px accent bar plus a count chip, never by large coloured fills.
-- Issue tiles: id chip, title, two-line excerpt, iridescent due pill, a seam, then the assignee footer.
-- One dark gradient chip beside the page title; one dark pill for the primary action.
-- Light and dark are both first-class and AA throughout.
+Borrowing Linear's interaction patterns and density is explicitly allowed; Velo keeps its own mark, world and signature moves.
 
 ## Colors
 
-### Surfaces
-- **Canvas** (`{colors.canvas}` / `{colors.night-canvas}`): the page ground behind every panel.
-- **Panel** (`{colors.panel}` / `{colors.night-panel}`): sidebar, top bar, board columns, row groups, detail cards.
-- **Tile** (`{colors.tile}` / `{colors.night-tile}`): issue tiles and row hover, sitting inside panels.
-- **Tile edge** (`{colors.tile-edge}`): the 2px seam between a tile's body and its footer.
-- **Chip** (`{colors.chip}`): identifier chips and the background of small labels on tiles.
-- **Popover** (`{colors.popover}`): menus, dialogs, inputs.
+The palette is a single signal scale from ground to ink, plus five muted state tints. There is no accent hue.
 
-### Ink
-- **Ink** (`{colors.ink}` / `{colors.night-ink}`): all primary text.
-- **Muted ink** (`{colors.muted-ink}` / `{colors.night-muted-ink}`): descriptions, meta, inactive nav (5.0:1 on tile, 5.6:1 on panel).
-- **Control edge** (`{colors.control-edge}`): input and checkbox boundaries, 3.4:1 on panel.
-- **Ring** (`{colors.ring}` / `{colors.night-ring}`): focus outlines, the caret, links.
+### Neutral
+- **Ground** `{colors.ground}` is the page. **Ink** `{colors.ink}` is all primary text and every inverted block.
+- **Tile** `{colors.tile}` is the hover wash on rows. **Chip** `{colors.chip}` and **Muted** `{colors.muted}` fill quiet controls.
+- **Border** `{colors.border}` rules rows; **Rule** `{colors.rule}` rules sections and frames; **Input** `{colors.input}` outlines controls (4.4:1).
+- **Muted ink** `{colors.muted-ink}` (8.6:1) carries secondary text; **Faint** `{colors.faint}` only marks separators and text 14px and up.
 
-### State accents
-- Backlog and canceled `{colors.state-backlog}`, unstarted `{colors.state-unstarted}`, started `{colors.state-started}`, completed `{colors.state-completed}`. Used for the column bar, the properties bar and selection tint. Never as text.
-- **Teal** (`{colors.teal}`): the title ring marker, the sidebar diamond, progress fill.
-- **Urgent** (`{colors.urgent}`): the urgent priority ramp only.
-- **Destructive** (`{colors.destructive}`): destructive actions, errors and "Overdue".
+### State tints
+Backlog, unstarted, started, completed and canceled each have one small, desaturated tint (`state-*`). They appear only as the stage-gauge cells, label squares and status squares, never as fills behind text and never alone: every tint is paired with the gauge's fill count or a text label.
 
-### Named rules
-**The Bar Not Block Rule.** A state's colour appears as a thin bar or dot. If a surface would be filled with state colour, use a bar instead.
+### Destructive
+`{colors.destructive}` (light `{colors.light-destructive}`) marks urgent priority, overdue dates, destructive buttons and errors. It is the only warm signal and stays rare.
 
-**The One Ring Rule.** The iridescent ring marks dates, the Commands button, the member card and "via assistant". It is never a general border.
+### Named Rules
+- **The No-Accent Rule.** Emphasis comes from inversion, weight and size, never from a brand hue.
+- **The Exact Inversion Rule.** Light theme swaps ground and ink and darkens the state tints to stay 3:1 as marks; nothing else changes.
 
 ## Typography
 
-**Font:** Figtree for everything (variable, 300–900), Geist Mono only for code. Tabular figures are on globally.
+Two faces from one family. **Geist** sets titles and UI text; **Geist Mono** sets all data: issue ids, dates, estimates, counts, shortcuts and section labels. Numerals are tabular everywhere.
 
-- **Page title** (600, 36/40, -0.02em): the page's name, preceded by a teal ring marker.
-- **Section** (500, 22/28): the heading over the board or list ("All issues").
-- **Tile title** (500, 16/24): issue titles on tiles.
-- **Body** (400, 15/24): rows, descriptions, Markdown.
-- **Meta** (400, 13/20, muted): ids, dates, counts, estimates. Nothing functional below 12px.
+### Hierarchy
+- **Page title** (64px, -0.04em, 0.95 line height): team names, Projects, Settings. Set large and tight; 44px on phones.
+- **Issue title** (34px, -0.035em): the issue page's editable title.
+- **Section title** (17px semibold): settings sections, empty and error states.
+- **Body** (14px, 24px line height): rows, descriptions, dialogs. Markdown runs at 14.5px with a 72ch measure.
+- **Data** (Geist Mono 12px): ids, dates, estimates, counts.
+- **Signal label** (Geist Mono 11px, 0.18em, uppercase): group headings like `IN PROGRESS / 04`, table headers, property labels.
+
+### Named Rules
+- **The Data Voice Rule.** If it is an identifier, a number, a date or a key, it is mono. Prose is never mono.
 
 ## Layout
 
-The shell is a 17.5rem floating sidebar panel and, to its right, a 68px top bar panel over the work field, all inset 12px from the window. Pages open with the header (ring marker, title, dark chip, diamond sub-page links hanging off an L-shaped connector, member avatars on the right) and a soft 3px rule that fades out to the right. Under it, a section title and a controls row: segmented List/Board toggle, a hairline divider, the dark "New …" pill, and filter pills on the right. Board columns are equal panels (min 300px) with 20px gaps; tiles stack 16px apart. Lists group rows into one panel per state. Page padding is 24px (12px on small screens).
+- The shell is flush: a 240px sidebar ruled off by a hairline, a 48px top strip, then the work field edge to edge. Content uses a 12px gutter on phones and 24px from `md` up.
+- Lists are full-width tables: 40px issue rows, 44px rows elsewhere, a hairline under each, groups opened by a section rule and a signal label.
+- Detail pages split into the content column and a 320px properties column behind a vertical hairline.
+- Facts render as figure strips: equal cells divided by vertical hairlines, a signal label over a large mono value.
+- Settings sections are two columns (260px title and description, then controls), stacked and ruled.
 
 ## Elevation & Depth
 
-Panels sit flat on the canvas with a faint inner highlight. Things that are lifted cast a soft, offset shadow: the primary pill (`--shadow-press`), the Commands button, the member card, popovers and dialogs (`--shadow-lift`), and a tile while it is being dragged.
+There is no depth system. Layers separate by hairlines (`border`, `rule`), never by shadows, gradients or blur. Popovers, dialogs, sheets and menus are framed with a 1px `rule` ring on `popover`. Clerk surfaces are restyled the same way.
 
 ## Shapes
 
-Round and soft. 10px controls, 14px rows, 20px tiles and panels, 22px dialogs, full pills for the primary button, due pills and label tags. Avatars are circles. Diamonds (rotated squares) mark the current page in the sidebar and in header sub-nav.
+Square. Controls take 2px corners at most; frames, rows, panels and dialogs take none. Avatars are the only round elements, and photos render in grayscale.
 
 ## Components
 
 ### Buttons
-- **Primary:** ink pill, 44px for page actions, with a leading circle-plus icon; soft press shadow. One per view.
-- **Outline:** muted fill with a rule border, 10px corners (filters, Save view, Edit).
-- **Ghost / destructive:** as shadcn, with destructive as a red wash.
+- **Primary:** ink block, ground text, 36px tall, 2px corners; hover drops to 85% ink.
+- **Outline:** 1px `rule` border on the ground; the border turns ink on hover.
+- **Destructive:** 1px destructive border and text; fills destructive on hover.
+- **Ghost:** text only; muted wash on hover. Focus everywhere is a 1px ink outline offset 2px.
 
-### Segmented control
-A muted track with a 4px inset; the selected option is a panel-coloured pill with a small shadow.
+### Inputs / Fields
+1px `input` border, 2px corners, ground fill. Field labels are signal labels. The search page uses one large 22px input on a single underline that turns ink on focus.
 
-### Filter pills
-40px, rule border on muted. A filter with a value turns into the dark gradient chip and shows its value.
+### Navigation
+- **Sidebar:** 32px rows at 13.5px with muted icons and mono shortcut hints (`G I`, `⌘J`). The current page inverts. Teams show their key in mono.
+- **Page tabs:** text links on the header's bottom rule; the active tab carries a 1px ink underline.
+- **Segmented controls** (List/Board, theme): hairline frame, mono caps, chosen cell inverted.
 
-### Issue tile (signature)
-Warm grey tile, 20px corners. Top: id chip; title; two-line Markdown-stripped excerpt; the due pill when there is a date ("Due: 16 May", or a red "Overdue:" for open work past its date). A 2px seam, then the assignee avatar and name, estimate and priority ramp.
+### Issue row
+id (mono) · stage gauge · priority ramp · title with label squares · due · estimate · avatar. Hover washes `tile`; focus inverts the whole row, including the gauge and ramp, which draw in `currentColor`.
 
-### State heading
-3×24px accent bar, the state name at 15/500, and a count chip. Used for columns, list groups, cycles, views and sub-issues.
-
-### Sidebar
-Wordmark with the chevron mark, a Search field-link, nav items with icons (active item gets a tile fill), teams as collapsible groups whose pages hang off a vertical rule, with a teal diamond on the current page. The member card sits at the bottom.
-
-### Theme
-Light, dark and system, chosen with the three-icon segmented control in the top bar or the palette's Theme commands; it follows the system until the member picks one. Clerk's components read the same tokens through `appearance.variables`, so they switch with the app.
+### Stage gauge
+Five 9×7px cells in the state's tint: backlog fills one, unstarted two, started three, completed five; canceled is one hatched cell. Empty cells are 16% of the current text colour, so they invert with the row.
 
 ### Priority ramp
-Three rounded bars of rising height; urgent fills all three in urgent red; none is all faint.
+Three 2px bars of rising height in `currentColor`; urgent is a solid destructive square with a mono "!".
+
+### Activity barcode (signature)
+A 64px band between two section rules: completions full height, creations three quarters at 55% opacity, faint scan lines behind, a mono day scale below. Built only from real issue timestamps.
+
+### Progress and usage
+Rows of hairline ticks (24 for progress, 40 for assistant usage) with a mono count; used ticks draw in ink, or destructive near a limit.
+
+### Assistant
+Your messages are inverted blocks aligned right; replies sit behind a 1px left rule. Pending proposals have an ink frame; resolved ones a faint frame.
+
+### States
+Empty states are a ruled frame topped by an empty signal band. Errors take a destructive frame. Loading skeletons mirror the table rows.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** put content in panels on the canvas, and issues in tiles inside panels.
-- **Do** mark state with the accent bar and a count chip.
-- **Do** keep one dark primary pill per view.
-- **Do** check new text colours for 4.5:1 on panel and tile, in both themes.
+- **Do** separate everything with 1px hairlines (`border` for rows, `rule` for sections and frames).
+- **Do** set every id, date, count, estimate and key in Geist Mono.
+- **Do** reserve inversion for the active path: focus, selection, the chosen segment, the dragged card, primary buttons, key blocks.
+- **Do** pair every state tint with the stage gauge or a text label.
+- **Do** keep page titles large and tight (64px, -0.04em) against small, dense data.
 
 ### Don't:
-- **Don't** nest panels inside panels; inside a panel, use tiles or rows.
-- **Don't** fill large areas with state colour, or set state colours as text.
-- **Don't** use the iridescent ring as a general border.
-- **Don't** copy the reference's brand, logo, names or illustrated avatars; Velo keeps its own identity.
+- **Don't** add shadows, gradients, glass or blur to any surface.
+- **Don't** round anything past 2px except avatars.
+- **Don't** introduce an accent hue; use inversion, weight or size.
+- **Don't** fill a surface with a state tint or put text on one.
+- **Don't** draw the barcode or any chart from invented data; label decorative fields as illustration.
