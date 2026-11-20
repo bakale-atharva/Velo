@@ -481,6 +481,15 @@ export const setAvatar = mutation({
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
     const { agent } = await requireProfileEditor(ctx, member, args.agentId);
+    if (agent.imageStorageId === args.storageId) return null;
+    // Photo URLs contain their storage id, so anyone in the org can see the
+    // ids of other agents' photos. Refuse them: attaching one would let a
+    // later photo change delete another agent's file.
+    const owner = await ctx.db
+      .query("agents")
+      .withIndex("by_imageStorageId", (q) => q.eq("imageStorageId", args.storageId))
+      .first();
+    if (owner !== null) throw appError("INVALID_INPUT");
     const file = await ctx.db.system.get("_storage", args.storageId);
     if (
       file === null ||
@@ -490,7 +499,7 @@ export const setAvatar = mutation({
       if (file !== null) await ctx.storage.delete(args.storageId);
       throw appError("INVALID_INPUT");
     }
-    if (agent.imageStorageId !== null && agent.imageStorageId !== args.storageId) {
+    if (agent.imageStorageId !== null) {
       await ctx.storage.delete(agent.imageStorageId);
     }
     await ctx.db.patch("agents", agent._id, { imageStorageId: args.storageId });

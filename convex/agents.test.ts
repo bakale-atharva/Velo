@@ -237,6 +237,21 @@ describe("agent members", () => {
     ).rejects.toThrow(/FORBIDDEN/);
   });
 
+  test("an agent can't take over another agent's photo file", async () => {
+    const { t, adminA } = await setup();
+    const a = await makeAgent(t, adminA, { name: "A" });
+    const b = await makeAgent(t, adminA, { name: "B" });
+    const storageId = await t.run(async (ctx) =>
+      ctx.storage.store(new Blob(["png"], { type: "image/png" })),
+    );
+    await a.client.mutation(api.agents.setAvatar, { agentId: a.agentId, storageId });
+    expect((await adminA.query(api.agents.get, { agentId: a.agentId })).imageUrl).not.toBeNull();
+    await expect(
+      b.client.mutation(api.agents.setAvatar, { agentId: b.agentId, storageId }),
+    ).rejects.toThrow(/INVALID_INPUT/);
+    expect(await t.run(async (ctx) => ctx.db.system.get("_storage", storageId))).not.toBeNull();
+  });
+
   test("a disabled agent can no longer manage agents", async () => {
     const { t, adminA } = await setup();
     const lead = await makeAgent(t, adminA, { name: "Lead", canManageAgents: true });

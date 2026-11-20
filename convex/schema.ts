@@ -144,7 +144,9 @@ export default defineSchema({
   })
     .index("by_orgId", ["orgId"])
     .index("by_orgId_and_userId", ["orgId", "userId"])
-    .index("by_parentAgentId", ["parentAgentId"]),
+    .index("by_parentAgentId", ["parentAgentId"])
+    // A photo belongs to one agent; setAvatar refuses ids already in use.
+    .index("by_imageStorageId", ["imageStorageId"]),
 
   // API keys an agent uses to reach the MCP server (B8, B9). Only the
   // SHA-256 hash is stored; the key is shown once when created.
