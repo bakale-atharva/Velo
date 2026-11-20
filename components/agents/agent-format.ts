@@ -40,9 +40,9 @@ export function sinceLabel(ms: number | null, now: number): string | null {
 }
 
 export const AGENT_MESSAGES = {
-  FORBIDDEN: "You can’t manage this agent. Ask a workspace admin, or an agent above it.",
+  FORBIDDEN: "Only workspace admins create and manage agents here. Ask an admin.",
   INVALID_INPUT:
     "Check the fields: the name can’t be empty, the photo must be an https link or an image under 2 MB, and metadata keys start with a letter.",
-  LIMIT_REACHED: "That’s the limit here: agents nest at most 5 deep, and an agent has at most 20 active keys.",
+  LIMIT_REACHED: "That’s the limit here: an agent has at most 20 active keys, and a workspace at most 1,000 agents.",
   NOT_FOUND: "This agent no longer exists.",
 };

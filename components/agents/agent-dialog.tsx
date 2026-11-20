@@ -59,8 +59,9 @@ export function useAvatarUpload() {
 }
 
 /**
- * Creates an agent, or edits one when `agent` is given. The role can't be
- * above your own; the backend enforces that and the subtree rules too.
+ * Creates a master agent (workspace admins only), or edits an agent's
+ * profile when `agent` is given. Roles are never chosen here: the backend
+ * makes masters admins and the agents they create members.
  */
 export function AgentDialog({
   agent,
@@ -163,6 +164,11 @@ export function AgentDialog({
         <form onSubmit={submit} className="grid gap-5">
           <DialogHeader>
             <DialogTitle>{editing ? `Edit ${agent.name}` : "New agent"}</DialogTitle>
+            {!editing && (
+              <p className="text-[13.5px] leading-6 text-muted-foreground">
+                It can create agents of its own once connected, and hand them issues.
+              </p>
+            )}
           </DialogHeader>
 
           <Input

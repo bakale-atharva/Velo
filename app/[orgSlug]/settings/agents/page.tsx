@@ -49,6 +49,10 @@ function Agents() {
     return <PageSkeleton rows={4} />;
   }
   const teamKey = new Map(teams.map((t) => [t._id, t.key]));
+  const childCount = new Map<string, number>();
+  for (const a of agents) {
+    if (a.parentAgentId !== null) childCount.set(a.parentAgentId, (childCount.get(a.parentAgentId) ?? 0) + 1);
+  }
   const open = (agentId: string) => router.push(`/${orgSlug}/settings/agents/${agentId}`);
 
   return (
@@ -56,8 +60,9 @@ function Agents() {
       title="Agents"
       description={
         <>
-          AI agents that work in this workspace through MCP. They can be assigned issues and join teams, and use no
-          seats. Every change they make is recorded under their name.{" "}
+          AI agents that work in this workspace through MCP. The agents you create here are master agents: they can
+          create agents of their own and hand them work. Agents can be assigned issues, join teams and use no seats;
+          every change they make is recorded under their name.{" "}
           <a
             href="https://github.com/bakale-atharva/Velo/blob/main/docs/agents-mcp.md"
             className="underline underline-offset-2 hover:text-foreground"
@@ -82,8 +87,8 @@ function Agents() {
           }
         >
           {canCreate
-            ? "Create an agent, give it a key, and connect it from Claude Code, Claude Desktop or OpenClaw. It can then create its own subagents."
-            : "An admin can create agents here. Agents can also create subagents of their own."}
+            ? "Create an agent, give it a key, and connect it from Claude Code, Claude Desktop or OpenClaw. From there it can create its own agents and hand them issues."
+            : "A workspace admin creates agents here; those agents then create agents of their own."}
         </EmptyState>
       ) : (
         <ul className="flex flex-col border-t border-border" aria-label="Agents">
@@ -93,7 +98,7 @@ function Agents() {
           >
             <span className="flex-1">Agent</span>
             <span className="w-40">Runs on</span>
-            <span className="w-16">Role</span>
+            <span className="w-16 text-right">Agents</span>
             <span className="w-28">Teams</span>
             <span className="w-20 text-right">Active</span>
             <span className="w-4" />
@@ -113,7 +118,7 @@ function Agents() {
                     )}
                     <AssigneeAvatar member={agentAsMember(agent)} size={24} />
                     <span className="min-w-0 truncate text-[14px] font-medium">{agent.name}</span>
-                    {depth > 0 && <span className="sr-only">, subagent</span>}
+                    {depth > 0 && <span className="sr-only">, created by the agent above</span>}
                     {disabled && (
                       <span className="data shrink-0 text-[11px] tracking-[0.14em] uppercase">Disabled</span>
                     )}
@@ -122,8 +127,8 @@ function Agents() {
                     {runtimeLabel(agent.runtime)}
                     {agent.model !== null && ` · ${agent.model}`}
                   </span>
-                  <span className="data hidden w-16 text-[12px] text-muted-foreground group-focus-visible:text-background md:block">
-                    {agent.role}
+                  <span className="data hidden w-16 text-right text-[12px] text-muted-foreground tabular-nums group-focus-visible:text-background md:block">
+                    {agent.isMaster ? (childCount.get(agent._id) ?? 0) : ""}
                   </span>
                   <span className="data hidden w-28 truncate text-[12px] text-muted-foreground group-focus-visible:text-background md:block">
                     {agent.teamIds.map((id) => teamKey.get(id)).filter(Boolean).join(" ") || "—"}

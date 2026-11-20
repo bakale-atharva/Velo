@@ -60,13 +60,24 @@ function Profile({ agent, parent }: { agent: AgentView; parent: AgentView | unde
             {agent.model !== null && ` · ${agent.model}`}
           </span>
         </SettingsFact>
-        <SettingsFact label="Reports to">
-          {parent !== undefined ? (
-            <Link href={`/${orgSlug}/settings/agents/${parent._id}`} className="underline underline-offset-2 hover:text-foreground">
-              {parent.name}
-            </Link>
+        <SettingsFact label="Kind">
+          {agent.isMaster ? (
+            <span>Master agent: creates and manages its own agents</span>
           ) : (
-            <span className="text-muted-foreground">Nobody (top-level agent)</span>
+            <span>
+              Created by{" "}
+              {parent !== undefined ? (
+                <Link
+                  href={`/${orgSlug}/settings/agents/${parent._id}`}
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  {parent.name}
+                </Link>
+              ) : (
+                "its master agent"
+              )}
+              <span className="text-muted-foreground">; can’t create agents</span>
+            </span>
           )}
         </SettingsFact>
         <SettingsFact label="Created by">
@@ -166,15 +177,13 @@ function Subagents({ agent, agents }: { agent: AgentView; agents: AgentView[] })
   const below = subtreeOf(agents, agent._id);
   return (
     <SettingsPanel
-      title="Subagents"
-      description={
-        agent.isMaster
-          ? "Agents this one created. It manages them and can hand them issues."
-          : "Only master agents create agents."
-      }
+      title="Its agents"
+      description="Agents this master created over MCP. It manages them, gives them keys and hands them issues."
     >
       {below.length === 0 ? (
-        <p className="px-2 text-[14px] text-muted-foreground">None yet.</p>
+        <p className="px-2 text-[14px] text-muted-foreground">
+          None yet. Once connected, ask it to create one, e.g. “create an agent called Reviewer and add it to ENG”.
+        </p>
       ) : (
         <ul className="border-t border-border">
           {below.map(({ agent: sub, depth }) => (
@@ -242,7 +251,7 @@ function Danger({ agent, subagentCount }: { agent: AgentView; subagentCount: num
       />
       <SettingsPanel
         title="Delete agent"
-        description={`Deletes the agent${subagentCount > 0 ? ` and its ${subagentCount} subagent${subagentCount === 1 ? "" : "s"}` : ""}, revokes their keys and unassigns their issues. Their past changes keep their name. This can’t be undone.`}
+        description={`Deletes the agent${subagentCount > 0 ? ` and the ${subagentCount} agent${subagentCount === 1 ? "" : "s"} it created` : ""}, revokes their keys and unassigns their issues. Their past changes keep their name. This can’t be undone.`}
         actions={
           <Button variant="destructive" onClick={() => setDeleting(true)}>
             Delete {agent.name}
@@ -255,7 +264,7 @@ function Danger({ agent, subagentCount }: { agent: AgentView; subagentCount: num
               <DialogTitle>Delete {agent.name}?</DialogTitle>
               <DialogDescription>
                 {subagentCount > 0
-                  ? `Its ${subagentCount} subagent${subagentCount === 1 ? " is" : "s are"} deleted too. `
+                  ? `The ${subagentCount} agent${subagentCount === 1 ? " it created is" : "s it created are"} deleted too. `
                   : ""}
                 Keys stop working at once. This can’t be undone.
               </DialogDescription>
@@ -324,7 +333,8 @@ function AgentSettings() {
           <h2 className="flex flex-wrap items-baseline gap-3 text-[34px] leading-10 font-semibold tracking-[-0.035em]">
             <span className="min-w-0 truncate">{agent.name}</span>
             <span className="data text-[12px] font-normal tracking-[0.14em] text-muted-foreground uppercase">
-              {agent.disabledAt !== null ? "Agent · disabled" : "Agent"}
+              {agent.isMaster ? "Master agent" : "Agent"}
+              {agent.disabledAt !== null && " · disabled"}
             </span>
           </h2>
           {agent.description !== "" && (
@@ -340,14 +350,14 @@ function AgentSettings() {
       {!agent.canManage && (
         <div className="py-6">
           <EmptyState title="Read only">
-            You can see this agent but not change it. Admins manage every agent, and agents manage the ones they
-            created.
+            You can see this agent but not change it. Workspace admins manage every agent, and each master agent
+            manages the agents it created.
           </EmptyState>
         </div>
       )}
       <Profile agent={agent} parent={parent} />
       <Teams agent={agent} />
-      <Subagents agent={agent} agents={agents} />
+      {agent.isMaster && <Subagents agent={agent} agents={agents} />}
       <AgentKeys agentId={agent._id} canManage={agent.canManage} />
       {agent.canManage && <ConnectPanel runtime={agent.runtime} />}
       {agent.canManage && <Danger agent={agent} subagentCount={subagentCount} />}
