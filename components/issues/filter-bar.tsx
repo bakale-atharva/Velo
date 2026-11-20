@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AgentTag } from "./agent-tag";
 import { activeCount, type IssueFilter, type StateType } from "./filters";
 import { displayName, PRIORITY_LABELS, useWorkspaceLookups } from "./lookups";
 
@@ -17,7 +18,7 @@ const STATE_OPTIONS: { value: StateType; label: string }[] = [
   { value: "canceled", label: "Canceled" },
 ];
 
-type Option<T> = { value: T; label: string; swatch?: string };
+type Option<T> = { value: T; label: string; swatch?: string; agent?: boolean };
 
 /** A trigger naming the field and what is picked, opening a checkbox list. */
 function MultiFilter<T extends string | number | null>({
@@ -88,6 +89,7 @@ function MultiFilter<T extends string | number | null>({
                       />
                     )}
                     <span className="truncate">{option.label}</span>
+                    {option.agent && <AgentTag className="ml-auto" />}
                   </label>
                 </li>
               );
@@ -142,7 +144,7 @@ export function FilterBar({
         label="Assignee"
         options={[
           { value: null, label: "Unassigned" },
-          ...members.map((m) => ({ value: m.userId, label: displayName(m) })),
+          ...members.map((m) => ({ value: m.userId, label: displayName(m), agent: m.isAgent })),
         ]}
         value={filter.assigneeIds ?? []}
         onChange={(v) => set("assigneeIds", v)}

@@ -6,6 +6,7 @@ import { TeamPageHeader } from "@/components/issues/team-page-header";
 const PAGES = [
   { path: "", label: "General" },
   { path: "/members", label: "Members" },
+  { path: "/agents", label: "Agents" },
   { path: "/teams", label: "Teams" },
   { path: "/labels", label: "Labels" },
   { path: "/billing", label: "Billing" },
