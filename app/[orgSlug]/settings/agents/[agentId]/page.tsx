@@ -359,7 +359,7 @@ function AgentSettings() {
       <Teams agent={agent} />
       {agent.isMaster && <Subagents agent={agent} agents={agents} />}
       <AgentKeys agentId={agent._id} canManage={agent.canManage} />
-      {agent.canManage && <ConnectPanel runtime={agent.runtime} />}
+      {agent.canManage && <ConnectPanel runtime={agent.runtime} isMaster={agent.isMaster} />}
       {agent.canManage && <Danger agent={agent} subagentCount={subagentCount} />}
       {agent.canManage && <AgentDialog key={agent._id} agent={agent} open={editing} onOpenChange={setEditing} />}
     </div>

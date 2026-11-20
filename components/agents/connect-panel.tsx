@@ -85,10 +85,14 @@ function steps(client: Client, url: string): { note: string; code: string }[] {
   }
 }
 
-function Snippet({ code }: { code: string }) {
+function Snippet({ code, prose = false }: { code: string; prose?: boolean }) {
   return (
     <div className="group relative border border-rule">
-      <pre className="overflow-x-auto p-3 pr-12 font-mono text-[12.5px] leading-5 whitespace-pre">{code}</pre>
+      {prose ? (
+        <p className="max-w-[72ch] p-3 pr-12 text-[14px] leading-6">{code}</p>
+      ) : (
+        <pre className="overflow-x-auto p-3 pr-12 font-mono text-[12.5px] leading-5 whitespace-pre">{code}</pre>
+      )}
       <button
         type="button"
         aria-label="Copy"
@@ -101,14 +105,33 @@ function Snippet({ code }: { code: string }) {
   );
 }
 
-/** How to connect this agent from Claude Code, Claude Desktop or OpenClaw. */
-export function ConnectPanel({ runtime }: { runtime: Runtime }) {
+/** What a master can ask its client to do once connected. */
+const TEAM_PROMPT =
+  "Use Velo. Create an agent called Reviewer running claude-opus-5-5 that reviews pull requests, " +
+  "add it to the ENG team, give it its own API key, and assign it every open ENG issue labelled needs-review.";
+
+/**
+ * How to connect this agent from Claude Code, Claude Desktop or OpenClaw.
+ * A master also gets the step that lets it build its own team.
+ */
+export function ConnectPanel({ runtime, isMaster }: { runtime: Runtime; isMaster: boolean }) {
   const [client, setClient] = useState<Client>(runtime === "openclaw" ? "openclaw" : "claude-code");
   const url = mcpUrl();
+  const extra = isMaster
+    ? {
+        note: "Then let it build its team. It creates agents with create_agent, gives each its own key with create_agent_key, adds them to teams with add_team_member and hands them work with update_issue. Its agents are regular members and can’t create agents. Try:",
+        code: TEAM_PROMPT,
+        prose: true,
+      }
+    : null;
   return (
     <SettingsPanel
       title="Connect"
-      description="Make a key above, then point the agent at Velo’s MCP server. Replace velo_… with the key."
+      description={
+        isMaster
+          ? "Make a key above, then point the agent at Velo’s MCP server. Replace velo_… with the key."
+          : "This agent was created by its master agent. Connect it with its own key (from above, or one its master made), the same way."
+      }
     >
       <div className="grid gap-5">
         <div className="flex flex-wrap items-center gap-3">
@@ -134,10 +157,10 @@ export function ConnectPanel({ runtime }: { runtime: Runtime }) {
           </Button>
         </div>
         <ol className="grid gap-4">
-          {steps(client, url).map((step, index) => (
+          {[...steps(client, url).map((s) => ({ ...s, prose: false })), ...(extra === null ? [] : [extra])].map((step, index) => (
             <li key={`${client}-${index}`} className="grid gap-2">
               <p className="text-[14px] leading-6 text-muted-foreground">{step.note}</p>
-              <Snippet code={step.code} />
+              <Snippet code={step.code} prose={step.prose} />
             </li>
           ))}
         </ol>
