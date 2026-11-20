@@ -1,4 +1,5 @@
 import type { Tool } from "../registry";
+import { adminTools } from "./admin";
 import { agentTools } from "./agents";
 import { issueTools } from "./issues";
 import { planningTools } from "./planning";
@@ -12,4 +13,5 @@ export const ALL_TOOLS: Tool[] = [
   ...teamTools,
   ...issueTools,
   ...planningTools,
+  ...adminTools,
 ];

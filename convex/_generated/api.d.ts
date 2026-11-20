@@ -53,6 +53,7 @@ import type * as mcp_issuer from "../mcp/issuer.js";
 import type * as mcp_protocol from "../mcp/protocol.js";
 import type * as mcp_registry from "../mcp/registry.js";
 import type * as mcp_token from "../mcp/token.js";
+import type * as mcp_tools_admin from "../mcp/tools/admin.js";
 import type * as mcp_tools_agents from "../mcp/tools/agents.js";
 import type * as mcp_tools_index from "../mcp/tools/index.js";
 import type * as mcp_tools_issues from "../mcp/tools/issues.js";
@@ -123,6 +124,7 @@ declare const fullApi: ApiFromModules<{
   "mcp/protocol": typeof mcp_protocol;
   "mcp/registry": typeof mcp_registry;
   "mcp/token": typeof mcp_token;
+  "mcp/tools/admin": typeof mcp_tools_admin;
   "mcp/tools/agents": typeof mcp_tools_agents;
   "mcp/tools/index": typeof mcp_tools_index;
   "mcp/tools/issues": typeof mcp_tools_issues;
