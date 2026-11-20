@@ -154,6 +154,10 @@ export default defineSchema({
     isPrivate: v.boolean(),
     nextIssueNumber: v.number(),
     archivedAt: v.union(v.number(), v.null()),
+    // Set when an admin deletes the team: it disappears at once and a
+    // scheduled job removes its issues and rows before the team itself.
+    // Optional because teams written before deletion existed lack it.
+    deletingAt: v.optional(v.union(v.number(), v.null())),
   })
     .index("by_orgId", ["orgId"])
     .index("by_orgId_and_key", ["orgId", "key"]),
