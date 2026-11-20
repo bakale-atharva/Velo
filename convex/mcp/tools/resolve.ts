@@ -1,0 +1,126 @@
+import { api } from "../../_generated/api";
+import type { Doc, Id } from "../../_generated/dataModel";
+import type { AgentClient } from "../client";
+import { ToolError } from "../registry";
+
+// Turns the references an agent knows (team key "ENG", a member's name or
+// email, an agent's name) into Velo ids. Every lookup goes through public
+// functions, so an agent can only resolve what it may see.
+
+const norm = (value: string) => value.trim().toLowerCase();
+
+function pickOne<T>(matches: T[], kind: string, ref: string): T {
+  if (matches.length === 1) return matches[0];
+  if (matches.length === 0) throw new ToolError(`NOT_FOUND: no ${kind} matches "${ref}".`);
+  throw new ToolError(`INVALID_INPUT: "${ref}" matches ${matches.length} ${kind}s; use an id.`);
+}
+
+/** A team by key (case-insensitive) or id, archived teams included. */
+export async function resolveTeam(client: AgentClient, ref: string): Promise<Doc<"teams">> {
+  const teams = await client.query(api.teams.list, { includeArchived: true });
+  return pickOne(
+    teams.filter((t) => t._id === ref || norm(t.key) === norm(ref)),
+    "team",
+    ref,
+  );
+}
+
+export async function resolveTeamId(client: AgentClient, ref: string): Promise<Id<"teams">> {
+  return (await resolveTeam(client, ref))._id;
+}
+
+/** A member (person or agent) by user id, email or exact name. */
+export async function resolveUserId(client: AgentClient, ref: string): Promise<string> {
+  if (norm(ref) === "me") {
+    return (await client.query(api.members.me, {})).userId;
+  }
+  const members = await client.query(api.members.list, {});
+  const byId = members.filter((m) => m.userId === ref.trim());
+  if (byId.length === 1) return byId[0].userId;
+  return pickOne(
+    members.filter(
+      (m) => (m.email !== null && norm(m.email) === norm(ref)) || (m.name !== null && norm(m.name) === norm(ref)),
+    ),
+    "member",
+    ref,
+  ).userId;
+}
+
+/** `null` stays null (unassign); anything else is resolved. */
+export async function resolveOptionalUserId(
+  client: AgentClient,
+  ref: string | null,
+): Promise<string | null> {
+  return ref === null ? null : await resolveUserId(client, ref);
+}
+
+/** An agent by id, user id or exact name. */
+export async function resolveAgentId(client: AgentClient, ref: string): Promise<Id<"agents">> {
+  const agents = await client.query(api.agents.list, {});
+  return pickOne(
+    agents.filter((a) => a._id === ref || a.userId === ref || norm(a.name) === norm(ref)),
+    "agent",
+    ref,
+  )._id;
+}
+
+/** A workflow state of a team, by id or name (case-insensitive). */
+export async function resolveStateId(
+  client: AgentClient,
+  teamId: Id<"teams">,
+  ref: string,
+): Promise<Id<"workflowStates">> {
+  const states = await client.query(api.workflowStates.list, { teamId });
+  return pickOne(
+    states.filter((s) => s._id === ref || norm(s.name) === norm(ref)),
+    "state",
+    ref,
+  )._id;
+}
+
+/** A label by id or name (case-insensitive). */
+export async function resolveLabelIds(client: AgentClient, refs: string[]): Promise<Id<"labels">[]> {
+  if (refs.length === 0) return [];
+  const labels = await client.query(api.labels.list, {});
+  return refs.map(
+    (ref) => pickOne(labels.filter((l) => l._id === ref || norm(l.name) === norm(ref)), "label", ref)._id,
+  );
+}
+
+/** An issue by identifier (ENG-12). */
+export async function resolveIssue(client: AgentClient, identifier: string) {
+  return await client.query(api.issues.get, { identifier: identifier.trim().toUpperCase() });
+}
+
+/** A project by id or exact name (case-insensitive). */
+export async function resolveProjectId(client: AgentClient, ref: string): Promise<Id<"projects">> {
+  const projects = await client.query(api.projects.list, {});
+  return pickOne(
+    projects.filter((p) => p._id === ref || norm(p.name) === norm(ref)),
+    "project",
+    ref,
+  )._id;
+}
+
+/** A team's cycle by id, number or name. */
+export async function resolveCycle(client: AgentClient, teamId: Id<"teams">, ref: string) {
+  const cycles = await client.query(api.cycles.list, { teamId });
+  return pickOne(
+    cycles.filter((c) => c._id === ref || String(c.number) === ref.trim() || norm(c.name) === norm(ref)),
+    "cycle",
+    ref,
+  );
+}
+
+/** "YYYY-MM-DD" (or any ISO date) to ms; null stays null. */
+export function parseDate(value: string | null): number | null {
+  if (value === null) return null;
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) throw new ToolError(`INVALID_INPUT: "${value}" is not a date (use YYYY-MM-DD).`);
+  return ms;
+}
+
+/** ms to "YYYY-MM-DD"; null stays null. */
+export function formatDate(ms: number | null): string | null {
+  return ms === null ? null : new Date(ms).toISOString().slice(0, 10);
+}

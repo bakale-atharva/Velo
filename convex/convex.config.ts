@@ -9,6 +9,10 @@ const app = defineApp({
     CLERK_WEBHOOK_SIGNING_SECRET: v.optional(v.string()),
     // OpenRouter key for the assistant (docs/ai-models.md).
     OPENROUTER_API_KEY: v.optional(v.string()),
+    // Agent token signing (B9): made by `node scripts/agent-jwt-keys.mjs`.
+    // The private key as a JWK (secret), and the public key set as a data URI.
+    AGENT_JWT_PRIVATE_KEY: v.optional(v.string()),
+    AGENT_JWT_JWKS: v.optional(v.string()),
   },
 });
 
