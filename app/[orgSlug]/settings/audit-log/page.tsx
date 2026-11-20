@@ -36,6 +36,10 @@ function describe(entry: Entry, nameOf: (userId: string) => string): string {
       return `updated team ${name}${m.isPrivate === "true" ? ", now private" : ""}`;
     case "team.archived":
       return `archived team ${name}`;
+    case "team.unarchived":
+      return `unarchived team ${name}`;
+    case "team.deleted":
+      return `deleted team ${name}${m.key ? ` (${m.key})` : ""}`;
     case "team.member_added":
       return `added ${nameOf(m.userId ?? "")} to a team`;
     case "team.member_removed":

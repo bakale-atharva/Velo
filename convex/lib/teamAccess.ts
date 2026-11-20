@@ -31,6 +31,10 @@ export async function canAccessTeam(
   if (team.orgId !== member.orgId) {
     return false;
   }
+  // A team being deleted is gone for everyone, including its issues.
+  if (team.deletingAt != null) {
+    return false;
+  }
   if (!team.isPrivate) {
     return true;
   }

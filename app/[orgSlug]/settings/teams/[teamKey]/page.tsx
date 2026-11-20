@@ -179,7 +179,7 @@ function Archive({ team, orgSlug }: { team: Doc<"teams">; orgSlug: string }) {
           <DialogHeader>
             <DialogTitle>Archive {team.name}?</DialogTitle>
             <DialogDescription>
-              Nobody can create issues in it afterwards. There’s no unarchive yet.
+              Nobody can create issues in it until it’s unarchived. Its issues stay readable.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -206,11 +206,105 @@ function Archive({ team, orgSlug }: { team: Doc<"teams">; orgSlug: string }) {
   );
 }
 
+/** Unarchive for anyone who manages teams; permanent delete for org admins. */
+function ArchivedTeam({ team, orgSlug, isAdmin }: { team: Doc<"teams">; orgSlug: string; isAdmin: boolean }) {
+  const unarchive = useMutation(api.teams.unarchive);
+  const remove = useMutation(api.teams.remove);
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <>
+      <SettingsPanel
+        title="Archived"
+        description="This team is out of the sidebar and takes no new issues. Unarchive it to use it again."
+        actions={
+          <Button
+            variant="outline"
+            onClick={() =>
+              unarchive({ teamId: team._id })
+                .then(() => toast.success(`Unarchived ${team.name}`))
+                .catch((error: unknown) => toast.error(errorMessage(error)))
+            }
+          >
+            Unarchive {team.key}
+          </Button>
+        }
+      />
+      {isAdmin && (
+        <SettingsPanel
+          title="Delete team"
+          description="Deletes the team for good: its issues with their comments and activity, its cycles and workflow states. Saved views filtered to it are deleted too. This can’t be undone."
+          actions={
+            <Button variant="destructive" onClick={() => setDeleting(true)}>
+              Delete {team.key}
+            </Button>
+          }
+        >
+          <Dialog
+            open={deleting}
+            onOpenChange={(open) => {
+              setDeleting(open);
+              if (!open) setTyped("");
+            }}
+          >
+            <DialogContent className="sm:max-w-sm">
+              <form
+                className="grid gap-4"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (typed.trim() !== team.key) return;
+                  setBusy(true);
+                  try {
+                    await remove({ teamId: team._id, confirmKey: typed.trim() });
+                    toast.success(`Deleting ${team.name}`);
+                    router.push(`/${orgSlug}/settings/teams`);
+                  } catch (error) {
+                    toast.error(errorMessage(error));
+                    setBusy(false);
+                  }
+                }}
+              >
+                <DialogHeader>
+                  <DialogTitle>Delete {team.name} for good?</DialogTitle>
+                  <DialogDescription>
+                    Every issue in {team.key}, with its comments and activity, is deleted. This can’t be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <label className="data grid gap-1.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+                  Type {team.key} to confirm
+                  <Input
+                    autoFocus
+                    autoComplete="off"
+                    value={typed}
+                    onChange={(e) => setTyped(e.target.value.toUpperCase())}
+                    className="data text-[14px] tracking-normal text-foreground normal-case"
+                  />
+                </label>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setDeleting(false)}>
+                    Keep team
+                  </Button>
+                  <Button type="submit" variant="destructive" disabled={busy || typed.trim() !== team.key}>
+                    {busy ? "Deleting…" : "Delete team"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </SettingsPanel>
+      )}
+    </>
+  );
+}
+
 function TeamSettings() {
   const { orgSlug, teamKey } = useParams<{ orgSlug: string; teamKey: string }>();
   const team = useQuery(api.teams.get, { key: teamKey });
   const states = useQuery(api.workflowStates.list, team ? { teamId: team._id } : "skip");
   const canManage = usePermission("teams.manage") === true;
+  const me = useQuery(api.members.me, {});
   if (team === undefined || states === undefined) {
     return <PageSkeleton rows={6} />;
   }
@@ -233,6 +327,9 @@ function TeamSettings() {
         <WorkflowStates teamId={team._id} states={states} canManage={canManage && team.archivedAt === null} />
       </SettingsPanel>
       {canManage && team.archivedAt === null && <Archive team={team} orgSlug={orgSlug} />}
+      {canManage && team.archivedAt !== null && (
+        <ArchivedTeam team={team} orgSlug={orgSlug} isAdmin={me?.role === "admin"} />
+      )}
     </div>
   );
 }
