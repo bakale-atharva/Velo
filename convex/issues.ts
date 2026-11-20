@@ -71,17 +71,23 @@ export const create = mutation({
 
 /** An issue by its identifier, e.g. "ENG-12". */
 export const get = query({
+  // An identifier (ENG-12) or the issue's id.
   args: { identifier: v.string() },
   returns: issueValidator,
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
-    const issue = await ctx.db
-      .query("issues")
-      .withIndex("by_orgId_and_identifier", (q) =>
-        q.eq("orgId", member.orgId).eq("identifier", args.identifier),
-      )
-      .unique();
-    if (issue === null) {
+    const ref = args.identifier.trim();
+    const issueId = ctx.db.normalizeId("issues", ref);
+    const issue =
+      issueId !== null
+        ? await ctx.db.get("issues", issueId)
+        : await ctx.db
+            .query("issues")
+            .withIndex("by_orgId_and_identifier", (q) =>
+              q.eq("orgId", member.orgId).eq("identifier", ref.toUpperCase()),
+            )
+            .unique();
+    if (issue === null || issue.orgId !== member.orgId) {
       throw appError("NOT_FOUND");
     }
     await requireTeamAccess(ctx, member, issue.teamId);

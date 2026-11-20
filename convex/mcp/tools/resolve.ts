@@ -87,9 +87,9 @@ export async function resolveLabelIds(client: AgentClient, refs: string[]): Prom
   );
 }
 
-/** An issue by identifier (ENG-12). */
+/** An issue by identifier (ENG-12) or id. */
 export async function resolveIssue(client: AgentClient, identifier: string) {
-  return await client.query(api.issues.get, { identifier: identifier.trim().toUpperCase() });
+  return await client.query(api.issues.get, { identifier });
 }
 
 /** A project by id or exact name (case-insensitive). */

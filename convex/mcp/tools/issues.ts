@@ -19,7 +19,7 @@ import {
 // Issues, their comments and activity. Issues are named by identifier
 // (ENG-12); every field takes names (state, labels, assignee, project).
 
-const issueRef = z.string().describe("Issue identifier, e.g. ENG-12");
+const issueRef = z.string().describe("Issue identifier (e.g. ENG-12) or id");
 const teamRef = z.string().describe("Team key (e.g. ENG) or id");
 const page = {
   cursor: z.string().optional().describe("nextCursor from the previous page"),

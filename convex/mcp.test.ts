@@ -263,6 +263,12 @@ describe("MCP tools", () => {
     const moved = await ok(lead, "update_issue", { issue: "ENG-1", state: "In Progress" });
     expect(moved.stateType).toBe("started");
 
+    // An issue's id works wherever its identifier does.
+    expect((await ok(lead, "get_issue", { issue: issue._id })).identifier).toBe("ENG-1");
+    const byId = await ok(lead, "update_issue", { issue: issue._id, priority: 1 });
+    expect(byId).toMatchObject({ identifier: "ENG-1", priorityName: "urgent" });
+    expect((await ok(lead, "get_issue", { issue: "eng-1" })).identifier).toBe("ENG-1");
+
     // The subagent sees its work.
     const reviewer = clientFor(t, sub.userId, ORG_A);
     const mine = await ok(reviewer, "my_issues");
@@ -342,19 +348,20 @@ describe("MCP tools", () => {
     const { t, adminA, lead } = await setup();
     await setPlan(t, ORG_A, "business");
     const secret = await adminA.mutation(api.teams.create, { name: "Secret", key: "SEC", isPrivate: true });
-    await adminA.mutation(api.issues.create, { teamId: secret, title: "Hidden plan" });
+    const { issueId } = await adminA.mutation(api.issues.create, { teamId: secret, title: "Hidden plan" });
 
     const teams = await ok(lead, "list_teams");
     expect(teams.teams.map((x: { key: string }) => x.key)).toEqual(["ENG"]);
     const hidden = await call(lead, "get_issue", { issue: "SEC-1" });
     expect(hidden.content![0].text).toMatch(/^NOT_FOUND/);
+    expect((await call(lead, "get_issue", { issue: issueId })).content![0].text).toMatch(/^NOT_FOUND/);
     const search = await ok(lead, "search_issues", { query: "Hidden" });
     expect(search.issues).toEqual([]);
   });
 
   test("an agent can't reach another workspace", async () => {
     const { t, adminA, lead } = await setup();
-    await adminA.mutation(api.issues.create, {
+    const { issueId } = await adminA.mutation(api.issues.create, {
       teamId: (await adminA.query(api.teams.get, { key: "ENG" }))._id,
       title: "Org A work",
     });
@@ -364,6 +371,9 @@ describe("MCP tools", () => {
     const client = clientFor(t, outsider.userId, ORG_B);
 
     expect((await call(client, "get_issue", { issue: "ENG-1" })).content![0].text).toMatch(/^NOT_FOUND/);
+    expect((await call(client, "get_issue", { issue: issueId })).content![0].text).toMatch(/^NOT_FOUND/);
+    const write = await call(client, "update_issue", { issue: issueId, title: "Pwned" });
+    expect(write.content![0].text).toMatch(/^NOT_FOUND/);
     expect((await call(client, "get_team", { team: "ENG" })).content![0].text).toMatch(/^NOT_FOUND/);
     const lookup = await call(client, "update_agent", { agent: "Lead", name: "Pwned" });
     expect(lookup.content![0].text).toMatch(/^NOT_FOUND/);
