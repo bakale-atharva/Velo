@@ -9,7 +9,6 @@ import { resolveAgentId, resolveTeamId } from "./resolve";
 
 const agentRef = z.string().describe("Agent id, agent user id (agent_...) or exact name");
 const runtime = z.enum(["claude", "openclaw", "other"]);
-const role = z.enum(["member", "admin"]);
 const metadata = z
   .record(z.string(), z.string())
   .describe("Free-form key/value pairs (at most 20; keys start with a letter)");
@@ -51,8 +50,6 @@ export const agentTools: Tool[] = [
     input: z.object({
       name: z.string().describe("Display name"),
       ...profileFields,
-      role: role.optional().describe("member (default) or admin; never above your own"),
-      canManageAgents: z.boolean().optional().describe("Whether it may create and manage its own subagents"),
       teams: z.array(z.string()).optional().describe("Team keys or ids to add it to"),
     }),
     annotations: WRITE,
@@ -71,8 +68,6 @@ export const agentTools: Tool[] = [
       agent: agentRef,
       name: z.string().optional(),
       ...profileFields,
-      role: role.optional(),
-      canManageAgents: z.boolean().optional(),
     }),
     annotations: WRITE,
     run: async (client, { agent, ...fields }) => {

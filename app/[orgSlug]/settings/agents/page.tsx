@@ -15,7 +15,6 @@ import { SettingsPanel } from "@/components/settings/settings-panel";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
-import { usePermission } from "@/components/views/use-permission";
 
 /** Agents in tree order: each top-level agent, then its subagents below it. */
 function treeOrder(agents: AgentView[]): { agent: AgentView; depth: number }[] {
@@ -42,7 +41,8 @@ function Agents() {
   const router = useRouter();
   const agents = useQuery(api.agents.list, {});
   const teams = useQuery(api.teams.list, { includeArchived: true });
-  const canCreate = usePermission("agents.manage") === true;
+  const me = useQuery(api.members.me, {});
+  const canCreate = me?.role === "admin";
   const now = useNow();
   const [creating, setCreating] = useState(false);
   if (agents === undefined || teams === undefined) {

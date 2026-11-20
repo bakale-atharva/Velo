@@ -16,9 +16,6 @@ export const PERMISSIONS = [
   "projects.manage",
   "cycles.manage",
   "views.share",
-  // Create, edit and delete any agent of the org (agents themselves manage
-  // only their own subtree; see convex/lib/agentAccess.ts).
-  "agents.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -30,7 +27,6 @@ export const permissionValidator = v.union(
   v.literal("projects.manage"),
   v.literal("cycles.manage"),
   v.literal("views.share"),
-  v.literal("agents.manage"),
 );
 
 // Keeps the validator and the list in step at compile time.

@@ -11,13 +11,10 @@ import {
 import { logActivity } from "./lib/activity";
 import { AGENT_USER_PREFIX } from "./lib/agentIds";
 import {
-  AGENT_ROLES,
-  MAX_AGENT_DEPTH,
   MAX_AGENTS_PER_ORG,
   agentMembership,
-  assertRoleAllowed,
   canManageAgent,
-  depthOf,
+  isMaster,
   loadAgent,
   requireAgentCreator,
   requireManagedAgent,
@@ -29,10 +26,11 @@ import { cleanText } from "./lib/input";
 import { canAccessTeam, isTeamMember, requireTeamAccess } from "./lib/teamAccess";
 import { agentRuntime } from "./schema";
 
-// Agents are org members (B8). People with `agents.manage` manage every
-// agent; agents with `canManageAgents` manage their own subtree (see
-// convex/lib/agentAccess.ts). Every function works the same whether a
-// person (Clerk token) or an agent (Velo-signed token, B9) calls it.
+// Agents are org members (B8), in two levels: workspace admins create
+// master agents (admins that can create agents), and a master's agents are
+// members that can't (see convex/lib/agentAccess.ts). Every function works
+// the same whether a person (Clerk token) or an agent (Velo-signed token,
+// B9) calls it.
 
 type DbCtx = QueryCtx | MutationCtx;
 
@@ -47,8 +45,6 @@ const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const MAX_TEAMS_PER_AGENT = 200;
 const STEP_BATCH = 100;
 
-const roleValidator = v.union(v.literal("member"), v.literal("admin"));
-
 const agentValidator = v.object({
   _id: v.id("agents"),
   _creationTime: v.number(),
@@ -62,7 +58,10 @@ const agentValidator = v.object({
   metadata: v.record(v.string(), v.string()),
   parentAgentId: v.union(v.id("agents"), v.null()),
   createdBy: v.string(),
-  canManageAgents: v.boolean(),
+  // Created by a person: an admin that can create agents.
+  isMaster: v.boolean(),
+  // "admin" for masters, "member" for their agents (for MCP; the UI never
+  // shows it).
   role: v.string(),
   disabledAt: v.union(v.number(), v.null()),
   lastActiveAt: v.union(v.number(), v.null()),
@@ -161,7 +160,7 @@ async function toView(ctx: QueryCtx, member: MemberInfo, agent: Doc<"agents">) {
     metadata: agent.metadata,
     parentAgentId: agent.parentAgentId,
     createdBy: agent.createdBy,
-    canManageAgents: agent.canManageAgents,
+    isMaster: isMaster(agent),
     role: membership?.role ?? "member",
     disabledAt: agent.disabledAt,
     lastActiveAt: agent.lastActiveAt,
@@ -274,9 +273,9 @@ export const removeFromTeam = mutation({
 // --- Create and update -------------------------------------------------------
 
 /**
- * Creates an agent member. When an agent calls it, the new agent goes below
- * the caller. Its role can't be above the caller's, and `canManageAgents`
- * can only be given by someone who may manage agents.
+ * Creates an agent member. A workspace admin creates a master agent (role
+ * admin); a master creates one of its agents (role member, below it).
+ * The role is never taken from the caller.
  */
 export const create = mutation({
   args: {
@@ -286,19 +285,13 @@ export const create = mutation({
     model: v.optional(v.union(v.string(), v.null())),
     runtime: v.optional(agentRuntime),
     metadata: v.optional(v.record(v.string(), v.string())),
-    role: v.optional(roleValidator),
-    canManageAgents: v.optional(v.boolean()),
     teamIds: v.optional(v.array(v.id("teams"))),
   },
   returns: v.id("agents"),
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
     const parent = await requireAgentCreator(ctx, member);
-    const role = args.role ?? AGENT_ROLES[0];
-    assertRoleAllowed(member, role);
-    if (parent !== null && (await depthOf(ctx, parent)) >= MAX_AGENT_DEPTH) {
-      throw appError("LIMIT_REACHED");
-    }
+    const role = parent === null ? "admin" : "member";
     const existing = await ctx.db
       .query("agents")
       .withIndex("by_orgId", (q) => q.eq("orgId", member.orgId))
@@ -324,7 +317,6 @@ export const create = mutation({
       metadata: cleanMetadata(args.metadata ?? {}),
       parentAgentId: parent?._id ?? null,
       createdBy: member.userId,
-      canManageAgents: args.canManageAgents ?? false,
       disabledAt: null,
       deletingAt: null,
       lastActiveAt: null,
@@ -375,18 +367,19 @@ async function requireProfileEditor(
   ctx: MutationCtx,
   member: MemberInfo,
   agentId: Id<"agents">,
-): Promise<{ agent: Doc<"agents">; manages: boolean }> {
+): Promise<{ agent: Doc<"agents"> }> {
   const agent = await loadAgent(ctx, member, agentId);
   if (agent.deletingAt !== null) throw appError("NOT_FOUND");
-  const manages = await canManageAgent(ctx, member, agent);
-  if (!manages && agent.userId !== member.userId) throw appError("FORBIDDEN");
-  return { agent, manages };
+  if (agent.userId !== member.userId && !(await canManageAgent(ctx, member, agent))) {
+    throw appError("FORBIDDEN");
+  }
+  return { agent };
 }
 
 /**
- * Changes an agent. Profile fields (name, photo URL, description, model,
- * runtime, metadata) can be changed by the agent itself or by whoever
- * manages it; role and `canManageAgents` only by whoever manages it.
+ * Changes an agent's profile (name, photo URL, description, model,
+ * runtime, metadata): the agent itself, or whoever manages it. Its role
+ * follows from its level and never changes.
  */
 export const update = mutation({
   args: {
@@ -397,16 +390,11 @@ export const update = mutation({
     model: v.optional(v.union(v.string(), v.null())),
     runtime: v.optional(agentRuntime),
     metadata: v.optional(v.record(v.string(), v.string())),
-    role: v.optional(roleValidator),
-    canManageAgents: v.optional(v.boolean()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
-    const { agent, manages } = await requireProfileEditor(ctx, member, args.agentId);
-    if ((args.role !== undefined || args.canManageAgents !== undefined) && !manages) {
-      throw appError("FORBIDDEN");
-    }
+    const { agent } = await requireProfileEditor(ctx, member, args.agentId);
 
     const patch: Partial<Doc<"agents">> = {};
     const changed: string[] = [];
@@ -439,17 +427,6 @@ export const update = mutation({
       patch.metadata = cleanMetadata(args.metadata);
       changed.push("metadata");
     }
-    if (args.canManageAgents !== undefined) {
-      patch.canManageAgents = args.canManageAgents;
-      changed.push("canManageAgents");
-    }
-    if (args.role !== undefined) {
-      assertRoleAllowed(member, args.role);
-      const membership = await agentMembership(ctx, agent);
-      if (membership === null) throw appError("NOT_FOUND");
-      await ctx.db.patch("memberships", membership._id, { role: args.role });
-      changed.push("role");
-    }
     if (changed.length === 0) return null;
 
     await ctx.db.patch("agents", agent._id, patch);
@@ -458,7 +435,7 @@ export const update = mutation({
       action: "agent.updated",
       targetType: "agent",
       targetId: agent._id,
-      metadata: { fields: changed.join(","), ...(args.role ? { role: args.role } : {}) },
+      metadata: { fields: changed.join(",") },
     });
     return null;
   },

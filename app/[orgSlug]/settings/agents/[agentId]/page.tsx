@@ -60,10 +60,6 @@ function Profile({ agent, parent }: { agent: AgentView; parent: AgentView | unde
             {agent.model !== null && ` · ${agent.model}`}
           </span>
         </SettingsFact>
-        <SettingsFact label="Role">
-          <span className="data text-[13px]">{agent.role}</span>
-          {agent.canManageAgents && <span className="ml-3 text-muted-foreground">Can create subagents</span>}
-        </SettingsFact>
         <SettingsFact label="Reports to">
           {parent !== undefined ? (
             <Link href={`/${orgSlug}/settings/agents/${parent._id}`} className="underline underline-offset-2 hover:text-foreground">
@@ -172,9 +168,9 @@ function Subagents({ agent, agents }: { agent: AgentView; agents: AgentView[] })
     <SettingsPanel
       title="Subagents"
       description={
-        agent.canManageAgents
-          ? "Agents this one created, and theirs. It manages them and can hand them issues."
-          : "This agent can’t create subagents. Turn on “Can create subagents” to let it."
+        agent.isMaster
+          ? "Agents this one created. It manages them and can hand them issues."
+          : "Only master agents create agents."
       }
     >
       {below.length === 0 ? (

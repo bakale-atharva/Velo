@@ -65,17 +65,8 @@ async function setup() {
   return { t, adminA, memberA, adminB, eng };
 }
 
-/** Creates an agent as `by` and returns its id, user id and a client for it. */
-async function makeAgent(
-  t: T,
-  by: ReturnType<typeof as>,
-  args: Partial<{ name: string; role: "member" | "admin"; canManageAgents: boolean }> = {},
-) {
-  const agentId = await by.mutation(api.agents.create, {
-    name: args.name ?? "Builder",
-    role: args.role,
-    canManageAgents: args.canManageAgents,
-  });
+/** The agent's row and a client acting as it, with the role it was given. */
+async function asAgent(t: T, agentId: Id<"agents">) {
   const agent = await t.run(async (ctx) => (await ctx.db.get("agents", agentId))!);
   const membership = await t.run(async (ctx) =>
     ctx.db
@@ -85,38 +76,40 @@ async function makeAgent(
       )
       .unique(),
   );
-  return {
-    agentId,
-    userId: agent.userId,
-    client: as(t, agent.userId, agent.orgId, membership!.role),
-  };
+  return { agentId, userId: agent.userId, role: membership!.role, client: as(t, agent.userId, agent.orgId, membership!.role) };
 }
 
-describe("agent members", () => {
-  test("an admin creates an agent that is a member with a mirror profile", async () => {
+/** A master agent created by the admin of org A. */
+async function makeMaster(t: T, adminA: ReturnType<typeof as>, name = "Lead") {
+  return await asAgent(t, await adminA.mutation(api.agents.create, { name }));
+}
+
+describe("master agents", () => {
+  test("an admin's agent is a master: an admin that can create agents", async () => {
     const { t, adminA } = await setup();
     const agentId = await adminA.mutation(api.agents.create, {
-      name: "Reviewer",
-      imageUrl: "https://example.com/r.png",
-      description: "Reviews pull requests",
+      name: "Lead",
+      imageUrl: "https://example.com/lead.png",
+      description: "Runs the team",
       model: "claude-opus-5-5",
       runtime: "claude",
       metadata: { repo: "velo" },
     });
     const view = await adminA.query(api.agents.get, { agentId });
     expect(view).toMatchObject({
-      name: "Reviewer",
-      imageUrl: "https://example.com/r.png",
+      name: "Lead",
+      imageUrl: "https://example.com/lead.png",
       model: "claude-opus-5-5",
       runtime: "claude",
       metadata: { repo: "velo" },
-      role: "member",
+      role: "admin",
+      isMaster: true,
       parentAgentId: null,
       canManage: true,
     });
     expect(view.userId).toMatch(/^agent_[a-z0-9]{24}$/);
     const members = await adminA.query(api.members.list, {});
-    expect(members.find((m) => m.userId === view.userId)).toMatchObject({ name: "Reviewer" });
+    expect(members.find((m) => m.userId === view.userId)).toMatchObject({ name: "Lead", isAgent: true, role: "admin" });
     const user = await t.run(async (ctx) =>
       ctx.db
         .query("users")
@@ -124,6 +117,75 @@ describe("agent members", () => {
         .unique(),
     );
     expect(user?.isAgent).toBe(true);
+  });
+
+  test("a master's agents are members and can't create agents", async () => {
+    const { t, adminA } = await setup();
+    const lead = await makeMaster(t, adminA);
+    const subId = await lead.client.mutation(api.agents.create, { name: "Reviewer" });
+    const sub = await asAgent(t, subId);
+    expect(sub.role).toBe("member");
+    expect(await adminA.query(api.agents.get, { agentId: subId })).toMatchObject({
+      parentAgentId: lead.agentId,
+      createdBy: lead.userId,
+      isMaster: false,
+      role: "member",
+    });
+    await expect(sub.client.mutation(api.agents.create, { name: "Grandchild" })).rejects.toThrow(/FORBIDDEN/);
+  });
+
+  test("only workspace admins create masters, custom roles included", async () => {
+    const { t, adminA, memberA } = await setup();
+    await expect(memberA.mutation(api.agents.create, { name: "A" })).rejects.toThrow(/FORBIDDEN/);
+    await setPlan(t, ORG_A, "business");
+    const roleId = await adminA.mutation(api.roles.create, {
+      name: "Everything",
+      permissions: ["issues.delete", "teams.manage", "labels.manage", "projects.manage", "cycles.manage", "views.share"],
+    });
+    await adminA.mutation(api.roles.assign, { userId: "member_a", roleId });
+    await expect(memberA.mutation(api.agents.create, { name: "A" })).rejects.toThrow(/FORBIDDEN/);
+    // Nor can a member manage an existing master.
+    const lead = await makeMaster(t, adminA);
+    await expect(memberA.action(api.agentKeys.create, { agentId: lead.agentId, label: "steal" })).rejects.toThrow(
+      /FORBIDDEN/,
+    );
+    await expect(memberA.mutation(api.agents.remove, { agentId: lead.agentId })).rejects.toThrow(/FORBIDDEN/);
+  });
+
+  test("a master manages only its own agents, not itself or another master's", async () => {
+    const { t, adminA } = await setup();
+    const lead = await makeMaster(t, adminA, "Lead");
+    const other = await makeMaster(t, adminA, "Other");
+    const otherSub = await other.client.mutation(api.agents.create, { name: "Theirs" });
+    const mine = await lead.client.mutation(api.agents.create, { name: "Mine" });
+
+    expect((await lead.client.query(api.agents.get, { agentId: mine })).canManage).toBe(true);
+    expect((await lead.client.query(api.agents.get, { agentId: lead.agentId })).canManage).toBe(false);
+    expect((await lead.client.query(api.agents.get, { agentId: other.agentId })).canManage).toBe(false);
+    await expect(lead.client.mutation(api.agents.update, { agentId: otherSub, name: "Taken" })).rejects.toThrow(
+      /FORBIDDEN/,
+    );
+    await expect(lead.client.mutation(api.agents.disable, { agentId: other.agentId })).rejects.toThrow(/FORBIDDEN/);
+    await expect(lead.client.mutation(api.agents.disable, { agentId: lead.agentId })).rejects.toThrow(/FORBIDDEN/);
+    await lead.client.mutation(api.agents.disable, { agentId: mine });
+  });
+
+  test("any agent edits its own profile", async () => {
+    const { t, adminA } = await setup();
+    const lead = await makeMaster(t, adminA);
+    const sub = await asAgent(t, await lead.client.mutation(api.agents.create, { name: "Builder" }));
+    await sub.client.mutation(api.agents.update, {
+      agentId: sub.agentId,
+      name: "Builder 2",
+      imageUrl: "https://example.com/b.png",
+      metadata: { mood: "focused" },
+    });
+    expect(await adminA.query(api.agents.get, { agentId: sub.agentId })).toMatchObject({
+      name: "Builder 2",
+      imageUrl: "https://example.com/b.png",
+      metadata: { mood: "focused" },
+      role: "member",
+    });
   });
 
   test("rejects bad input", async () => {
@@ -134,142 +196,33 @@ describe("agent members", () => {
     await expect(
       adminA.mutation(api.agents.create, { name: "A", metadata: { "bad key": "x" } }),
     ).rejects.toThrow(/INVALID_INPUT/);
-    await expect(adminA.mutation(api.agents.create, { name: "  " })).rejects.toThrow(
-      /INVALID_INPUT/,
-    );
-  });
-
-  test("members without agents.manage can't create agents", async () => {
-    const { memberA } = await setup();
-    await expect(memberA.mutation(api.agents.create, { name: "A" })).rejects.toThrow(
-      /FORBIDDEN/,
-    );
+    await expect(adminA.mutation(api.agents.create, { name: "  " })).rejects.toThrow(/INVALID_INPUT/);
   });
 
   test("agents don't use seats: a full Free org can still add agents", async () => {
     const { t, adminA } = await setup();
     await join(t, ORG_A, "member_a2");
     expect(await adminA.query(api.billing.seats, {})).toEqual({ used: 3, limit: 3 });
-    const { client } = await makeAgent(t, adminA);
-    await makeAgent(t, adminA, { name: "Second" });
+    const lead = await makeMaster(t, adminA);
+    const sub = await asAgent(t, await lead.client.mutation(api.agents.create, { name: "Second" }));
     expect(await adminA.query(api.billing.seats, {})).toEqual({ used: 3, limit: 3 });
-    // The agent is let in even though every seat is taken.
-    expect((await client.query(api.members.me, {})).role).toBe("member");
+    expect((await sub.client.query(api.members.me, {})).role).toBe("member");
   });
 
-  test("an agent without canManageAgents can't create subagents", async () => {
+  test("a disabled master can't create agents until enabled", async () => {
     const { t, adminA } = await setup();
-    const { client } = await makeAgent(t, adminA);
-    await expect(client.mutation(api.agents.create, { name: "Sub" })).rejects.toThrow(
-      /FORBIDDEN/,
-    );
-  });
-
-  test("subagents go below their creator and can't outrank it", async () => {
-    const { t, adminA } = await setup();
-    const lead = await makeAgent(t, adminA, { name: "Lead", canManageAgents: true });
-    await expect(
-      lead.client.mutation(api.agents.create, { name: "Boss", role: "admin" }),
-    ).rejects.toThrow(/FORBIDDEN/);
-    const subId = await lead.client.mutation(api.agents.create, { name: "Sub" });
-    const sub = await adminA.query(api.agents.get, { agentId: subId });
-    expect(sub.parentAgentId).toBe(lead.agentId);
-    expect(sub.createdBy).toBe(lead.userId);
-    // The lead manages its subagent but not itself.
-    expect((await lead.client.query(api.agents.get, { agentId: subId })).canManage).toBe(true);
-    expect((await lead.client.query(api.agents.get, { agentId: lead.agentId })).canManage).toBe(
-      false,
-    );
-    await expect(
-      lead.client.mutation(api.agents.update, { agentId: lead.agentId, role: "admin" }),
-    ).rejects.toThrow(/FORBIDDEN/);
-  });
-
-  test("a member with agents.manage can't create or manage admin agents", async () => {
-    const { t, adminA, memberA } = await setup();
-    await setPlan(t, ORG_A, "business");
-    const roleId = await adminA.mutation(api.roles.create, {
-      name: "Agent wrangler",
-      permissions: ["agents.manage"],
-    });
-    await adminA.mutation(api.roles.assign, { userId: "member_a", roleId });
-    await memberA.mutation(api.agents.create, { name: "Helper" });
-    await expect(
-      memberA.mutation(api.agents.create, { name: "Root", role: "admin" }),
-    ).rejects.toThrow(/FORBIDDEN/);
-    const admin = await makeAgent(t, adminA, { name: "Ops", role: "admin" });
-    await expect(
-      memberA.action(api.agentKeys.create, { agentId: admin.agentId, label: "steal" }),
-    ).rejects.toThrow(/FORBIDDEN/);
-    await expect(
-      memberA.mutation(api.agents.remove, { agentId: admin.agentId }),
-    ).rejects.toThrow(/FORBIDDEN/);
-  });
-
-  test("an agent can't manage agents outside its subtree", async () => {
-    const { t, adminA } = await setup();
-    const lead = await makeAgent(t, adminA, { name: "Lead", canManageAgents: true });
-    const other = await makeAgent(t, adminA, { name: "Other" });
-    await expect(
-      lead.client.mutation(api.agents.update, { agentId: other.agentId, name: "Mine" }),
-    ).rejects.toThrow(/FORBIDDEN/);
-    await expect(lead.client.mutation(api.agents.disable, { agentId: other.agentId })).rejects.toThrow(
-      /FORBIDDEN/,
-    );
-  });
-
-  test("an agent edits its own profile", async () => {
-    const { t, adminA } = await setup();
-    const { agentId, client } = await makeAgent(t, adminA);
-    await client.mutation(api.agents.update, {
-      agentId,
-      name: "Builder 2",
-      imageUrl: "https://example.com/b.png",
-      metadata: { mood: "focused" },
-    });
-    expect(await adminA.query(api.agents.get, { agentId })).toMatchObject({
-      name: "Builder 2",
-      imageUrl: "https://example.com/b.png",
-      metadata: { mood: "focused" },
-    });
-    await expect(
-      client.mutation(api.agents.update, { agentId, canManageAgents: true }),
-    ).rejects.toThrow(/FORBIDDEN/);
-  });
-
-  test("an agent can't take over another agent's photo file", async () => {
-    const { t, adminA } = await setup();
-    const a = await makeAgent(t, adminA, { name: "A" });
-    const b = await makeAgent(t, adminA, { name: "B" });
-    const storageId = await t.run(async (ctx) =>
-      ctx.storage.store(new Blob(["png"], { type: "image/png" })),
-    );
-    await a.client.mutation(api.agents.setAvatar, { agentId: a.agentId, storageId });
-    expect((await adminA.query(api.agents.get, { agentId: a.agentId })).imageUrl).not.toBeNull();
-    await expect(
-      b.client.mutation(api.agents.setAvatar, { agentId: b.agentId, storageId }),
-    ).rejects.toThrow(/INVALID_INPUT/);
-    expect(await t.run(async (ctx) => ctx.db.system.get("_storage", storageId))).not.toBeNull();
-  });
-
-  test("a disabled agent can no longer manage agents", async () => {
-    const { t, adminA } = await setup();
-    const lead = await makeAgent(t, adminA, { name: "Lead", canManageAgents: true });
+    const lead = await makeMaster(t, adminA);
     await adminA.mutation(api.agents.disable, { agentId: lead.agentId });
-    await expect(lead.client.mutation(api.agents.create, { name: "Sub" })).rejects.toThrow(
-      /FORBIDDEN/,
-    );
+    await expect(lead.client.mutation(api.agents.create, { name: "Sub" })).rejects.toThrow(/FORBIDDEN/);
     await adminA.mutation(api.agents.enable, { agentId: lead.agentId });
     await lead.client.mutation(api.agents.create, { name: "Sub" });
   });
 
   test("another org's agent is not found", async () => {
     const { t, adminA, adminB } = await setup();
-    const { agentId } = await makeAgent(t, adminA);
+    const { agentId } = await makeMaster(t, adminA);
     await expect(adminB.query(api.agents.get, { agentId })).rejects.toThrow(/NOT_FOUND/);
-    await expect(adminB.mutation(api.agents.update, { agentId, name: "X" })).rejects.toThrow(
-      /NOT_FOUND/,
-    );
+    await expect(adminB.mutation(api.agents.update, { agentId, name: "X" })).rejects.toThrow(/NOT_FOUND/);
     await expect(adminB.mutation(api.agents.remove, { agentId })).rejects.toThrow(/NOT_FOUND/);
     expect(await adminB.query(api.agents.list, {})).toEqual([]);
   });
@@ -277,12 +230,11 @@ describe("agent members", () => {
   test("agents can be assigned issues and added to private teams", async () => {
     const { t, adminA, eng } = await setup();
     await setPlan(t, ORG_A, "business");
-    const lead = await makeAgent(t, adminA, { name: "Lead", canManageAgents: true });
+    const lead = await makeMaster(t, adminA);
     const subId = await lead.client.mutation(api.agents.create, { name: "Sub", teamIds: [eng] });
     const sub = await adminA.query(api.agents.get, { agentId: subId });
     expect(sub.teamIds).toEqual([eng]);
 
-    // The lead creates an issue and hands it to its subagent.
     const { issueId } = await lead.client.mutation(api.issues.create, {
       teamId: eng,
       title: "Write tests",
@@ -292,25 +244,20 @@ describe("agent members", () => {
     expect(issue.assigneeId).toBe(sub.userId);
     expect(issue.creatorId).toBe(lead.userId);
 
-    // A private team the subagent is added to becomes visible to it.
-    const secret = await adminA.mutation(api.teams.create, {
-      name: "Secret",
-      key: "SEC",
-      isPrivate: true,
-    });
+    const secret = await adminA.mutation(api.teams.create, { name: "Secret", key: "SEC", isPrivate: true });
     const subClient = as(t, sub.userId, ORG_A);
     await expect(subClient.query(api.teams.get, { key: "SEC" })).rejects.toThrow(/NOT_FOUND/);
     await adminA.mutation(api.agents.addToTeam, { agentId: subId, teamId: secret });
     expect((await subClient.query(api.teams.get, { key: "SEC" }))._id).toBe(secret);
-    // The lead can't see the private team, so it can't add agents to it.
-    await expect(
-      lead.client.mutation(api.agents.addToTeam, { agentId: subId, teamId: secret }),
-    ).rejects.toThrow(/NOT_FOUND/);
+    // The master isn't in the private team, so it can't add agents to it.
+    await expect(lead.client.mutation(api.agents.addToTeam, { agentId: subId, teamId: secret })).rejects.toThrow(
+      /NOT_FOUND/,
+    );
   });
 
-  test("deleting an agent removes its subtree and unassigns its issues", async () => {
+  test("deleting a master deletes its agents and unassigns their issues", async () => {
     const { t, adminA, eng } = await setup();
-    const lead = await makeAgent(t, adminA, { name: "Lead", canManageAgents: true });
+    const lead = await makeMaster(t, adminA);
     const subId = await lead.client.mutation(api.agents.create, { name: "Sub", teamIds: [eng] });
     const sub = await adminA.query(api.agents.get, { agentId: subId });
     const { issueId } = await adminA.mutation(api.issues.create, {
@@ -344,29 +291,33 @@ describe("agent members", () => {
   test("an agent that is a private team's only member can't be deleted", async () => {
     const { t, adminA } = await setup();
     await setPlan(t, ORG_A, "business");
-    const { agentId, client } = await makeAgent(t, adminA);
-    const secret = await adminA.mutation(api.teams.create, {
-      name: "Secret",
-      key: "SEC",
-      isPrivate: true,
-    });
+    const { agentId, client } = await makeMaster(t, adminA);
+    const secret = await adminA.mutation(api.teams.create, { name: "Secret", key: "SEC", isPrivate: true });
     await adminA.mutation(api.agents.addToTeam, { agentId, teamId: secret });
     await adminA.mutation(api.teams.removeMember, { teamId: secret, userId: "admin_a" });
     expect((await client.query(api.teams.get, { key: "SEC" }))._id).toBe(secret);
-    await expect(adminA.mutation(api.agents.remove, { agentId })).rejects.toThrow(
+    await expect(adminA.mutation(api.agents.remove, { agentId })).rejects.toThrow(/INVALID_INPUT/);
+  });
+
+  test("an agent can't take over another agent's photo file", async () => {
+    const { t, adminA } = await setup();
+    const a = await makeMaster(t, adminA, "A");
+    const b = await makeMaster(t, adminA, "B");
+    const storageId = await t.run(async (ctx) => ctx.storage.store(new Blob(["png"], { type: "image/png" })));
+    await a.client.mutation(api.agents.setAvatar, { agentId: a.agentId, storageId });
+    expect((await adminA.query(api.agents.get, { agentId: a.agentId })).imageUrl).not.toBeNull();
+    await expect(b.client.mutation(api.agents.setAvatar, { agentId: b.agentId, storageId })).rejects.toThrow(
       /INVALID_INPUT/,
     );
+    expect(await t.run(async (ctx) => ctx.db.system.get("_storage", storageId))).not.toBeNull();
   });
 });
 
 describe("agent keys", () => {
   test("a key is returned once and only its hash is stored", async () => {
     const { t, adminA } = await setup();
-    const { agentId } = await makeAgent(t, adminA);
-    const { key, keyId, prefix } = await adminA.action(api.agentKeys.create, {
-      agentId,
-      label: "laptop",
-    });
+    const { agentId } = await makeMaster(t, adminA);
+    const { key, keyId, prefix } = await adminA.action(api.agentKeys.create, { agentId, label: "laptop" });
     expect(key).toMatch(/^velo_[A-Za-z0-9_-]{43}$/);
     expect(prefix).toBe(key.slice(0, 12));
     const row = await t.run(async (ctx) => (await ctx.db.get("agentKeys", keyId))!);
@@ -379,7 +330,7 @@ describe("agent keys", () => {
 
   test("the agent itself may make and revoke its keys; strangers may not", async () => {
     const { t, adminA, memberA, adminB } = await setup();
-    const { agentId, client } = await makeAgent(t, adminA);
+    const { agentId, client } = await makeMaster(t, adminA);
     const { keyId } = await client.action(api.agentKeys.create, { agentId, label: "self" });
     await expect(memberA.query(api.agentKeys.list, { agentId })).rejects.toThrow(/FORBIDDEN/);
     await expect(adminB.mutation(api.agentKeys.revoke, { keyId })).rejects.toThrow(/NOT_FOUND/);
@@ -388,14 +339,11 @@ describe("agent keys", () => {
     expect(row.revokedAt).not.toBeNull();
   });
 
-  test("a parent agent makes keys for its subagent", async () => {
+  test("a master makes keys for its agents", async () => {
     const { t, adminA } = await setup();
-    const lead = await makeAgent(t, adminA, { name: "Lead", canManageAgents: true });
+    const lead = await makeMaster(t, adminA);
     const subId: Id<"agents"> = await lead.client.mutation(api.agents.create, { name: "Sub" });
-    const { key } = await lead.client.action(api.agentKeys.create, {
-      agentId: subId,
-      label: "sub process",
-    });
+    const { key } = await lead.client.action(api.agentKeys.create, { agentId: subId, label: "sub process" });
     expect(key.startsWith("velo_")).toBe(true);
   });
 });

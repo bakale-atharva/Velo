@@ -25,7 +25,8 @@ export const workspaceTools: Tool[] = [
         agent,
         workspace: org === null ? { orgId: me.orgId } : { orgId: me.orgId, name: org.name, slug: org.slug },
         permissions,
-        canManageAgents: agent?.canManageAgents ?? false,
+        isMaster: agent?.isMaster ?? false,
+        canCreateAgents: agent !== null && agent.isMaster && agent.disabledAt === null,
       };
     },
   }),
@@ -55,7 +56,7 @@ export const workspaceTools: Tool[] = [
     name: "my_permissions",
     title: "My permissions",
     description:
-      "The Velo permissions your role gives you (e.g. issues.delete, teams.manage, labels.manage, agents.manage).",
+      "The Velo permissions your role gives you (e.g. issues.delete, teams.manage, labels.manage).",
     input: z.object({}),
     annotations: READ,
     run: async (client) => ({ permissions: await client.query(api.members.permissions, {}) }),
