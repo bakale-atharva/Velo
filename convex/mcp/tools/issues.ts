@@ -85,7 +85,58 @@ async function toIssueArgs(client: AgentClient, teamId: Id<"teams">, input: Issu
   return args;
 }
 
-const pageOpts = (input: { cursor?: string; limit?: number }) => ({
+/** Issue filter fields (filter_issues and saved views). */
+export const filterFields = {
+  team: teamRef.optional(),
+  stateTypes: z.array(z.enum(["backlog", "unstarted", "started", "completed", "canceled"])).optional(),
+  assignees: z.array(z.string()).optional().describe("People or agents; \"none\" means unassigned"),
+  labels: z.array(z.string()).optional(),
+  priorities: z.array(z.number().int().min(0).max(4)).optional(),
+  project: z.string().optional(),
+  cycle: z.string().optional().describe("Cycle number, name or id (needs team)"),
+  creator: z.string().optional(),
+};
+
+export type FilterInput = {
+  team?: string;
+  stateTypes?: ("backlog" | "unstarted" | "started" | "completed" | "canceled")[];
+  assignees?: string[];
+  labels?: string[];
+  priorities?: number[];
+  project?: string;
+  cycle?: string;
+  creator?: string;
+};
+
+/** Turns readable filter values into Velo's issue filter. */
+export async function toIssueFilter(client: AgentClient, input: FilterInput) {
+  const teamId = input.team === undefined ? undefined : await resolveTeamId(client, input.team);
+  if (input.cycle !== undefined && teamId === undefined) {
+    throw new ToolError("INVALID_INPUT: filtering by cycle needs a team.");
+  }
+  return {
+    ...(teamId === undefined ? {} : { teamId }),
+    ...(input.stateTypes === undefined ? {} : { stateTypes: input.stateTypes }),
+    ...(input.assignees === undefined
+      ? {}
+      : {
+          assigneeIds: await Promise.all(
+            input.assignees.map((a) => (a.trim().toLowerCase() === "none" ? null : resolveUserId(client, a))),
+          ),
+        }),
+    ...(input.labels === undefined ? {} : { labelIds: await resolveLabelIds(client, input.labels) }),
+    ...(input.priorities === undefined ? {} : { priorities: input.priorities }),
+    ...(input.project === undefined ? {} : { projectId: await resolveProjectId(client, input.project) }),
+    ...(input.cycle === undefined || teamId === undefined
+      ? {}
+      : { cycleId: (await resolveCycle(client, teamId, input.cycle))._id }),
+    ...(input.creator === undefined ? {} : { creatorId: await resolveUserId(client, input.creator) }),
+  };
+}
+
+export const pageFields = page;
+
+export const pageOpts = (input: { cursor?: string; limit?: number }) => ({
   numItems: input.limit ?? 25,
   cursor: input.cursor ?? null,
 });
@@ -218,41 +269,10 @@ export const issueTools: Tool[] = [
     title: "Filter issues",
     description:
       "Issues matching every given filter, across teams you can see. Use assignees: [\"none\"] for unassigned, [\"me\"] for yours.",
-    input: z.object({
-      team: teamRef.optional(),
-      stateTypes: z.array(z.enum(["backlog", "unstarted", "started", "completed", "canceled"])).optional(),
-      assignees: z.array(z.string()).optional().describe("People or agents; \"none\" means unassigned"),
-      labels: z.array(z.string()).optional(),
-      priorities: z.array(z.number().int().min(0).max(4)).optional(),
-      project: z.string().optional(),
-      cycle: z.string().optional().describe("Cycle number, name or id (needs team)"),
-      creator: z.string().optional(),
-      ...page,
-    }),
+    input: z.object({ ...filterFields, ...page }),
     annotations: READ,
     run: async (client, input) => {
-      const teamId = input.team === undefined ? undefined : await resolveTeamId(client, input.team);
-      if (input.cycle !== undefined && teamId === undefined) {
-        throw new ToolError("INVALID_INPUT: filtering by cycle needs a team.");
-      }
-      const filter = {
-        ...(teamId === undefined ? {} : { teamId }),
-        ...(input.stateTypes === undefined ? {} : { stateTypes: input.stateTypes }),
-        ...(input.assignees === undefined
-          ? {}
-          : {
-              assigneeIds: await Promise.all(
-                input.assignees.map((a) => (a.trim().toLowerCase() === "none" ? null : resolveUserId(client, a))),
-              ),
-            }),
-        ...(input.labels === undefined ? {} : { labelIds: await resolveLabelIds(client, input.labels) }),
-        ...(input.priorities === undefined ? {} : { priorities: input.priorities }),
-        ...(input.project === undefined ? {} : { projectId: await resolveProjectId(client, input.project) }),
-        ...(input.cycle === undefined || teamId === undefined
-          ? {}
-          : { cycleId: (await resolveCycle(client, teamId, input.cycle))._id }),
-        ...(input.creator === undefined ? {} : { creatorId: await resolveUserId(client, input.creator) }),
-      };
+      const filter = await toIssueFilter(client, input);
       const result = await client.query(api.issues.listFiltered, { filter, paginationOpts: pageOpts(input) });
       return { issues: await presentIssues(client, result.page), nextCursor: result.isDone ? null : result.continueCursor };
     },
