@@ -28,8 +28,8 @@ export function TeamPageHeader({
   signal?: React.ReactNode;
 }) {
   return (
-    <header className="pt-8">
-      <div className="px-3 md:px-6">
+    <header className="pt-6 @3xl/main:pt-8">
+      <div className="px-3 @3xl/main:px-6">
         {back !== undefined && (
           <nav aria-label="Breadcrumb" className="mb-4">
             <Link
@@ -42,8 +42,8 @@ export function TeamPageHeader({
           </nav>
         )}
         <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-          <div className="flex min-w-0 items-end gap-4">
-            <h1 className="min-w-0 truncate text-[44px] leading-[0.95] font-semibold tracking-[-0.04em] md:text-[64px]">
+          <div className="flex min-w-0 max-w-full items-end gap-4">
+            <h1 className="min-w-0 truncate text-[36px] leading-[0.95] font-semibold tracking-[-0.04em] @md/main:text-[44px] @3xl/main:text-[64px]">
               {title}
             </h1>
             {subtitle !== undefined && (
@@ -52,9 +52,9 @@ export function TeamPageHeader({
               </span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             {meta !== undefined && (
-              <div className="data text-right text-[11px] leading-5 tracking-[0.14em] text-muted-foreground uppercase">
+              <div className="data text-left @3xl/main:text-right text-[11px] leading-5 tracking-[0.14em] text-muted-foreground uppercase">
                 {meta}
               </div>
             )}
@@ -64,13 +64,17 @@ export function TeamPageHeader({
       </div>
       {signal !== undefined && <div className="mt-6">{signal}</div>}
       {nav !== undefined ? (
-        <nav aria-label="Pages" className="mt-4 flex gap-6 border-b border-rule px-3 md:px-6">
+        // Tabs scroll sideways when they outrun the work field (settings has eight).
+        <nav
+          aria-label="Pages"
+          className="mt-4 flex scroll-px-3 gap-6 overflow-x-auto border-b border-rule px-3 [scrollbar-width:none] @3xl/main:px-6 [&::-webkit-scrollbar]:hidden"
+        >
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               aria-current={item.active ? "page" : undefined}
-              className={`-mb-px border-b py-3 text-[14px] ${
+              className={`-mb-px shrink-0 border-b py-3 text-[14px] whitespace-nowrap ${
                 item.active
                   ? "border-foreground text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -101,7 +105,7 @@ export function PageSection({
     <section className="flex flex-1 flex-col pt-4">
       <h2 className="sr-only">{title}</h2>
       {controls !== undefined && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 pb-4 md:px-6">{controls}</div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 pb-4 @3xl/main:px-6">{controls}</div>
       )}
       {children}
     </section>
