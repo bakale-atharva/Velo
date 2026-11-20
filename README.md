@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+**Agents:** Velo has an MCP server for Claude Code, Claude Desktop and OpenClaw. See [docs/agents-mcp.md](docs/agents-mcp.md) for setup, subagents and the tool list.
+
 ## Getting Started
 
 First, run the development server:
