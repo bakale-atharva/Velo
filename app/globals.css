@@ -60,8 +60,6 @@
   --color-rule: var(--rule);
   --color-faint: var(--faint);
   --color-urgent: var(--urgent);
-  --color-count-teal: var(--count-teal);
-  --color-count-orange: var(--count-orange);
   --color-state-backlog: var(--state-backlog);
   --color-state-unstarted: var(--state-unstarted);
   --color-state-started: var(--state-started);
@@ -129,8 +127,6 @@
   --brand-foreground: #ffffff;
   --brand-ink: #000000;
   --urgent: #a8372a;
-  --count-teal: #000000;
-  --count-orange: #000000;
   /* Muted state tints, 3:1+ as UI marks on white. */
   --state-backlog: #8c8c8c;
   --state-unstarted: #8a7550;
@@ -181,8 +177,6 @@
   --brand-foreground: #000000;
   --brand-ink: #ffffff;
   --urgent: #e07a6c;
-  --count-teal: #ffffff;
-  --count-orange: #ffffff;
   --state-backlog: #6b6b6b;
   --state-unstarted: #b8a27a;
   --state-started: #8aa3c7;
@@ -201,31 +195,6 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #333333;
   --sidebar-ring: #ffffff;
-}
-
-/* A region on the ground, bounded by a hairline instead of a shadow. */
-@utility panel {
-  background: var(--panel);
-  border: 1px solid var(--rule);
-  border-radius: 0;
-}
-
-/* Former iris ring: now a plain hairline frame. */
-@utility iris-ring {
-  border: 1px solid var(--rule);
-  background: var(--iris-fill, transparent);
-}
-
-/* The member card: a hairline frame, no wash. */
-@utility profile-card {
-  border: 1px solid var(--rule);
-  box-shadow: none !important;
-}
-
-/* An inverted block: the world's emphasis (key chips, primary marks). */
-@utility chip-dark {
-  background: var(--foreground);
-  color: var(--background);
 }
 
 /* The active path: full inversion. */
