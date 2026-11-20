@@ -1,4 +1,5 @@
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { isAgentUserId } from "./agentIds";
 import { getPlan } from "./entitlements";
 import { SEAT_LIMIT } from "./plans";
 
@@ -13,7 +14,7 @@ const MAX_COUNTED_MEMBERS = 1000;
  * Clerk lets anyone be invited; Velo decides access. Admins always get in.
  * Other members get in if they are among the earliest `limit` members by join
  * order. A member whose membership row has not synced yet is the newest, so
- * they get in only while the org has a free seat.
+ * they get in only while the org has a free seat. Agents don't use seats.
  */
 export async function hasSeat(
   ctx: DbCtx,
@@ -21,7 +22,7 @@ export async function hasSeat(
   userId: string,
   role: string,
 ): Promise<boolean> {
-  if (role === "admin") {
+  if (role === "admin" || isAgentUserId(userId)) {
     return true;
   }
   const limit = SEAT_LIMIT[await getPlan(ctx, orgId)];
@@ -30,12 +31,12 @@ export async function hasSeat(
   }
   const seated = await ctx.db
     .query("memberships")
-    .withIndex("by_orgId", (q) => q.eq("orgId", orgId))
+    .withIndex("by_orgId_and_kind", (q) => q.eq("orgId", orgId).eq("kind", "human"))
     .take(limit);
   return seated.length < limit || seated.some((m) => m.userId === userId);
 }
 
-/** Members counted against the plan's seat limit (`null` = unlimited). */
+/** People counted against the plan's seat limit (`null` = unlimited). */
 export async function seatUsage(
   ctx: DbCtx,
   orgId: string,
@@ -43,7 +44,7 @@ export async function seatUsage(
   const limit = SEAT_LIMIT[await getPlan(ctx, orgId)];
   const members = await ctx.db
     .query("memberships")
-    .withIndex("by_orgId", (q) => q.eq("orgId", orgId))
+    .withIndex("by_orgId_and_kind", (q) => q.eq("orgId", orgId).eq("kind", "human"))
     .take(MAX_COUNTED_MEMBERS);
   return { used: members.length, limit };
 }

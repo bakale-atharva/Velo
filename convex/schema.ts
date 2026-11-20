@@ -122,13 +122,15 @@ export default defineSchema({
     role: v.string(),
     // Velo custom role (B6); applies only while the plan has `custom_roles`.
     customRoleId: v.optional(v.id("customRoles")),
-    // Optional until `memberships.backfillKind` has run on every deployment.
-    kind: v.optional(membershipKind),
+    kind: membershipKind,
   })
     .index("by_orgId_and_userId", ["orgId", "userId"])
     .index("by_customRoleId", ["customRoleId"])
-    // Members of an org in join order (seat limits seat the earliest).
+    // Members of an org in join order.
     .index("by_orgId", ["orgId"])
+    // People of an org in join order (seat limits seat the earliest; agents
+    // never use seats).
+    .index("by_orgId_and_kind", ["orgId", "kind"])
     .index("by_userId", ["userId"]),
 
   // One row per organization: its Clerk Billing subscription as last reported
