@@ -109,13 +109,35 @@ export async function requireAgentCreator(
   return self;
 }
 
-/** Whether the caller may change `target`'s settings, keys and teams. */
+/** An agent's membership row (holds its role and custom role). */
+export async function agentMembership(
+  ctx: DbCtx,
+  agent: Doc<"agents">,
+): Promise<Doc<"memberships"> | null> {
+  return await ctx.db
+    .query("memberships")
+    .withIndex("by_orgId_and_userId", (q) =>
+      q.eq("orgId", agent.orgId).eq("userId", agent.userId),
+    )
+    .unique();
+}
+
+/**
+ * Whether the caller may change `target`'s settings, keys and teams. Nobody
+ * manages an agent whose role is above their own: otherwise a member with
+ * `agents.manage`, or a parent agent that was demoted, could make a key for
+ * an admin agent and act as admin.
+ */
 export async function canManageAgent(
   ctx: DbCtx,
   member: MemberInfo,
   target: Doc<"agents">,
 ): Promise<boolean> {
   if (target.orgId !== member.orgId) {
+    return false;
+  }
+  const targetRole = (await agentMembership(ctx, target))?.role ?? "member";
+  if (roleRank(targetRole) > roleRank(member.role)) {
     return false;
   }
   if (!isAgentUserId(member.userId)) {

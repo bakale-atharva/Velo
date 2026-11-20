@@ -137,6 +137,9 @@ export default defineSchema({
     // May create and edit agents in its own subtree.
     canManageAgents: v.boolean(),
     disabledAt: v.union(v.number(), v.null()),
+    // Set when the agent is deleted: it disappears at once and a scheduled
+    // job unassigns its issues and removes its rows (agents.deleteStep).
+    deletingAt: v.union(v.number(), v.null()),
     lastActiveAt: v.union(v.number(), v.null()),
   })
     .index("by_orgId", ["orgId"])
