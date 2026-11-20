@@ -25,7 +25,8 @@ import { PageSkeleton } from "@/components/states/page-skeleton";
 import { errorMessage } from "@/lib/errors";
 import { AssigneeAvatar } from "./assignee-avatar";
 import { DuePill } from "./due-pill";
-import { displayName, useWorkspaceLookups } from "./lookups";
+import { MemberName } from "./agent-tag";
+import { useWorkspaceLookups } from "./lookups";
 import { useNow } from "./use-now";
 import { PriorityRamp } from "./priority-ramp";
 import { StageGauge, StateHeading } from "./state-heading";
@@ -89,7 +90,7 @@ function BoardItem({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
       </div>
       <div className="data flex items-center gap-3 border-t border-border px-3.5 py-2 text-[12px] text-muted-foreground group-focus-visible:text-background">
         <AssigneeAvatar member={assignee} size={20} />
-        <span className="min-w-0 flex-1 truncate">{assignee ? displayName(assignee) : "Unassigned"}</span>
+        <MemberName member={assignee} fallback="Unassigned" className="flex-1" />
         {issue.dueDate !== null && <DuePill dueDate={issue.dueDate} finished={finished} now={now} />}
         {issue.estimate !== null && <span>{issue.estimate}p</span>}
         <PriorityRamp priority={issue.priority} />

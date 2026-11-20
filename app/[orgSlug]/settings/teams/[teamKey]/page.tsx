@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MemberName, MemberOptions } from "@/components/issues/agent-tag";
 import { AssigneeAvatar } from "@/components/issues/assignee-avatar";
 import { displayName, useWorkspaceLookups } from "@/components/issues/lookups";
 import { SettingsPanel } from "@/components/settings/settings-panel";
@@ -112,7 +113,7 @@ function Members({ team, canManage }: { team: Doc<"teams">; canManage: boolean }
           return (
             <li key={userId} className="flex items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile">
               <AssigneeAvatar member={member} size={24} />
-              <span className="min-w-0 flex-1 truncate text-[15px]">{displayName(member)}</span>
+              <MemberName member={member} className="flex-1 text-[15px]" />
               {canManage && (
                 <button
                   type="button"
@@ -145,11 +146,7 @@ function Members({ team, canManage }: { team: Doc<"teams">; canManage: boolean }
             className="h-9 w-64 rounded-sm border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
           >
             <option value="">Choose a member…</option>
-            {others.map((m) => (
-              <option key={m.userId} value={m.userId}>
-                {displayName(m)}
-              </option>
-            ))}
+            <MemberOptions members={others} />
           </select>
           <Button type="submit" variant="outline" disabled={picked === ""}>
             Add to team

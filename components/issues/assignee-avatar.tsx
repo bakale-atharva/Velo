@@ -10,7 +10,11 @@ function hash(value: string) {
   return h;
 }
 
-/** A member's avatar, or a dashed empty circle for "unassigned". */
+/**
+ * A member's avatar, or a dashed empty circle for "unassigned". People are
+ * round; agents are square (2px corners), so an agent reads as one at any
+ * size without colour.
+ */
 export function AssigneeAvatar({ member, size = 20 }: { member: Member | undefined | null; size?: number }) {
   if (member === null || member === undefined) {
     return (
@@ -22,15 +26,18 @@ export function AssigneeAvatar({ member, size = 20 }: { member: Member | undefin
       />
     );
   }
+  const square = member.isAgent ? "rounded-[2px] after:rounded-[2px]" : "";
   return (
     <Avatar
       style={{ width: size, height: size }}
-      className="shrink-0 ring-1 ring-rule"
-      title={displayName(member)}
+      className={`shrink-0 ring-1 ring-rule ${square}`}
+      title={member.isAgent ? `${displayName(member)} (agent)` : displayName(member)}
     >
-      {member.imageUrl !== null && <AvatarImage src={member.imageUrl} alt="" className="grayscale" />}
+      {member.imageUrl !== null && (
+        <AvatarImage src={member.imageUrl} alt="" className={`grayscale ${member.isAgent ? "rounded-[2px]" : ""}`} />
+      )}
       <AvatarFallback
-        className="font-mono font-medium text-white"
+        className={`font-mono font-medium text-white ${member.isAgent ? "rounded-[2px]" : ""}`}
         style={{ background: FALLBACKS[hash(member.userId) % FALLBACKS.length], fontSize: Math.max(9, size * 0.36) }}
       >
         {initials(member)}

@@ -10,6 +10,7 @@ import type { Permission } from "@/convex/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { MemberName } from "@/components/issues/agent-tag";
 import { AssigneeAvatar } from "@/components/issues/assignee-avatar";
 import { displayName, useWorkspaceLookups } from "@/components/issues/lookups";
 import { ALL_PERMISSIONS, permissionName } from "@/components/settings/plans";
@@ -132,7 +133,7 @@ function Assignments({ roles }: { roles: Doc<"customRoles">[] }) {
       {members.map((member) => (
         <li key={member.userId} className="flex items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile">
           <AssigneeAvatar member={member} size={24} />
-          <span className="min-w-0 flex-1 truncate text-[15px]">{displayName(member)}</span>
+          <MemberName member={member} className="flex-1 text-[15px]" />
           {member.role === "admin" ? (
             <span className="text-[13px] text-muted-foreground">Admin, every permission</span>
           ) : (

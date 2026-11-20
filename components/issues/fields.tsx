@@ -4,7 +4,8 @@ import { Check, Tags } from "lucide-react";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { displayName, PRIORITY_LABELS, type Member } from "./lookups";
+import { MemberOptions } from "./agent-tag";
+import { PRIORITY_LABELS, type Member } from "./lookups";
 
 // Issue property controls shared by the create dialog and the detail panel.
 // Native selects keep them fast, accessible and fully keyboard-driven.
@@ -74,11 +75,7 @@ export function AssigneeSelect({
       onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
     >
       <option value="">Unassigned</option>
-      {members.map((member) => (
-        <option key={member.userId} value={member.userId}>
-          {displayName(member)}
-        </option>
-      ))}
+      <MemberOptions members={members} />
     </select>
   );
 }
