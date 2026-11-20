@@ -58,7 +58,10 @@ export const issueFilter = v.object({
   creatorId: v.optional(v.string()),
 });
 
-export const viewLayout = v.union(v.literal("list"), v.literal("board"));
+// A membership belongs to a person (synced from Clerk) or to an agent (B8).
+export const membershipKind = v.union(v.literal("human"), v.literal("agent"));
+
+export const viewLayout =v.union(v.literal("list"), v.literal("board"));
 export const viewGroupBy = v.union(
   v.literal("state"),
   v.literal("assignee"),
@@ -119,6 +122,8 @@ export default defineSchema({
     role: v.string(),
     // Velo custom role (B6); applies only while the plan has `custom_roles`.
     customRoleId: v.optional(v.id("customRoles")),
+    // Optional until `memberships.backfillKind` has run on every deployment.
+    kind: v.optional(membershipKind),
   })
     .index("by_orgId_and_userId", ["orgId", "userId"])
     .index("by_customRoleId", ["customRoleId"])
