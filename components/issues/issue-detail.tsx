@@ -61,7 +61,7 @@ function Title({ issue }: { issue: Issue }) {
           e.currentTarget.blur();
         }
       }}
-      className="field-sizing-content w-full resize-none bg-transparent text-[34px] leading-10 font-semibold tracking-[-0.035em] outline-none focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-ring"
+      className="field-sizing-content w-full resize-none bg-transparent text-[26px] leading-8 font-semibold @xl/main:text-[34px] @xl/main:leading-10 tracking-[-0.035em] outline-none focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-ring"
     />
   );
 }
@@ -226,7 +226,7 @@ function SubIssues({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
   return (
     <section aria-label="Sub-issues" className="mt-10 border-t border-rule pt-5">
       <StateHeading name="Sub-issues" count={children?.length ?? 0} />
-      <ul className="-mx-3 mt-3 flex flex-col md:-mx-6">
+      <ul className="-mx-3 mt-3 flex flex-col @3xl/main:-mx-6">
         {children?.map((child) => (
           <li key={child._id}>
             <IssueRow issue={child} orgSlug={orgSlug} />
@@ -267,8 +267,10 @@ export function IssueDetail({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="grid flex-1 items-stretch lg:grid-cols-[minmax(0,1fr)_320px]">
-      <article className="min-w-0 px-3 pt-8 pb-12 md:px-6 lg:px-10">
+    // The properties column sits beside the content once the work field is wide enough
+    // (the old lg viewport with the sidebar open), and below it otherwise.
+    <div className="grid flex-1 items-stretch @3xl/main:grid-cols-[minmax(0,1fr)_320px]">
+      <article className="min-w-0 px-3 pt-6 pb-10 @xl/main:pt-8 @xl/main:pb-12 @3xl/main:px-10">
         <span className="data text-[12px] text-muted-foreground">{issue.identifier}</span>
         <div className="mt-3">
           <Title key={issue._id} issue={issue} />
@@ -277,7 +279,7 @@ export function IssueDetail({
         <SubIssues issue={issue} orgSlug={orgSlug} />
         {children}
       </article>
-      <div className="grid min-w-0 content-start gap-8 border-t border-rule px-3 py-8 md:px-6 lg:border-t-0 lg:border-l">
+      <div className="grid min-w-0 content-start gap-8 border-t border-rule px-3 py-8 @3xl/main:border-t-0 @3xl/main:border-l @3xl/main:px-6">
         <Properties issue={issue} states={states} />
         <IssueAssist issueId={issue._id} />
       </div>
