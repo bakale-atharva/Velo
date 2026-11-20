@@ -22,7 +22,7 @@ export function StageGauge({ type, className = "" }: { type: string; className?:
                 ? `repeating-linear-gradient(135deg, ${stateColor(type)} 0 1px, transparent 1px 3px)`
                 : cell < filled
                   ? stateColor(type)
-                  : "var(--chip)",
+                  : "color-mix(in srgb, currentColor 16%, transparent)",
             boxShadow: canceled && cell === 0 ? `inset 0 0 0 1px ${stateColor(type)}` : undefined,
           }}
         />
