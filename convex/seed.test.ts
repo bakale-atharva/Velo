@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
@@ -37,4 +37,39 @@ test("seed fills an org once and the data is readable", async () => {
   expect(launch.issueCount).toBe(4);
   expect(launch.completedIssueCount).toBe(1);
   expect((await admin.query(api.issues.listMine, {})).length).toBeGreaterThan(10);
+});
+
+test("seed:clear removes only what the seed made", async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  await t.mutation(internal.clerkSync.handleEvent, {
+    svixId: "msg_seed_2",
+    type: "organizationMembership.created",
+    data: {
+      role: "org:admin",
+      organization: { id: "org_c" },
+      public_user_data: { user_id: "admin_c" },
+    },
+  });
+  const admin = t.withIdentity({
+    subject: "admin_c",
+    tokenIdentifier: "https://clerk.test|admin_c",
+    o: { id: "org_c", rol: "admin", slg: "org_c" },
+  });
+  await t.mutation(internal.seed.org, { orgId: "org_c" });
+  const ownTeam = await admin.mutation(api.teams.create, { name: "Own", key: "OWN" });
+  await admin.mutation(api.issues.create, { teamId: ownTeam, title: "Mine" });
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+  const removed = await t.mutation(internal.seed.clear, { orgId: "org_c" });
+  expect(removed).toEqual({ teams: 3, projects: 3, labels: 6 });
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+  expect((await admin.query(api.teams.list, {})).map((team) => team.key)).toEqual(["OWN"]);
+  expect(await admin.query(api.projects.list, {})).toHaveLength(0);
+  const issues = await t.run((ctx) => ctx.db.query("issues").take(50));
+  expect(issues.map((issue) => issue.title)).toEqual(["Mine"]);
+  const cycles = await t.run((ctx) => ctx.db.query("cycles").take(50));
+  expect(cycles).toHaveLength(0);
+  vi.useRealTimers();
 });

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, type MutationCtx } from "./_generated/server";
 import type { MemberInfo } from "./lib/auth";
@@ -247,6 +248,57 @@ const ISSUES: Record<TeamKey, SeedIssue[]> = {
     },
   ],
 };
+
+const MAX_CLEAR = 200;
+
+/**
+ * Removes what `seed:org` created: its teams (through the scheduled team
+ * deletion, so their issues, cycles and states go too), and its projects and
+ * labels by name. Anything else in the org is left alone. Run with
+ *   npx convex run seed:clear '{"orgId":"org_..."}'
+ */
+export const clear = internalMutation({
+  args: { orgId: v.string() },
+  returns: v.object({ teams: v.number(), projects: v.number(), labels: v.number() }),
+  handler: async (ctx, { orgId }) => {
+    const now = Date.now();
+    let teams = 0;
+    for (const { key } of TEAMS) {
+      const team = await ctx.db
+        .query("teams")
+        .withIndex("by_orgId_and_key", (q) => q.eq("orgId", orgId).eq("key", key))
+        .unique();
+      if (team === null || team.deletingAt != null) continue;
+      await ctx.db.patch("teams", team._id, { archivedAt: team.archivedAt ?? now, deletingAt: now });
+      await ctx.scheduler.runAfter(0, internal.teams.deleteStep, { teamId: team._id });
+      teams += 1;
+    }
+    const seededProjects = new Set<string>(PROJECTS.map((project) => project.name));
+    const projects = await ctx.db
+      .query("projects")
+      .withIndex("by_orgId", (q) => q.eq("orgId", orgId))
+      .take(MAX_CLEAR);
+    let removedProjects = 0;
+    for (const project of projects) {
+      if (seededProjects.has(project.name)) {
+        await ctx.db.delete("projects", project._id);
+        removedProjects += 1;
+      }
+    }
+    let labels = 0;
+    for (const { name } of LABELS) {
+      const label = await ctx.db
+        .query("labels")
+        .withIndex("by_orgId_and_name", (q) => q.eq("orgId", orgId).eq("name", name))
+        .unique();
+      if (label !== null) {
+        await ctx.db.delete("labels", label._id);
+        labels += 1;
+      }
+    }
+    return { teams, projects: removedProjects, labels };
+  },
+});
 
 export const org = internalMutation({
   args: { orgId: v.string() },
