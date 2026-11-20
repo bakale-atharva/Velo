@@ -87,6 +87,31 @@ export async function resolveLabelIds(client: AgentClient, refs: string[]): Prom
   );
 }
 
+/** An issue by identifier (ENG-12). */
+export async function resolveIssue(client: AgentClient, identifier: string) {
+  return await client.query(api.issues.get, { identifier: identifier.trim().toUpperCase() });
+}
+
+/** A project by id or exact name (case-insensitive). */
+export async function resolveProjectId(client: AgentClient, ref: string): Promise<Id<"projects">> {
+  const projects = await client.query(api.projects.list, {});
+  return pickOne(
+    projects.filter((p) => p._id === ref || norm(p.name) === norm(ref)),
+    "project",
+    ref,
+  )._id;
+}
+
+/** A team's cycle by id, number or name. */
+export async function resolveCycle(client: AgentClient, teamId: Id<"teams">, ref: string) {
+  const cycles = await client.query(api.cycles.list, { teamId });
+  return pickOne(
+    cycles.filter((c) => c._id === ref || String(c.number) === ref.trim() || norm(c.name) === norm(ref)),
+    "cycle",
+    ref,
+  );
+}
+
 /** "YYYY-MM-DD" (or any ISO date) to ms; null stays null. */
 export function parseDate(value: string | null): number | null {
   if (value === null) return null;

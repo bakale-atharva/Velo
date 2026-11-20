@@ -55,6 +55,8 @@ import type * as mcp_registry from "../mcp/registry.js";
 import type * as mcp_token from "../mcp/token.js";
 import type * as mcp_tools_agents from "../mcp/tools/agents.js";
 import type * as mcp_tools_index from "../mcp/tools/index.js";
+import type * as mcp_tools_issues from "../mcp/tools/issues.js";
+import type * as mcp_tools_present from "../mcp/tools/present.js";
 import type * as mcp_tools_resolve from "../mcp/tools/resolve.js";
 import type * as mcp_tools_teams from "../mcp/tools/teams.js";
 import type * as mcp_tools_workspace from "../mcp/tools/workspace.js";
@@ -122,6 +124,8 @@ declare const fullApi: ApiFromModules<{
   "mcp/token": typeof mcp_token;
   "mcp/tools/agents": typeof mcp_tools_agents;
   "mcp/tools/index": typeof mcp_tools_index;
+  "mcp/tools/issues": typeof mcp_tools_issues;
+  "mcp/tools/present": typeof mcp_tools_present;
   "mcp/tools/resolve": typeof mcp_tools_resolve;
   "mcp/tools/teams": typeof mcp_tools_teams;
   "mcp/tools/workspace": typeof mcp_tools_workspace;
