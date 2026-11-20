@@ -33,7 +33,7 @@ export function StateSections({
         if (inState.length === 0) return null;
         return (
           <section key={state._id} aria-labelledby={`state-${state._id}`} className={GROUP_PANEL}>
-            <div className="px-3 pt-5 pb-2 md:px-6">
+            <div className="px-3 pt-5 pb-2 @3xl/main:px-6">
               <StateHeading id={`state-${state._id}`} name={state.name} count={inState.length} type={state.type} />
             </div>
             <ul className="flex flex-col pb-2">
@@ -74,7 +74,7 @@ export function IssueList({
   }
   if (results.length === 0) {
     return (
-      <div className="px-3 md:px-6">
+      <div className="px-3 @3xl/main:px-6">
         <EmptyState title="No issues yet">
           Create the first issue with <kbd className="data font-medium">C</kbd> or the New issue button.
         </EmptyState>
@@ -86,14 +86,14 @@ export function IssueList({
     <div className="pb-12">
       <StateSections states={states} issues={results} orgSlug={orgSlug} />
       {status === "CanLoadMore" && (
-        <div className="px-3 pt-2 md:px-6">
+        <div className="px-3 pt-2 @3xl/main:px-6">
           <Button variant="outline" onClick={() => loadMore(PAGE_SIZE)}>
             Load more issues
           </Button>
         </div>
       )}
       {status === "LoadingMore" && (
-        <p className="data px-3 pt-2 text-[13px] text-muted-foreground md:px-6">Loading more…</p>
+        <p className="data px-3 pt-2 text-[13px] text-muted-foreground @3xl/main:px-6">Loading more…</p>
       )}
     </div>
   );

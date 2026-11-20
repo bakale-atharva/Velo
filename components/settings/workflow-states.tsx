@@ -57,7 +57,7 @@ function StateRow({
     });
 
   return (
-    <li className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile sm:grid-cols-[32px_minmax(0,1fr)_110px_auto]">
+    <li className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile @xl/main:grid-cols-[32px_minmax(0,1fr)_110px_auto]">
       <input
         type="color"
         aria-label={`Colour of ${state.name}`}
@@ -78,7 +78,7 @@ function StateRow({
           else if (name !== state.name) void save({ name });
         }}
       />
-      <span className="hidden text-[13px] text-muted-foreground sm:block">{typeLabel(state.type)}</span>
+      <span className="hidden text-[13px] text-muted-foreground @xl/main:block">{typeLabel(state.type)}</span>
       {canManage ? (
         <span className="flex items-center gap-1">
           <button type="button" aria-label={`Move ${state.name} up`} disabled={index === 0} onClick={() => onMove(index, index - 1)} className={iconButton}>

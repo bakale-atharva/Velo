@@ -32,7 +32,7 @@ const STATUS_LABEL: Record<Doc<"cycles">["status"], string> = {
 /** A large number under its label. */
 function Figure({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="grid gap-2 border-r border-border px-3 py-5 md:px-6">
+    <div className="grid gap-2 border-r border-b border-border px-3 py-5 nth-3:border-r-0 @xl/main:border-b-0 @xl/main:nth-3:border-r @3xl/main:px-6">
       <dd className="data text-[36px] leading-none font-medium tracking-[-0.04em]">{value}</dd>
       <dt className="signal-label order-first">{label}</dt>
     </div>
@@ -76,11 +76,11 @@ function CycleIssues({
 
   return (
     <>
-      <dl className="grid grid-cols-2 border-b border-rule sm:grid-cols-[minmax(140px,auto)_minmax(140px,auto)_minmax(140px,auto)_minmax(200px,1fr)]">
+      <dl className="grid grid-cols-3 border-b border-rule @xl/main:grid-cols-[minmax(140px,auto)_minmax(140px,auto)_minmax(140px,auto)_minmax(200px,1fr)]">
         <Figure label="Scope" value={`${results.length}${more ? "+" : ""}`} />
         <Figure label="Completed" value={done} />
         <Figure label="Points" value={points === 0 ? "—" : `${donePoints}/${points}`} />
-        <div className="col-span-2 grid content-between gap-2 px-3 py-5 sm:col-span-1 md:px-6">
+        <div className="col-span-3 grid content-between gap-2 px-3 py-5 @xl/main:col-span-1 @3xl/main:px-6">
           <dt className="signal-label">Progress</dt>
           <dd>
             <Progress completed={done} total={results.length} />
@@ -89,7 +89,7 @@ function CycleIssues({
       </dl>
 
       {results.length === 0 ? (
-        <div className="px-3 md:px-6">
+        <div className="px-3 @3xl/main:px-6">
           <EmptyState title="No issues in this cycle">
             Add issues by setting their Cycle in the issue’s properties.
           </EmptyState>
@@ -109,7 +109,7 @@ function CycleIssues({
         </div>
       )}
       {more && (
-        <div className="px-3 pt-2 pb-8 md:px-6">
+        <div className="px-3 pt-2 pb-8 @3xl/main:px-6">
           <Button
             variant="outline"
             disabled={status === "LoadingMore"}
@@ -138,7 +138,7 @@ function CycleDetail() {
 
   if (!Number.isInteger(cycleNumber)) {
     return (
-      <div className="px-3 pt-8 md:px-6">
+      <div className="px-3 pt-8 @3xl/main:px-6">
         <EmptyState title="No such cycle">Cycles are numbered 1, 2, 3 within a team.</EmptyState>
       </div>
     );
@@ -166,7 +166,7 @@ function CycleDetail() {
           </>
         }
       />
-      <p className="data flex h-10 items-center border-b border-rule px-3 text-[12px] uppercase md:px-6">
+      <p className="data flex h-10 items-center border-b border-rule px-3 text-[12px] uppercase @3xl/main:px-6">
         <span
           className="mr-2 inline-block size-[7px]"
           style={{

@@ -159,7 +159,9 @@ Two faces from one family. **Geist** sets titles and UI text; **Geist Mono** set
 
 ## Layout
 
-- The shell is flush: a 240px sidebar ruled off by a hairline, a 48px top strip, then the work field edge to edge. Content uses a 12px gutter on phones and 24px from `md` up.
+- The shell is flush: a 240px sidebar ruled off by a hairline, a 48px top strip, then the work field edge to edge. Content uses a 12px gutter on narrow work fields and 24px from `@3xl/main` up.
+- Layout inside the workspace responds to the work field's width, not the viewport: the work field is `@container/main` and the top strip `@container/top`. Use `@xl/main` (36rem) where a viewport `sm:` would go and `@3xl/main` (48rem) for `md:` and `lg:` splits; at desktop widths with the sidebar open these resolve the same as before. Only the sidebar (a sheet below `md`), its trigger, and portaled overlays (dialogs, sheets, popovers) stay on viewport breakpoints.
+- On narrow work fields issue rows drop the stage gauge, figure strips fold into ruled grids, and page tabs scroll sideways. The board snaps column by column; on touch a swipe scrolls and a long press (250ms) picks a card up. Shortcut hints are hidden on coarse pointers.
 - Lists are full-width tables: 40px issue rows, 44px rows elsewhere, a hairline under each, groups opened by a section rule and a signal label.
 - Detail pages split into the content column and a 320px properties column behind a vertical hairline.
 - Facts render as figure strips: equal cells divided by vertical hairlines, a signal label over a large mono value.

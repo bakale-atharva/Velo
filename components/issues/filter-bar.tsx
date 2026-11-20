@@ -47,7 +47,7 @@ function MultiFilter<T extends string | number | null>({
         render={
           <button
             type="button"
-            className={`inline-flex h-8 items-center gap-1.5 border px-2.5 text-[13px] focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+            className={`inline-flex h-8 shrink-0 items-center gap-1.5 border px-2.5 text-[13px] focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               picked.length > 0
                 ? "inverted border-foreground"
                 : "border-rule text-muted-foreground hover:border-foreground hover:text-foreground"
@@ -59,7 +59,7 @@ function MultiFilter<T extends string | number | null>({
         {summary !== null && <span className="max-w-32 truncate">{summary}</span>}
         <ChevronDown className="size-3.5 opacity-70" aria-hidden />
       </PopoverTrigger>
-      <PopoverContent align="start" className="max-h-80 w-60 overflow-y-auto p-1.5">
+      <PopoverContent align="start" className="max-h-80 w-[min(15rem,calc(100vw-1.5rem))] overflow-y-auto p-1.5">
         {options.length === 0 ? (
           <p className="p-2 text-xs text-muted-foreground">Nothing to filter by yet.</p>
         ) : (

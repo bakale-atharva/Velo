@@ -20,10 +20,10 @@ function ViewRow({ view, orgSlug, owner }: { view: Doc<"savedViews">; orgSlug: s
   return (
     <Link
       href={`/${orgSlug}/views/${view._id}`}
-      className={`${TABLE_ROW} grid h-11 grid-cols-[minmax(0,1fr)_auto] gap-4 sm:grid-cols-[minmax(0,1fr)_200px_160px]`}
+      className={`${TABLE_ROW} grid h-11 grid-cols-[minmax(0,1fr)_auto] gap-4 @xl/main:grid-cols-[minmax(0,1fr)_200px_160px]`}
     >
       <span className="truncate text-[14px] font-medium">{view.name}</span>
-      <span className={`hidden truncate text-[13px] sm:block ${ROW_MUTED}`}>
+      <span className={`hidden truncate text-[13px] @xl/main:block ${ROW_MUTED}`}>
         {owner ?? (view.isShared ? "Shared with workspace" : "Only you")}
       </span>
       <span className={`data text-right text-[12px] uppercase ${ROW_MUTED}`}>
@@ -37,7 +37,7 @@ function Section({ title, children, count }: { title: string; count: number; chi
   const id = `views-${title.toLowerCase().replace(/\s+/g, "-")}`;
   return (
     <section aria-labelledby={id} className="border-t border-rule first:border-t-0">
-      <div className="px-3 pt-5 pb-2 md:px-6">
+      <div className="px-3 pt-5 pb-2 @3xl/main:px-6">
         <StateHeading id={id} name={title} count={count} />
       </div>
       <ul className="flex flex-col pb-2">{children}</ul>
@@ -61,7 +61,7 @@ function Views() {
     <div className="flex flex-1 flex-col">
       <TeamPageHeader title="Views" subtitle={views.length === 0 ? undefined : `${views.length} saved`} />
       {views.length === 0 ? (
-        <div className="px-3 pt-8 md:px-6">
+        <div className="px-3 pt-8 @3xl/main:px-6">
           <EmptyState title="No saved views">
             Filter a team’s issues, then choose Save view to keep that filter here.
           </EmptyState>

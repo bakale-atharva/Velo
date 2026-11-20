@@ -28,7 +28,7 @@ import { VeloMark } from "./velo-mark";
 
 /** A shortcut hint in the data voice; it inverts with an active row. */
 function Hint({ children }: { children: React.ReactNode }) {
-  return <kbd className="data ml-auto hidden text-[11px] opacity-60 sm:inline">{children}</kbd>;
+  return <kbd className="data ml-auto hidden text-[11px] opacity-60 sm:inline pointer-coarse:hidden">{children}</kbd>;
 }
 
 function NavLink({

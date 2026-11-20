@@ -62,7 +62,7 @@ function TeamIssues() {
             <Button className="ml-auto" onClick={() => setCreating(true)}>
               <Plus aria-hidden />
               New issue
-              <kbd className="data ml-1 text-[11px] opacity-60">C</kbd>
+              <kbd className="data ml-1 text-[11px] opacity-60 pointer-coarse:hidden">C</kbd>
             </Button>
           </>
         }

@@ -3,7 +3,8 @@
 import {
   DndContext,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCorners,
   useDroppable,
   useSensor,
@@ -64,7 +65,8 @@ function BoardItem({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
       {...attributes}
       {...listeners}
       aria-roledescription="Draggable issue"
-      className={`group touch-none border border-rule bg-background outline-none hover:border-input focus-visible:bg-foreground focus-visible:text-background ${
+      // touch-manipulation keeps swipes scrolling the board; a long press picks the card up.
+      className={`group touch-manipulation border border-rule bg-background outline-none hover:border-input focus-visible:bg-foreground focus-visible:text-background ${
         isDragging ? "relative z-10 bg-foreground text-background" : ""
       }`}
     >
@@ -78,7 +80,7 @@ function BoardItem({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
         <Link
           href={`/${orgSlug}/issue/${issue.identifier}`}
           className={`mt-2 block text-[14px] leading-5 font-medium hover:underline ${finished ? "text-muted-foreground" : ""}`}
-          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
         >
           {issue.title}
         </Link>
@@ -112,7 +114,7 @@ function BoardColumn({
   return (
     <section
       aria-label={`${state.name}, ${column.issues.length} issues`}
-      className={`flex min-w-[280px] flex-col border-r border-border px-3 pt-4 last:border-r-0 ${
+      className={`flex min-w-0 snap-start flex-col border-r border-border px-3 pt-4 last:border-r-0 ${
         isOver ? "bg-tile" : ""
       }`}
     >
@@ -220,7 +222,9 @@ export function Board({
   onMove: (args: MoveArgs) => void;
 }) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    // Touch waits for a long press, so a swipe still scrolls the board and the page.
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -243,7 +247,9 @@ export function Board({
   const byState = new Map(columns.map((column) => [column.stateId, column]));
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-      <div className="grid flex-1 auto-cols-[minmax(280px,1fr)] grid-flow-col items-stretch overflow-x-auto">
+      {/* On narrow work fields a column snaps into view with the next one peeking in. */}
+      <div className="grid flex-1 snap-x snap-mandatory auto-cols-[minmax(min(280px,85cqw),1fr)] grid-flow-col items-stretch overflow-x-auto overscroll-x-contain @3xl/main:snap-none">
+
         {states.map((state) => (
           <BoardColumn
             key={state._id}

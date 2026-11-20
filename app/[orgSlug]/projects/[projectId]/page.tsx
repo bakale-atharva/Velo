@@ -25,7 +25,8 @@ const PAGE_SIZE = 100;
 /** One labelled fact in the row under the header. */
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid content-between gap-3 border-r border-border px-3 py-5 last:border-r-0 md:px-6">
+    // Narrow work fields fold the strip into two columns ruled both ways; the last fact spans the row.
+    <div className="grid content-between gap-3 border-r border-b border-border px-3 py-5 even:border-r-0 last:col-span-2 last:border-r-0 last:border-b-0 @3xl/main:border-b-0 @3xl/main:px-6 @3xl/main:even:border-r @3xl/main:last:col-span-1 @3xl/main:last:border-r-0">
       <dt className="signal-label">{label}</dt>
       <dd className="flex min-h-7 items-center gap-2 text-[14px]">{children}</dd>
     </div>
@@ -43,7 +44,7 @@ function ProjectIssues({ project, orgSlug }: { project: Doc<"projects">; orgSlug
   }
   if (results.length === 0 && status === "Exhausted") {
     return (
-      <div className="px-3 pt-8 md:px-6">
+      <div className="px-3 pt-8 @3xl/main:px-6">
         <EmptyState title="No issues in this project">
           Add issues from any team by setting their Project in the issue’s properties.
         </EmptyState>
@@ -54,14 +55,14 @@ function ProjectIssues({ project, orgSlug }: { project: Doc<"projects">; orgSlug
     <div className="pt-8 pb-12">
       <IssueGroups issues={results} orgSlug={orgSlug} />
       {status === "CanLoadMore" && (
-        <div className="px-3 pt-2 md:px-6">
+        <div className="px-3 pt-2 @3xl/main:px-6">
           <Button variant="outline" onClick={() => loadMore(PAGE_SIZE)}>
             Load more issues
           </Button>
         </div>
       )}
       {status === "LoadingMore" && (
-        <p className="px-3 pt-2 text-[13px] text-muted-foreground md:px-6">Loading more…</p>
+        <p className="px-3 pt-2 text-[13px] text-muted-foreground @3xl/main:px-6">Loading more…</p>
       )}
     </div>
   );
@@ -95,7 +96,7 @@ function ProjectDetail() {
       />
       <ProjectDialog project={project} open={editing} onOpenChange={setEditing} />
 
-      <dl className="grid grid-cols-2 border-b border-rule md:grid-cols-[minmax(140px,auto)_minmax(160px,auto)_minmax(120px,auto)_minmax(120px,auto)_minmax(200px,1fr)]">
+      <dl className="grid grid-cols-2 border-b border-rule @3xl/main:grid-cols-[minmax(140px,auto)_minmax(160px,auto)_minmax(120px,auto)_minmax(120px,auto)_minmax(200px,1fr)]">
         <Fact label="Status">
           <ProjectStatusTag status={project.status} />
         </Fact>
@@ -129,7 +130,7 @@ function ProjectDetail() {
       </dl>
 
       {project.description.trim() !== "" && (
-        <div className="max-w-3xl border-b border-border px-3 py-8 md:px-6">
+        <div className="max-w-3xl border-b border-border px-3 py-8 @3xl/main:px-6">
           <Markdown>{project.description}</Markdown>
         </div>
       )}

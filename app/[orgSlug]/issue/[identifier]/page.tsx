@@ -22,7 +22,7 @@ function IssuePage() {
     <>
       <nav
         aria-label="Breadcrumb"
-        className="data flex h-11 items-center gap-2 border-b border-rule px-3 text-[12px] text-muted-foreground md:px-6"
+        className="data flex h-11 items-center gap-2 border-b border-rule px-3 text-[12px] text-muted-foreground @3xl/main:px-6"
       >
         <Link href={`/${orgSlug}/team/${teamKey}/issues`} className="hover:text-foreground">
           {teamKey}

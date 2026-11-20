@@ -37,7 +37,7 @@ function PermissionChecks({
   idPrefix: string;
 }) {
   return (
-    <div className="grid gap-1 sm:grid-cols-2">
+    <div className="grid gap-1 @xl/main:grid-cols-2">
       {ALL_PERMISSIONS.map((permission) => (
         <label key={permission} htmlFor={`${idPrefix}-${permission}`} className="inline-flex items-center gap-2 py-1 text-[14px]">
           <Checkbox

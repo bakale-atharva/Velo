@@ -94,7 +94,7 @@ function AuditLogBody() {
           {results.map((entry) => (
             <li
               key={entry._id}
-              className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-3 border-b border-border px-2 py-2.5 hover:bg-tile sm:grid-cols-[24px_minmax(0,1fr)_150px]"
+              className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-3 border-b border-border px-2 py-2.5 hover:bg-tile @xl/main:grid-cols-[24px_minmax(0,1fr)_150px]"
             >
               <AssigneeAvatar member={memberById.get(entry.actorId)} size={22} />
               <p className="min-w-0 text-[14px] leading-6">
@@ -104,7 +104,7 @@ function AuditLogBody() {
               </p>
               <time
                 dateTime={new Date(entry._creationTime).toISOString()}
-                className="data col-start-2 text-[11px] text-muted-foreground uppercase sm:col-start-auto sm:pt-1 sm:text-right"
+                className="data col-start-2 text-[11px] text-muted-foreground uppercase @xl/main:col-start-auto @xl/main:pt-1 @xl/main:text-right"
               >
                 {TIME.format(entry._creationTime)}
               </time>
