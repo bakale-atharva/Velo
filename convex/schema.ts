@@ -58,7 +58,17 @@ export const issueFilter = v.object({
   creatorId: v.optional(v.string()),
 });
 
-export const viewLayout = v.union(v.literal("list"), v.literal("board"));
+// A membership belongs to a person (synced from Clerk) or to an agent (B8).
+export const membershipKind = v.union(v.literal("human"), v.literal("agent"));
+
+// What an agent runs on; only used for display and setup instructions.
+export const agentRuntime = v.union(
+  v.literal("claude"),
+  v.literal("openclaw"),
+  v.literal("other"),
+);
+
+export const viewLayout =v.union(v.literal("list"), v.literal("board"));
 export const viewGroupBy = v.union(
   v.literal("state"),
   v.literal("assignee"),
@@ -101,7 +111,59 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     imageUrl: v.union(v.string(), v.null()),
+    // Set on the mirror row of an agent member (B8); `clerkId` then holds
+    // the agent's "agent_..." user id. Absent for people.
+    isAgent: v.optional(v.boolean()),
   }).index("by_clerkId", ["clerkId"]),
+
+  // An AI agent that is a member of an org (B8). Its member identity is
+  // `userId` ("agent_..."), used everywhere a Clerk user id would be.
+  agents: defineTable({
+    orgId: v.string(),
+    userId: v.string(),
+    name: v.string(),
+    // Either a URL the agent was given, or an uploaded file (which wins).
+    imageUrl: v.union(v.string(), v.null()),
+    imageStorageId: v.union(v.id("_storage"), v.null()),
+    description: v.string(),
+    // e.g. "claude-opus-5-5"; free text.
+    model: v.union(v.string(), v.null()),
+    runtime: agentRuntime,
+    metadata: v.record(v.string(), v.string()),
+    // The agent that created this one; null for agents people created.
+    parentAgentId: v.union(v.id("agents"), v.null()),
+    // User id (person or agent) that created it.
+    createdBy: v.string(),
+    // May create and edit agents in its own subtree.
+    canManageAgents: v.boolean(),
+    disabledAt: v.union(v.number(), v.null()),
+    // Set when the agent is deleted: it disappears at once and a scheduled
+    // job unassigns its issues and removes its rows (agents.deleteStep).
+    deletingAt: v.union(v.number(), v.null()),
+    lastActiveAt: v.union(v.number(), v.null()),
+  })
+    .index("by_orgId", ["orgId"])
+    .index("by_orgId_and_userId", ["orgId", "userId"])
+    .index("by_parentAgentId", ["parentAgentId"])
+    // A photo belongs to one agent; setAvatar refuses ids already in use.
+    .index("by_imageStorageId", ["imageStorageId"]),
+
+  // API keys an agent uses to reach the MCP server (B8, B9). Only the
+  // SHA-256 hash is stored; the key is shown once when created.
+  agentKeys: defineTable({
+    orgId: v.string(),
+    agentId: v.id("agents"),
+    label: v.string(),
+    // The key's first characters, so people can tell keys apart.
+    prefix: v.string(),
+    // Hex SHA-256 of the whole key.
+    hash: v.string(),
+    createdBy: v.string(),
+    lastUsedAt: v.union(v.number(), v.null()),
+    revokedAt: v.union(v.number(), v.null()),
+  })
+    .index("by_hash", ["hash"])
+    .index("by_agentId", ["agentId"]),
 
   organizations: defineTable({
     clerkOrgId: v.string(),
@@ -119,11 +181,15 @@ export default defineSchema({
     role: v.string(),
     // Velo custom role (B6); applies only while the plan has `custom_roles`.
     customRoleId: v.optional(v.id("customRoles")),
+    kind: membershipKind,
   })
     .index("by_orgId_and_userId", ["orgId", "userId"])
     .index("by_customRoleId", ["customRoleId"])
-    // Members of an org in join order (seat limits seat the earliest).
+    // Members of an org in join order.
     .index("by_orgId", ["orgId"])
+    // People of an org in join order (seat limits seat the earliest; agents
+    // never use seats).
+    .index("by_orgId_and_kind", ["orgId", "kind"])
     .index("by_userId", ["userId"]),
 
   // One row per organization: its Clerk Billing subscription as last reported

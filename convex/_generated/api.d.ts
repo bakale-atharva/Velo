@@ -9,6 +9,8 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as agentKeys from "../agentKeys.js";
+import type * as agents from "../agents.js";
 import type * as ai_agent from "../ai/agent.js";
 import type * as ai_chat from "../ai/chat.js";
 import type * as ai_data from "../ai/data.js";
@@ -31,6 +33,8 @@ import type * as issueFilters from "../issueFilters.js";
 import type * as issues from "../issues.js";
 import type * as labels from "../labels.js";
 import type * as lib_activity from "../lib/activity.js";
+import type * as lib_agentAccess from "../lib/agentAccess.js";
+import type * as lib_agentIds from "../lib/agentIds.js";
 import type * as lib_audit from "../lib/audit.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_entitlements from "../lib/entitlements.js";
@@ -60,6 +64,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  agentKeys: typeof agentKeys;
+  agents: typeof agents;
   "ai/agent": typeof ai_agent;
   "ai/chat": typeof ai_chat;
   "ai/data": typeof ai_data;
@@ -82,6 +88,8 @@ declare const fullApi: ApiFromModules<{
   issues: typeof issues;
   labels: typeof labels;
   "lib/activity": typeof lib_activity;
+  "lib/agentAccess": typeof lib_agentAccess;
+  "lib/agentIds": typeof lib_agentIds;
   "lib/audit": typeof lib_audit;
   "lib/auth": typeof lib_auth;
   "lib/entitlements": typeof lib_entitlements;

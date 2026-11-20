@@ -214,6 +214,7 @@ async function deleteOrganization(ctx: MutationCtx, data: Json) {
     await ctx.db.delete("subscriptions", subscription._id);
   }
   await deleteMembershipsOfOrg(ctx, clerkOrgId);
+  await ctx.scheduler.runAfter(0, internal.agents.deleteOrgAgents, { orgId: clerkOrgId });
 }
 
 async function deleteMembershipsOfOrg(ctx: MutationCtx, orgId: string) {
@@ -249,7 +250,7 @@ async function upsertMembership(ctx: MutationCtx, data: Json) {
     return;
   }
 
-  const fields = { orgId, userId, role: stripOrgPrefix(role) };
+  const fields = { orgId, userId, role: stripOrgPrefix(role), kind: "human" as const };
   const existing = await ctx.db
     .query("memberships")
     .withIndex("by_orgId_and_userId", (q) =>

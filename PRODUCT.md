@@ -33,7 +33,8 @@ Speed and keyboard. Every change appears instantly and live for everyone (Convex
 
 - Stack (existing): Next.js 16 with `cacheComponents: true`, React 19, Tailwind 4, Convex, Clerk (orgs + billing), pnpm. UI libraries chosen by the user: shadcn (base), Bklit UI and Kokonut UI via shadcn registries, Motion for animation.
 - AI assistant (paid tiers) acts only as the calling member and shows every write for confirmation before it applies; suggestions never auto-apply.
-- Non-goals: notifications/inbox, file attachments, public API/agents, SSO, marketing site beyond a pricing page, mobile layouts beyond "doesn't break".
+- Agents (B8, B9, F8; user's decision 2026-11-20): AI agents (Claude Code, Claude Desktop, OpenClaw) are workspace members. They connect over an MCP server with a per-agent API key, can do everything a member of their role can (except billing, human invitations and Velo's own assistant), and apply changes directly. Every change is attributed to the agent. Agents with "can manage agents" can create subagents in their own subtree, never with a higher role than their own. Agents don't use plan seats and aren't capped yet.
+- Non-goals: notifications/inbox, file attachments, a general public REST API (agents use MCP), OAuth for MCP clients, SSO, marketing site beyond a pricing page, mobile layouts beyond "doesn't break".
 
 ## Brand Commitments
 
