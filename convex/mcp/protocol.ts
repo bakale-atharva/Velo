@@ -31,7 +31,7 @@ export const INSTRUCTIONS = [
   "Velo is an issue tracker. You act as an agent member of one workspace, with your role's permissions; every change you make is recorded under your name.",
   "Issues are named by identifier (e.g. ENG-12), teams by key (e.g. ENG). Priority: 0 none, 1 urgent, 2 high, 3 medium, 4 low. Dates are ISO strings (YYYY-MM-DD).",
   "Start with `whoami` and `list_teams`. Use `list_members` to find people and agents to assign; agents have isAgent: true.",
-  "If you may manage agents, `create_agent` makes a subagent below you; give it a key with `create_agent_key` and add it to teams with `add_team_member`.",
+  "If `whoami` says you're a master agent (canCreateAgents), you can build a team: `create_agent` makes one of your agents (a regular member that can't create agents), `create_agent_key` gives it its own key, `add_team_member` puts it in a team, and `update_issue` with assignee hands it work.",
 ].join("\n");
 
 export type McpDeps = {

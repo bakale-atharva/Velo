@@ -3,9 +3,10 @@ import { api } from "../../_generated/api";
 import { defineTool, DESTRUCTIVE, READ, ToolError, WRITE, type Tool } from "../registry";
 import { resolveAgentId, resolveTeamId } from "./resolve";
 
-// Agents and subagents. Creating and managing agents needs "can manage
-// agents" (for agents) or agents.manage (for people); an agent manages only
-// agents below it, and may edit its own profile.
+// Agents in two levels. Master agents (created by workspace admins) are
+// admins and can create agents; the agents a master creates are members,
+// can't create agents, and are managed by their master. Any agent may edit
+// its own profile.
 
 const agentRef = z.string().describe("Agent id, agent user id (agent_...) or exact name");
 const runtime = z.enum(["claude", "openclaw", "other"]);
@@ -28,7 +29,7 @@ export const agentTools: Tool[] = [
     name: "list_agents",
     title: "List agents",
     description:
-      "All agents in the workspace with their role, parent, teams and status. canManage says whether you may change each one.",
+      "All agents in the workspace: master agents (isMaster) and the agents each master created (parentAgentId), with teams and status. canManage says whether you may change each one.",
     input: z.object({}),
     annotations: READ,
     run: async (client) => ({ agents: await client.query(api.agents.list, {}) }),
@@ -36,7 +37,7 @@ export const agentTools: Tool[] = [
   defineTool({
     name: "get_agent",
     title: "Get agent",
-    description: "One agent's profile, role, parent, teams and status.",
+    description: "One agent's profile, whether it is a master, who created it, its teams and status.",
     input: z.object({ agent: agentRef }),
     annotations: READ,
     run: async (client, { agent }) =>
@@ -46,7 +47,7 @@ export const agentTools: Tool[] = [
     name: "create_agent",
     title: "Create agent",
     description:
-      "Creates an agent member (a subagent below you when you are an agent) with a name, photo, description, model and metadata, optionally adding it to teams. Its role can't be above yours. It can then be assigned issues. Give it a key with create_agent_key if it will connect itself.",
+      "Master agents only: creates one of your agents with a name, photo, description, model and metadata, optionally adding it to teams. It is a regular member (not an admin), can't create agents itself, and you manage it. Assign it issues with update_issue; give it its own key with create_agent_key if it will connect itself.",
     input: z.object({
       name: z.string().describe("Display name"),
       ...profileFields,
@@ -63,7 +64,7 @@ export const agentTools: Tool[] = [
     name: "update_agent",
     title: "Update agent",
     description:
-      "Changes an agent's name, photo URL, description, model, runtime or metadata (yourself, or an agent you manage), or its role and canManageAgents (agents you manage only).",
+      "Changes an agent's name, photo URL, description, model, runtime or metadata: your own, or one of your agents if you are a master.",
     input: z.object({
       agent: agentRef,
       name: z.string().optional(),
@@ -79,7 +80,7 @@ export const agentTools: Tool[] = [
   defineTool({
     name: "disable_agent",
     title: "Disable agent",
-    description: "Disables an agent you manage: its keys stop working and it can't manage agents. Reversible with enable_agent.",
+    description: "Disables one of your agents (masters) so its keys stop working. Reversible with enable_agent.",
     input: z.object({ agent: agentRef }),
     annotations: DESTRUCTIVE,
     run: async (client, { agent }) => {
@@ -102,7 +103,7 @@ export const agentTools: Tool[] = [
     name: "delete_agent",
     title: "Delete agent",
     description:
-      "Deletes an agent you manage and every agent below it, unassigning their issues. Can't be undone.",
+      "Deletes one of your agents (masters), unassigning its issues and revoking its keys. Can't be undone.",
     input: z.object({ agent: agentRef }),
     annotations: DESTRUCTIVE,
     run: async (client, { agent }) => {
