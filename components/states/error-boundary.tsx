@@ -24,10 +24,10 @@ export class ErrorBoundary extends Component<Props, State> {
       return this.props.children;
     }
     if (errorCode(this.state.error) === "FEATURE_NOT_IN_PLAN") {
-      return <UpgradePrompt className="m-3 md:m-6" />;
+      return <UpgradePrompt className="m-3 @3xl/main:m-6" />;
     }
     return (
-      <div role="alert" className="m-3 max-w-xl border border-destructive/60 p-6 md:m-6">
+      <div role="alert" className="m-3 max-w-xl border border-destructive/60 p-6 @3xl/main:m-6">
         <h2 className="text-[20px] leading-7 font-semibold tracking-[-0.02em]">This page couldn’t load</h2>
         <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
           {errorMessage(this.state.error)}
