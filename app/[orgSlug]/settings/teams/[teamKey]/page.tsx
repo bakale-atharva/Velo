@@ -110,7 +110,7 @@ function Members({ team, canManage }: { team: Doc<"teams">; canManage: boolean }
         {userIds.map((userId) => {
           const member = memberById.get(userId);
           return (
-            <li key={userId} className="flex items-center gap-3 rounded-[14px] px-3 py-2 hover:bg-tile/60">
+            <li key={userId} className="flex items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile">
               <AssigneeAvatar member={member} size={24} />
               <span className="min-w-0 flex-1 truncate text-[15px]">{displayName(member)}</span>
               {canManage && (
@@ -118,7 +118,7 @@ function Members({ team, canManage }: { team: Doc<"teams">; canManage: boolean }
                   type="button"
                   aria-label={`Remove ${displayName(member)} from ${team.name}`}
                   onClick={() => remove({ teamId: team._id, userId }).catch(fail)}
-                  className="grid size-8 place-items-center rounded-[10px] text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
+                  className="grid size-8 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
                 >
                   <X className="size-4" />
                 </button>
@@ -142,7 +142,7 @@ function Members({ team, canManage }: { team: Doc<"teams">; canManage: boolean }
             aria-label="Member to add"
             value={picked}
             onChange={(e) => setPicked(e.target.value)}
-            className="h-9 w-64 rounded-[10px] border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
+            className="h-9 w-64 rounded-sm border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
           >
             <option value="">Choose a member…</option>
             {others.map((m) => (
@@ -215,12 +215,12 @@ function TeamSettings() {
     return <PageSkeleton rows={6} />;
   }
   return (
-    <div className="grid gap-5">
-      <Link href={`/${orgSlug}/settings/teams`} className="text-[13px] text-muted-foreground hover:text-foreground">
-        ← All teams
+    <div className="grid">
+      <Link href={`/${orgSlug}/settings/teams`} className="signal-label hover:text-foreground">
+        All teams
       </Link>
-      <h2 className="text-[22px] leading-7 font-medium">
-        {team.name} <span className="text-muted-foreground">{team.key}</span>
+      <h2 className="mt-3 flex items-baseline gap-3 text-[28px] leading-8 font-semibold tracking-[-0.03em]">
+        {team.name} <span className="data text-[13px] font-normal tracking-normal text-muted-foreground">{team.key}</span>
       </h2>
       {!canManage && (
         <EmptyState title="Read only">

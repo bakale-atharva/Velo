@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlus } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cycleRange, daysLeft } from "@/components/cycles/cycle-dates";
 import { CycleDialog } from "@/components/cycles/cycle-dialog";
 import { GROUP_PANEL } from "@/components/issues/issue-list";
+import { ROW_MUTED, TABLE_ROW } from "@/components/states/table-styles";
 import { StateHeading } from "@/components/issues/state-heading";
 import { TeamPageHeader, teamNav } from "@/components/issues/team-page-header";
 import { useTeamFromUrl } from "@/components/issues/use-team";
@@ -37,11 +38,11 @@ function CycleRow({
   return (
     <Link
       href={href}
-      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-[14px] px-3 py-3 hover:bg-tile focus-visible:bg-tile focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_220px_130px]"
+      className={`${TABLE_ROW} grid h-11 grid-cols-[minmax(0,1fr)_auto] gap-4 sm:grid-cols-[minmax(0,1fr)_220px_130px]`}
     >
-      <span className="truncate text-[15px] font-medium">{cycle.name}</span>
-      <span className="text-[13px] text-muted-foreground tabular-nums">{cycleRange(cycle)}</span>
-      <span className="hidden text-right text-[13px] tabular-nums sm:block">
+      <span className="truncate text-[14px] font-medium">{cycle.name}</span>
+      <span className={`data text-[12px] uppercase ${ROW_MUTED}`}>{cycleRange(cycle)}</span>
+      <span className="data hidden text-right text-[12px] uppercase sm:block">
         {cycle.status === "active" && `${left} ${left === 1 ? "day" : "days"} left`}
         {cycle.status === "upcoming" &&
           `in ${Math.max(1, Math.ceil((cycle.startsAt - now) / 86_400_000))} days`}
@@ -69,8 +70,8 @@ function TeamCycles() {
         subtitle={team.key}
         nav={teamNav(orgSlug, teamKey, pathname)}
         actions={
-          <Button size="lg" className="h-11 px-5 text-[15px]" onClick={() => setCreating(true)}>
-            <CirclePlus aria-hidden />
+          <Button onClick={() => setCreating(true)}>
+            <Plus aria-hidden />
             New cycle
           </Button>
         }
@@ -98,21 +99,21 @@ function TeamCycles() {
             if (inSection.length === 0) return null;
             return (
               <section key={section.status} aria-labelledby={`cycles-${section.status}`} className={GROUP_PANEL}>
-                <div className="px-3 pt-2 pb-3">
+                <div className="px-3 pt-5 pb-2 md:px-6">
                   <StateHeading
                     id={`cycles-${section.status}`}
                     name={section.title}
                     count={inSection.length}
-                    color={
+                    type={
                       section.status === "active"
-                        ? "var(--state-started)"
+                        ? "started"
                         : section.status === "upcoming"
-                          ? "var(--state-unstarted)"
-                          : "var(--state-completed)"
+                          ? "unstarted"
+                          : "completed"
                     }
                   />
                 </div>
-                <ul className="flex flex-col gap-0.5">
+                <ul className="flex flex-col pb-2">
                   {inSection.map((cycle) => (
                     <li key={cycle._id}>
                       <CycleRow

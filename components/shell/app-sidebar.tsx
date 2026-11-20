@@ -26,28 +26,36 @@ import {
 import { NewTeamDialog } from "@/components/teams/new-team-dialog";
 import { VeloMark } from "./velo-mark";
 
+/** A shortcut hint in the data voice; it inverts with an active row. */
+function Hint({ children }: { children: React.ReactNode }) {
+  return <kbd className="data ml-auto hidden text-[11px] opacity-60 sm:inline">{children}</kbd>;
+}
+
 function NavLink({
   href,
   icon: Icon,
   label,
   active,
+  hint,
 }: {
   href: string;
   icon: typeof Search;
   label: string;
   active: boolean;
+  hint?: string;
 }) {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton isActive={active} render={<Link href={href} />}>
         <Icon aria-hidden className="text-muted-foreground" />
         <span>{label}</span>
+        {hint !== undefined && <Hint>{hint}</Hint>}
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
 }
 
-/** A team as a collapsible group; the active page is marked by a diamond on the rail. */
+/** A team as a collapsible group: its name, its key in the data voice, its pages. */
 function TeamGroup({
   team,
   base,
@@ -68,9 +76,10 @@ function TeamGroup({
       <SidebarMenuButton aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         <ChevronDown
           aria-hidden
-          className={`size-4! transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
+          className={`size-3.5! text-muted-foreground transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
         />
         <span>{team.name}</span>
+        <span className="data ml-auto text-[11px] text-muted-foreground">{team.key}</span>
       </SidebarMenuButton>
       {open && (
         <SidebarMenuSub>
@@ -78,12 +87,6 @@ function TeamGroup({
             const active = pathname === page.href || pathname.startsWith(`${page.href}/`);
             return (
               <SidebarMenuSubItem key={page.href}>
-                {active && (
-                  <span
-                    aria-hidden
-                    className="absolute top-1/2 -left-[22px] size-[11px] -translate-y-1/2 rotate-45 rounded-[2px] border-[1.5px] border-count-teal bg-sidebar"
-                  />
-                )}
                 <SidebarMenuSubButton isActive={active} render={<Link href={page.href} />}>
                   {page.label}
                 </SidebarMenuSubButton>
@@ -96,25 +99,17 @@ function TeamGroup({
   );
 }
 
-/** The signed-in member on a soft gradient card; the avatar opens account actions. */
-function ProfileCard() {
+/** The signed-in member as one hairline row; the avatar opens account actions. */
+function ProfileRow() {
   const { user } = useUser();
   const name = user?.fullName ?? user?.username ?? "Your account";
   const email = user?.primaryEmailAddress?.emailAddress;
   return (
-    <div className="profile-card rounded-[24px] p-2 pt-0 shadow-(--shadow-lift)">
-      <div className="px-2 pt-3 pb-3">
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "size-14 ring-[3px] ring-white shadow-md",
-            },
-          }}
-        />
-      </div>
-      <div className="iris-ring rounded-[18px] px-4 py-3 [--iris-fill:var(--popover)]">
-        <p className="truncate text-[16px] font-semibold">{name}</p>
-        {email !== undefined && <p className="truncate text-[13px] text-muted-foreground">{email}</p>}
+    <div className="flex items-center gap-3 border-t border-sidebar-border px-2 pt-3">
+      <UserButton appearance={{ elements: { avatarBox: "size-8 grayscale" } }} />
+      <div className="min-w-0">
+        <p className="truncate text-[13px] font-medium">{name}</p>
+        {email !== undefined && <p className="data truncate text-[11px] text-muted-foreground">{email}</p>}
       </div>
     </div>
   );
@@ -123,50 +118,51 @@ function ProfileCard() {
 export function AppSidebar({ orgSlug }: { orgSlug: string }) {
   const pathname = usePathname();
   const teams = useQuery(api.teams.list, {});
-  const { openAssistant } = useCommandCenter();
+  const { openAssistant, openPalette } = useCommandCenter();
   const base = `/${orgSlug}`;
   const is = (path: string) => pathname === `${base}${path}` || pathname.startsWith(`${base}${path}/`);
 
   return (
-    <Sidebar variant="floating">
-      <SidebarHeader className="gap-6 px-5 pt-6">
-        <Link href={`${base}/my-issues`} className="flex items-center gap-2.5 self-start rounded-lg">
-          <VeloMark />
-          <span className="text-[22px] leading-none font-semibold tracking-[-0.02em]">Velo</span>
+    <Sidebar>
+      <SidebarHeader className="gap-5 px-3 pt-5">
+        <Link href={`${base}/my-issues`} className="flex items-center gap-2.5 self-start px-1.5">
+          <VeloMark size={18} />
+          <span className="text-[17px] leading-none font-semibold tracking-[-0.03em]">Velo</span>
         </Link>
-        <Link
-          href={`${base}/search`}
-          className="flex h-11 items-center gap-2.5 rounded-xl bg-muted px-3.5 text-[15px] text-muted-foreground hover:bg-secondary"
+        <button
+          type="button"
+          onClick={() => openPalette()}
+          className="flex h-8 items-center gap-2 border border-sidebar-border px-2.5 text-[13px] text-muted-foreground hover:border-input hover:text-foreground"
         >
-          <Search className="size-[18px]" aria-hidden />
-          Search…
-        </Link>
+          <Search className="size-3.5" aria-hidden />
+          Search or jump to…
+          <Hint>⌘K</Hint>
+        </button>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 pt-4">
+      <SidebarContent className="px-1 pt-3">
         <SidebarGroup>
-          <SidebarMenu className="gap-1">
-            <NavLink href={`${base}/my-issues`} icon={CircleUser} label="My issues" active={is("/my-issues")} />
-            <NavLink href={`${base}/projects`} icon={FolderKanban} label="Projects" active={is("/projects")} />
+          <SidebarMenu className="gap-px">
+            <NavLink href={`${base}/my-issues`} icon={CircleUser} label="My issues" active={is("/my-issues")} hint="G I" />
+            <NavLink href={`${base}/projects`} icon={FolderKanban} label="Projects" active={is("/projects")} hint="G P" />
             <NavLink href={`${base}/views`} icon={Layers} label="Views" active={is("/views")} />
+            <NavLink href={`${base}/search`} icon={Search} label="Search" active={is("/search")} hint="/" />
             <SidebarMenuItem>
               <SidebarMenuButton onClick={openAssistant}>
-                <Sparkles aria-hidden />
+                <Sparkles aria-hidden className="text-muted-foreground" />
                 <span>Assistant</span>
-                <kbd className="ml-auto hidden rounded-md bg-muted px-1.5 font-sans text-xs text-muted-foreground sm:inline">
-                  ⌘J
-                </kbd>
+                <Hint>⌘J</Hint>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <div className="flex items-center justify-between px-2.5 pb-1">
-            <span className="text-[13px] font-medium text-muted-foreground">Teams</span>
+        <SidebarGroup className="pt-4">
+          <div className="flex items-center justify-between px-2.5 pb-2">
+            <span className="signal-label">Teams</span>
             <NewTeamDialog />
           </div>
-          <SidebarMenu className="gap-1">
+          <SidebarMenu className="gap-px">
             {teams === undefined ? (
               <>
                 <SidebarMenuSkeleton />
@@ -183,11 +179,11 @@ export function AppSidebar({ orgSlug }: { orgSlug: string }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="gap-3 px-3 pb-4">
+      <SidebarFooter className="gap-3 px-2 pb-4">
         <SidebarMenu>
           <NavLink href={`${base}/settings`} icon={Settings} label="Settings" active={is("/settings")} />
         </SidebarMenu>
-        <ProfileCard />
+        <ProfileRow />
       </SidebarFooter>
     </Sidebar>
   );

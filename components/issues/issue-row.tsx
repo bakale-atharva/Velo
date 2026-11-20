@@ -7,12 +7,15 @@ import { DuePill } from "./due-pill";
 import { useNow } from "./use-now";
 import { useWorkspaceLookups } from "./lookups";
 import { PriorityRamp } from "./priority-ramp";
+import { SignalFlash } from "./signal-flash";
+import { StageGauge } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
 
 /**
- * One issue on the grid: identifier and priority in fixed columns, title,
- * labels as square tags, estimate and assignee aligned right.
+ * One issue as a table row: id, stage gauge, priority, title with labels,
+ * then due date, estimate and assignee in fixed columns. The focused row
+ * (J/K or Tab) is the active path and inverts.
  */
 export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
   const { labelById, memberById } = useWorkspaceLookups();
@@ -24,14 +27,15 @@ export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) 
       // J/K selection and S/A/P/L act on the focused row (components/commands/shortcuts.tsx).
       data-issue-row=""
       data-identifier={issue.identifier}
-      className="grid grid-cols-[auto_16px_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] px-3 py-2.5 hover:bg-tile focus-visible:bg-tile focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+      className="group relative grid h-10 grid-cols-[84px_56px_14px_minmax(0,1fr)_auto] items-center gap-4 border-b border-border px-3 hover:bg-tile focus-visible:bg-foreground focus-visible:text-background focus-visible:outline-none md:px-6"
     >
-      <span className="inline-flex h-7 min-w-[72px] items-center justify-center rounded-lg bg-chip px-2 text-[13px] font-medium text-muted-foreground tabular-nums">
+      <span className="data text-[12px] text-muted-foreground group-focus-visible:text-background">
         {issue.identifier}
       </span>
+      <StageGauge type={issue.stateType} />
       <PriorityRamp priority={issue.priority} />
-      <span className="flex min-w-0 items-center gap-2">
-        <span className={`truncate text-[15px] ${finished ? "text-muted-foreground" : "font-medium"}`}>
+      <span className="flex min-w-0 items-center gap-3">
+        <span className={`truncate text-[14px] ${finished ? "text-muted-foreground group-focus-visible:text-background" : ""}`}>
           {issue.title}
         </span>
         {issue.labelIds.map((labelId) => {
@@ -39,23 +43,26 @@ export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) 
           return label === undefined ? null : (
             <span
               key={labelId}
-              className="hidden h-6 shrink-0 items-center gap-1.5 rounded-full border border-rule bg-panel px-2.5 text-[12px] sm:inline-flex"
+              className="data hidden shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground group-focus-visible:text-background sm:inline-flex"
             >
-              <span className="size-2 rounded-full" style={{ background: label.color }} aria-hidden />
+              <span className="size-[7px]" style={{ background: label.color }} aria-hidden />
               {label.name}
             </span>
           );
         })}
       </span>
-      <span className="flex items-center gap-3 text-[13px] text-muted-foreground tabular-nums">
+      <span className="data flex items-center gap-5 text-[12px] text-muted-foreground group-focus-visible:text-background">
         {issue.dueDate !== null && (
           <span className="hidden md:inline">
-            <DuePill dueDate={issue.dueDate} finished={finished} now={now} fill="var(--panel)" />
+            <DuePill dueDate={issue.dueDate} finished={finished} now={now} />
           </span>
         )}
-        {issue.estimate !== null && <span>{issue.estimate} pt</span>}
-        <AssigneeAvatar member={issue.assigneeId === null ? null : memberById.get(issue.assigneeId)} size={26} />
+        <span className="hidden w-8 text-right sm:inline">{issue.estimate === null ? "—" : `${issue.estimate}p`}</span>
+        <AssigneeAvatar member={issue.assigneeId === null ? null : memberById.get(issue.assigneeId)} size={22} />
       </span>
+      <SignalFlash
+        signature={[issue.title, issue.stateId, issue.priority, issue.assigneeId, issue.estimate, issue.dueDate, issue.labelIds.join()].join("|")}
+      />
     </Link>
   );
 }

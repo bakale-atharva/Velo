@@ -1,20 +1,20 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Loading state for a work page: title, rule, and a panel of rows. */
+/** Loading state for a work page: title, the ruled header, and table rows. */
 export function PageSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <div className="px-3 pt-8 md:px-6" aria-busy="true" aria-label="Loading">
-      <div className="flex items-center gap-4">
-        <Skeleton className="size-[18px] rounded-full" />
-        <Skeleton className="h-9 w-64 rounded-xl" />
+    <div className="pt-8" aria-busy="true" aria-label="Loading">
+      <div className="px-3 md:px-6">
+        <Skeleton className="h-12 w-72" />
       </div>
-      <div className="mt-8 h-[3px] rounded-full bg-rule" />
-      <div className="panel mt-8 grid gap-2 p-4">
+      <div className="mt-6 border-b border-rule" />
+      <div className="mt-5 grid">
         {Array.from({ length: rows }, (_, index) => (
-          <div key={index} className="flex items-center gap-4 rounded-xl px-2 py-2">
-            <Skeleton className="h-7 w-[72px] rounded-lg" />
-            <Skeleton className="h-4 flex-1" />
-            <Skeleton className="size-6 rounded-full" />
+          <div key={index} className="flex h-10 items-center gap-4 border-b border-border px-3 md:px-6">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-2 w-14" />
+            <Skeleton className="h-3 flex-1" />
+            <Skeleton className="size-5 rounded-full" />
           </div>
         ))}
       </div>

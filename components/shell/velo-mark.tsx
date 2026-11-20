@@ -1,15 +1,24 @@
-/** Velo's mark: two chevrons stepping forward, set in a dark rounded tile. */
-export function VeloMark({ size = 28 }: { size?: number }) {
+/**
+ * Velo's mark: a V drawn as a barcode. Seven hairline bars fall to the
+ * centre and rise again, so the letter is made of the same signal as the
+ * activity barcode. Takes the current text colour.
+ */
+const BARS = [
+  { x: 0, h: 20, w: 2 },
+  { x: 3.5, h: 15, w: 1 },
+  { x: 6, h: 10.5, w: 2 },
+  { x: 9, h: 6, w: 2 },
+  { x: 12, h: 10.5, w: 2 },
+  { x: 15.5, h: 15, w: 1 },
+  { x: 18, h: 20, w: 2 },
+];
+
+export function VeloMark({ size = 20 }: { size?: number }) {
   return (
-    <span
-      aria-hidden
-      className="chip-dark inline-grid shrink-0 place-items-center rounded-[9px]"
-      style={{ width: size, height: size }}
-    >
-      <svg viewBox="0 0 20 20" width={size * 0.62} height={size * 0.62} fill="none">
-        <path d="M4 5.5 9 10l-5 4.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
-        <path d="M10 5.5 15 10l-5 4.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
+    <svg aria-hidden viewBox="0 0 20 20" width={size} height={size} className="shrink-0" fill="currentColor">
+      {BARS.map((bar) => (
+        <rect key={bar.x} x={bar.x} y={0} width={bar.w} height={bar.h} />
+      ))}
+    </svg>
   );
 }

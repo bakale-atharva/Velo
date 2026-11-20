@@ -20,17 +20,15 @@ function IssuePage() {
   const teamKey = issue.identifier.split("-")[0];
   return (
     <>
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 px-3 pt-8 text-[13px] text-muted-foreground md:px-6">
-        <Link
-          href={`/${orgSlug}/team/${teamKey}/issues`}
-          className="inline-flex h-8 items-center rounded-lg bg-muted px-3 hover:bg-secondary hover:text-foreground"
-        >
+      <nav
+        aria-label="Breadcrumb"
+        className="data flex h-11 items-center gap-2 border-b border-rule px-3 text-[12px] text-muted-foreground md:px-6"
+      >
+        <Link href={`/${orgSlug}/team/${teamKey}/issues`} className="hover:text-foreground">
           {teamKey}
         </Link>
-        <ChevronRight className="size-4" aria-hidden />
-        <span className="inline-flex h-8 items-center rounded-lg bg-chip px-3 font-medium text-foreground tabular-nums">
-          {issue.identifier}
-        </span>
+        <ChevronRight className="size-3.5" aria-hidden />
+        <span className="text-foreground">{issue.identifier}</span>
       </nav>
       <IssueDetail issue={issue} states={states} orgSlug={orgSlug}>
         <IssueTimeline issueId={issue._id} />

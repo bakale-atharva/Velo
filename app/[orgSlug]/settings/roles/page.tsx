@@ -58,9 +58,9 @@ function RoleCard({ role }: { role: Doc<"customRoles"> }) {
   const remove = useMutation(api.roles.remove);
   const fail = (error: unknown) => toast.error(errorMessage(error, MESSAGES));
   return (
-    <li className="rounded-[20px] bg-tile p-4">
+    <li className="border border-rule p-4">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-[16px] font-medium">{role.name}</h3>
+        <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{role.name}</h3>
         <button
           type="button"
           aria-label={`Delete role ${role.name}`}
@@ -69,7 +69,7 @@ function RoleCard({ role }: { role: Doc<"customRoles"> }) {
               .then(() => toast.success(`Deleted ${role.name}. Its members are back on the defaults.`))
               .catch(fail)
           }
-          className="grid size-8 place-items-center rounded-[10px] text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
+          className="grid size-8 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
         >
           <Trash2 className="size-4" />
         </button>
@@ -130,7 +130,7 @@ function Assignments({ roles }: { roles: Doc<"customRoles">[] }) {
   return (
     <ul className="flex flex-col gap-0.5">
       {members.map((member) => (
-        <li key={member.userId} className="flex items-center gap-3 rounded-[14px] px-3 py-2 hover:bg-tile/60">
+        <li key={member.userId} className="flex items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile">
           <AssigneeAvatar member={member} size={24} />
           <span className="min-w-0 flex-1 truncate text-[15px]">{displayName(member)}</span>
           {member.role === "admin" ? (
@@ -145,7 +145,7 @@ function Assignments({ roles }: { roles: Doc<"customRoles">[] }) {
                   roleId: e.target.value === "" ? null : (e.target.value as Id<"customRoles">),
                 }).catch((error: unknown) => toast.error(errorMessage(error)))
               }
-              className="h-9 w-56 rounded-[10px] border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
+              className="h-9 w-56 rounded-sm border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
             >
               <option value="">Member defaults</option>
               {roles.map((role) => (

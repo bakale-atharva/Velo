@@ -34,7 +34,7 @@ function LabelRow({ label, canManage }: { label: Doc<"labels">; canManage: boole
     });
 
   return (
-    <li className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] px-3 py-2 hover:bg-tile/60">
+    <li className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile">
       <input
         type="color"
         aria-label={`Colour of ${label.name}`}
@@ -42,7 +42,7 @@ function LabelRow({ label, canManage }: { label: Doc<"labels">; canManage: boole
         value={color}
         onChange={(e) => setColor(e.target.value)}
         onBlur={() => color !== label.color && save({ color })}
-        className="size-8 cursor-pointer rounded-[10px] border border-input bg-transparent p-1 disabled:cursor-default"
+        className="size-8 cursor-pointer rounded-sm border border-input bg-transparent p-1 disabled:cursor-default"
       />
       <Input
         aria-label="Label name"
@@ -65,7 +65,7 @@ function LabelRow({ label, canManage }: { label: Doc<"labels">; canManage: boole
               .then(() => toast.success(`Deleted ${label.name}`))
               .catch((error: unknown) => toast.error(errorMessage(error, MESSAGES)))
           }
-          className="grid size-8 place-items-center rounded-[10px] text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
+          className="grid size-8 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
         >
           <Trash2 className="size-4" />
         </button>
@@ -122,7 +122,7 @@ function Labels() {
             aria-label="New label colour"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            className="size-9 cursor-pointer rounded-[10px] border border-input bg-transparent p-1"
+            className="size-9 cursor-pointer rounded-sm border border-input bg-transparent p-1"
           />
           <Input
             aria-label="New label name"

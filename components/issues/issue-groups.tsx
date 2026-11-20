@@ -3,7 +3,7 @@
 import type { Doc } from "@/convex/_generated/dataModel";
 import { GROUP_PANEL } from "./issue-list";
 import { IssueRow } from "./issue-row";
-import { StateHeading, stateColor } from "./state-heading";
+import { StateHeading } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
 type StateType = Doc<"issues">["stateType"];
@@ -30,15 +30,15 @@ export function IssueGroups({ issues, orgSlug }: { issues: Issue[]; orgSlug: str
         if (inGroup.length === 0) return null;
         return (
           <section key={group.type} aria-labelledby={`group-${group.type}`} className={GROUP_PANEL}>
-            <div className="px-3 pt-2 pb-3">
+            <div className="px-3 pt-5 pb-2 md:px-6">
               <StateHeading
                 id={`group-${group.type}`}
                 name={group.name}
                 count={inGroup.length}
-                color={stateColor(group.type)}
+                type={group.type}
               />
             </div>
-            <ul className="flex flex-col gap-0.5">
+            <ul className="flex flex-col pb-2">
               {inGroup.map((issue) => (
                 <li key={issue._id}>
                   <IssueRow issue={issue} orgSlug={orgSlug} />

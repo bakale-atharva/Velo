@@ -1,130 +1,34 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-16T12:30:00Z",
+  "generatedAt": "2026-11-20T00:00:00.000Z",
   "title": "Design System: Velo",
   "extensions": {
     "colorMeta": {
-      "ultramarine": { "role": "primary", "displayName": "Zürich Ultramarine", "canonical": "#2433d6", "tonalRamp": ["#0d1352", "#141e85", "#1d29b8", "#2433d6", "#5361e8", "#8c96ff", "#c3c8ff", "#eceeff"] },
-      "vermilion": { "role": "secondary", "displayName": "Signal Vermilion", "canonical": "#e8432a", "tonalRamp": ["#4a120a", "#7d1f12", "#b02e1a", "#e8432a", "#ff6b52", "#ff9a87", "#ffc8bd", "#fff0ec"] },
-      "destructive": { "role": "secondary", "displayName": "Ledger Red", "canonical": "#c4321b" },
-      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#f6f6f2", "tonalRamp": ["#121212", "#2d2e33", "#55554f", "#85857e", "#b3b3ac", "#d9d9d2", "#ecece6", "#f6f6f2"] },
-      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#121212" },
-      "muted-ink": { "role": "neutral", "displayName": "Graphite", "canonical": "#55554f" },
-      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#d9d9d2" },
-      "control-edge": { "role": "neutral", "displayName": "Control Edge", "canonical": "#85857e" },
-      "state-completed": { "role": "tertiary", "displayName": "Done Green", "canonical": "#2c7a4b" }
+      "ground": { "role": "neutral", "displayName": "Ground", "canonical": "#000000" },
+      "ink": { "role": "primary", "displayName": "Ink", "canonical": "#ffffff" },
+      "muted-ink": { "role": "neutral", "displayName": "Muted ink", "canonical": "#a3a3a3" },
+      "rule": { "role": "neutral", "displayName": "Rule", "canonical": "#333333" },
+      "destructive": { "role": "secondary", "displayName": "Destructive", "canonical": "#e07a6c" }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display count", "purpose": "Live state counts heading board columns." },
-      "headline": { "displayName": "Page title", "purpose": "Page titles only." },
-      "title": { "displayName": "Title", "purpose": "Section and dialog headings." },
-      "body": { "displayName": "Body", "purpose": "Issue titles, rows and form text, tabular figures on." },
-      "meta": { "displayName": "Meta", "purpose": "Identifiers, estimates, dates." },
-      "label": { "displayName": "Label", "purpose": "Uppercase rail and group labels; 11px floor." }
+      "page-title": { "displayName": "Page title", "purpose": "Team, project and settings page names." },
+      "data": { "displayName": "Data", "purpose": "Ids, dates, counts, estimates, shortcuts." },
+      "signal-label": { "displayName": "Signal label", "purpose": "Group headings, table headers, property labels." }
     },
     "shadows": [],
-    "motion": [
-      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "All entrances, reorders and panel moves." },
-      { "name": "duration-fast", "value": "120ms", "purpose": "Hover, press, small state flips." },
-      { "name": "duration-base", "value": "200ms", "purpose": "Entrances, list reorders, panels." }
-    ],
-    "breakpoints": [
-      { "name": "md", "value": "768px" },
-      { "name": "lg", "value": "1024px" }
-    ]
-  },
-  "components": [
-    {
-      "name": "Primary Button",
-      "kind": "button",
-      "refersTo": "button-primary",
-      "description": "The one main action per view, e.g. New issue.",
-      "html": "<button class=\"ds-btn-primary\">New issue</button>",
-      "css": ".ds-btn-primary { height: 32px; padding: 0 10px; background: var(--primary, #121212); color: var(--primary-foreground, #f6f6f2); border: 1px solid transparent; border-radius: 2px; font: 500 14px Geist, system-ui, sans-serif; cursor: pointer; transition: background 120ms cubic-bezier(0.16,1,0.3,1); } .ds-btn-primary:hover { background: color-mix(in srgb, var(--primary, #121212) 80%, transparent); } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring, #2433d6); outline-offset: 2px; }"
+    "motion": {
+      "signal": { "duration": "480ms", "easing": "steps(1, end)", "purpose": "Two-frame inversion when a live change lands on a row." },
+      "ease-out-expo": { "value": "cubic-bezier(0.16, 1, 0.3, 1)" }
     },
-    {
-      "name": "Outline Button",
-      "kind": "button",
-      "refersTo": "button-outline",
-      "description": "Secondary actions such as Filter.",
-      "html": "<button class=\"ds-btn-outline\">Filter</button>",
-      "css": ".ds-btn-outline { height: 32px; padding: 0 10px; background: var(--background, #f6f6f2); color: var(--foreground, #121212); border: 1px solid var(--border, #d9d9d2); border-radius: 2px; font: 500 14px Geist, system-ui, sans-serif; cursor: pointer; } .ds-btn-outline:hover { background: var(--muted, #ecece6); } .ds-btn-outline:focus-visible { outline: 2px solid var(--ring, #2433d6); outline-offset: 2px; }"
-    },
-    {
-      "name": "Destructive Button",
-      "kind": "button",
-      "refersTo": "button-destructive",
-      "description": "Delete and other irreversible actions.",
-      "html": "<button class=\"ds-btn-destructive\">Delete issue</button>",
-      "css": ".ds-btn-destructive { height: 32px; padding: 0 10px; background: color-mix(in srgb, var(--destructive, #c4321b) 10%, transparent); color: var(--destructive, #c4321b); border: 1px solid transparent; border-radius: 2px; font: 500 14px Geist, system-ui, sans-serif; cursor: pointer; } .ds-btn-destructive:hover { background: color-mix(in srgb, var(--destructive, #c4321b) 20%, transparent); } .ds-btn-destructive:focus-visible { outline: 2px solid var(--destructive, #c4321b); outline-offset: 2px; }"
-    },
-    {
-      "name": "Text Input",
-      "kind": "input",
-      "refersTo": "input",
-      "description": "Single-line field with a 3.6:1 control edge.",
-      "html": "<input class=\"ds-input\" placeholder=\"Issue title\">",
-      "css": ".ds-input { height: 32px; padding: 0 10px; background: transparent; color: var(--foreground, #121212); border: 1px solid var(--input, #85857e); border-radius: 2px; font: 400 14px Geist, system-ui, sans-serif; } .ds-input:focus-visible { outline: 2px solid var(--ring, #2433d6); outline-offset: 2px; } .ds-input::placeholder { color: var(--muted-foreground, #55554f); }"
-    },
-    {
-      "name": "Rail Navigation",
-      "kind": "nav",
-      "refersTo": "rail",
-      "description": "Ultramarine shell rail with an inverted active item.",
-      "html": "<nav class=\"ds-rail\"><a class=\"ds-rail-item ds-active\" href=\"#\">Engineering <span>41</span></a><a class=\"ds-rail-item\" href=\"#\">Design <span>12</span></a></nav>",
-      "css": ".ds-rail { width: 232px; padding: 16px; background: var(--sidebar, #2433d6); display: grid; gap: 2px; } .ds-rail-item { display: flex; justify-content: space-between; padding: 8px; color: #fff; text-decoration: none; border-radius: 2px; font: 500 13px Geist, system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-rail-item:hover { background: rgb(255 255 255 / 0.14); } .ds-rail-item.ds-active { background: #fff; color: var(--sidebar, #2433d6); } .ds-rail-item:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }"
-    },
-    {
-      "name": "Tag",
-      "kind": "chip",
-      "refersTo": "tag",
-      "description": "Outlined square label tag.",
-      "html": "<span class=\"ds-tag\">bug</span>",
-      "css": ".ds-tag { display: inline-block; padding: 0 4px; border: 1px solid var(--foreground, #121212); border-radius: 2px; font: 500 11px/16px Geist, system-ui, sans-serif; color: var(--foreground, #121212); }"
-    },
-    {
-      "name": "State Column Header",
-      "kind": "custom",
-      "description": "Signature: state name with its poster-scale live count over a 4px rule.",
-      "html": "<div class=\"ds-colhead ds-started\"><span class=\"ds-colname\">In Progress</span><span class=\"ds-count\">6</span></div>",
-      "css": ".ds-colhead { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; border-bottom: 4px solid var(--rule, #121212); } .ds-colname { font: 600 13px Geist, system-ui, sans-serif; } .ds-count { font-family: Archivo, Geist, sans-serif; font-weight: 800; font-size: 64px; line-height: 56px; letter-spacing: -0.04em; font-stretch: 75%; font-variant-numeric: tabular-nums; } .ds-started { border-color: var(--state-started, #2433d6); } .ds-started .ds-count { color: var(--brand-ink, #2433d6); }"
-    },
-    {
-      "name": "Priority Ramp",
-      "kind": "custom",
-      "description": "Signature: three rising bars; urgent fills in vermilion.",
-      "html": "<span class=\"ds-ramp ds-urgent\" role=\"img\" aria-label=\"Urgent\"><i></i><i></i><i></i></span>",
-      "css": ".ds-ramp { display: inline-flex; align-items: flex-end; gap: 1px; height: 12px; } .ds-ramp i { width: 3px; background: var(--foreground, #121212); } .ds-ramp i:nth-child(1) { height: 4px; } .ds-ramp i:nth-child(2) { height: 7px; } .ds-ramp i:nth-child(3) { height: 10px; } .ds-ramp.ds-urgent i { background: var(--urgent, #e8432a); }"
+    "breakpoints": { "md": "768px", "lg": "1024px" },
+    "narrative": {
+      "northStar": "The team's work, visible as signal.",
+      "rules": [
+        "No accent hue: emphasis is inversion, weight and size.",
+        "Inversion is reserved for the active path.",
+        "Hairlines, never shadows. Square, 2px at most.",
+        "Every identifier, number, date and key is Geist Mono."
+      ]
     }
-  ],
-  "narrative": {
-    "northStar": "The Departure Board",
-    "overview": "Velo reads like a station departure board set by a Zürich typographer: a whole team's work visible at a glance, numbers that change in place while you watch, and nothing on the surface that is not information. Every issue sits on one strict modular grid; hierarchy comes from scale, weight and position, never from boxes, cards or shadows. The board's columns are headed by poster-scale counts in a condensed heavy grotesk. They are the loudest thing on the screen and the only decorative act the system allows, because they are also the most useful number on it. Beneath them the rows are quiet and dense: a neo-grotesk at 13px with tabular figures, hairlines on the 8px grid, identifiers and estimates in their own aligned columns. Colour does jobs, not decoration. Paper and ink carry the reading; a committed ultramarine owns the shell rail and marks work in progress; vermilion appears only where something is urgent or destructive.",
-    "keyCharacteristics": [
-      "One Swiss modular grid on an 8px baseline; every edge lands on it.",
-      "Poster-scale condensed counts over quiet, dense rows.",
-      "Ultramarine shell, paper-and-ink field, vermilion only for urgent and destructive.",
-      "Square corners (2px at most), hairline rules, no shadows on the page.",
-      "Light and dark are both first-class and AA throughout."
-    ],
-    "rules": [
-      { "name": "The Rationed Red Rule", "body": "Vermilion marks urgency and nothing else. If a screen has no urgent issue, it has no vermilion.", "section": "colors" },
-      { "name": "The Blue Means Moving Rule", "body": "Ultramarine inside the work area means \"in progress\". Never use it for decoration, links in prose, or unrelated emphasis.", "section": "colors" },
-      { "name": "The Two Voices Rule", "body": "Archivo only ever sets numbers and page titles. Everything a person reads in a sentence is Geist.", "section": "typography" },
-      { "name": "The Aligned Figures Rule", "body": "Identifiers, counts, estimates and dates use tabular figures and sit in their own column so they scan vertically.", "section": "typography" },
-      { "name": "The Flat Page Rule", "body": "If it sits on the page, it has no shadow. Only things that float above the page may cast one.", "section": "elevation" }
-    ],
-    "dos": [
-      "Do put every edge on the 8px grid and separate rows with 1px hairlines.",
-      "Do head every board column with its live count in Display.",
-      "Do use tabular figures for ids, counts, estimates and dates.",
-      "Do check every new text colour for 4.5:1 (3:1 for Display) in both themes."
-    ],
-    "donts": [
-      "Don't use cards, rounded panels or shadows on the page to group content.",
-      "Don't set vermilion as text, or use it for anything that is not urgent.",
-      "Don't use Archivo for sentences, buttons or labels.",
-      "Don't add coloured left borders thicker than 1px to rows or cards; mark selection with a fill instead."
-    ]
   }
 }

@@ -1,8 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { displayName, initials, type Member } from "./lookups";
 
-// Initials sit on one of four deep tones (white text ≥ 4.5:1), picked per member.
-const FALLBACKS = ["#12705f", "#b5501f", "#4f52c9", "#5b6b2e"];
+// Initials sit on one of four greys from the signal scale (white text ≥ 4.5:1).
+const FALLBACKS = ["#262626", "#3d3d3d", "#525252", "#171717"];
 
 function hash(value: string) {
   let h = 0;
@@ -23,11 +23,15 @@ export function AssigneeAvatar({ member, size = 20 }: { member: Member | undefin
     );
   }
   return (
-    <Avatar style={{ width: size, height: size }} className="shrink-0" title={displayName(member)}>
-      {member.imageUrl !== null && <AvatarImage src={member.imageUrl} alt="" />}
+    <Avatar
+      style={{ width: size, height: size }}
+      className="shrink-0 ring-1 ring-rule"
+      title={displayName(member)}
+    >
+      {member.imageUrl !== null && <AvatarImage src={member.imageUrl} alt="" className="grayscale" />}
       <AvatarFallback
-        className="font-semibold text-white"
-        style={{ background: FALLBACKS[hash(member.userId) % FALLBACKS.length], fontSize: Math.max(10, size * 0.38) }}
+        className="font-mono font-medium text-white"
+        style={{ background: FALLBACKS[hash(member.userId) % FALLBACKS.length], fontSize: Math.max(9, size * 0.36) }}
       >
         {initials(member)}
       </AvatarFallback>

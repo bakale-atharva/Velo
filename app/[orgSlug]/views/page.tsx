@@ -13,19 +13,20 @@ import { TeamPageHeader } from "@/components/issues/team-page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
+import { ROW_MUTED, TABLE_ROW } from "@/components/states/table-styles";
 
 function ViewRow({ view, orgSlug, owner }: { view: Doc<"savedViews">; orgSlug: string; owner?: string }) {
   const count = activeCount(view.filter);
   return (
     <Link
       href={`/${orgSlug}/views/${view._id}`}
-      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-[14px] px-3 py-3 hover:bg-tile focus-visible:bg-tile focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_180px_140px]"
+      className={`${TABLE_ROW} grid h-11 grid-cols-[minmax(0,1fr)_auto] gap-4 sm:grid-cols-[minmax(0,1fr)_200px_160px]`}
     >
-      <span className="truncate text-[15px] font-medium">{view.name}</span>
-      <span className="hidden truncate text-[13px] text-muted-foreground sm:block">
+      <span className="truncate text-[14px] font-medium">{view.name}</span>
+      <span className={`hidden truncate text-[13px] sm:block ${ROW_MUTED}`}>
         {owner ?? (view.isShared ? "Shared with workspace" : "Only you")}
       </span>
-      <span className="text-right text-[13px] text-muted-foreground tabular-nums">
+      <span className={`data text-right text-[12px] uppercase ${ROW_MUTED}`}>
         {count} {count === 1 ? "filter" : "filters"} · {view.layout}
       </span>
     </Link>
@@ -35,11 +36,11 @@ function ViewRow({ view, orgSlug, owner }: { view: Doc<"savedViews">; orgSlug: s
 function Section({ title, children, count }: { title: string; count: number; children: React.ReactNode }) {
   const id = `views-${title.toLowerCase().replace(/\s+/g, "-")}`;
   return (
-    <section aria-labelledby={id} className="panel mx-3 mb-4 p-3 md:mx-6">
-      <div className="px-3 pt-2 pb-3">
-        <StateHeading id={id} name={title} count={count} color="var(--state-started)" />
+    <section aria-labelledby={id} className="border-t border-rule first:border-t-0">
+      <div className="px-3 pt-5 pb-2 md:px-6">
+        <StateHeading id={id} name={title} count={count} />
       </div>
-      <ul className="flex flex-col gap-0.5">{children}</ul>
+      <ul className="flex flex-col pb-2">{children}</ul>
     </section>
   );
 }

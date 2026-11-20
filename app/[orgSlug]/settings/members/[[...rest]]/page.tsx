@@ -22,7 +22,7 @@ export default function MembersSettingsPage() {
           appearance={{
             elements: {
               rootBox: "w-full",
-              cardBox: "w-full max-w-none rounded-[20px] shadow-none border border-border",
+              cardBox: "w-full max-w-none rounded-none shadow-none border border-rule",
             },
           }}
         />

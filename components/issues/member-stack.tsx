@@ -16,12 +16,12 @@ export function MemberStack({ max = 3 }: { max?: number }) {
       className="flex items-center"
     >
       {shown.map((member, index) => (
-        <span key={member.userId} className={`rounded-full ring-[3px] ring-background ${index > 0 ? "-ml-3" : ""}`}>
-          <AssigneeAvatar member={member} size={40} />
+        <span key={member.userId} className={`rounded-full ring-2 ring-background ${index > 0 ? "-ml-2" : ""}`}>
+          <AssigneeAvatar member={member} size={28} />
         </span>
       ))}
       {rest > 0 && (
-        <span className="-ml-3 grid size-[46px] place-items-center rounded-full bg-popover text-[15px] font-medium tabular-nums ring-[3px] ring-background">
+        <span className="data -ml-2 grid size-8 place-items-center rounded-full bg-popover text-[11px] ring-2 ring-background">
           +{rest}
         </span>
       )}

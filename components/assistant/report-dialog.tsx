@@ -79,11 +79,11 @@ export function ReportDialog({
           </DialogTitle>
           <DialogDescription>{subject}. Written by the assistant from the issues; check before sharing.</DialogDescription>
         </DialogHeader>
-        <div className="max-h-[60vh] min-h-32 overflow-y-auto rounded-[14px] bg-tile p-4" aria-live="polite">
+        <div className="max-h-[60vh] min-h-32 overflow-y-auto border border-rule p-4" aria-live="polite">
           {busy ? (
-            <p role="status" className="text-[15px] text-muted-foreground">Writing the report…</p>
+            <p role="status" className="signal-label">Writing the report…</p>
           ) : error !== null ? (
-            <p role="alert" className="text-[15px] text-destructive">{error}</p>
+            <p role="alert" className="text-[14px] text-destructive">{error}</p>
           ) : markdown !== null ? (
             <Markdown>{markdown}</Markdown>
           ) : null}

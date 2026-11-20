@@ -22,11 +22,11 @@ export function statusLabel(status: ProjectStatus): string {
   return PROJECT_STATUSES.find((s) => s.value === status)!.label;
 }
 
-/** A pill with a dot in the status colour, then its name. */
+/** A small square in the status tint, then its name in the data voice. */
 export function ProjectStatusTag({ status }: { status: ProjectStatus }) {
   return (
-    <span className="inline-flex h-7 items-center gap-2 rounded-full border border-rule bg-panel px-3 text-[13px] whitespace-nowrap">
-      <span className="size-2 shrink-0 rounded-full" style={{ background: DOT[status] }} aria-hidden />
+    <span className="data inline-flex items-center gap-2 text-[11px] tracking-[0.1em] whitespace-nowrap uppercase">
+      <span className="size-[7px] shrink-0" style={{ background: DOT[status] }} aria-hidden />
       {statusLabel(status)}
     </span>
   );

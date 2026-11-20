@@ -52,7 +52,7 @@ function Billing() {
   }
 
   return (
-    <div className="grid gap-5">
+    <div className="grid">
       <SettingsPanel title="Current plan">
         <dl>
           <SettingsFact label="Plan">{planName(plan.planSlug)}</SettingsFact>

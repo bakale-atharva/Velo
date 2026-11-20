@@ -46,7 +46,7 @@ export function Keys({ keys }: { keys: readonly string[] }) {
       {keys.map((key) => (
         <kbd
           key={key}
-          className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-muted px-1.5 font-sans text-[12px] text-muted-foreground shadow-[inset_0_-1px_0_var(--rule)]"
+          className="data inline-flex h-6 min-w-6 items-center justify-center border border-rule px-1.5 text-[11px] text-foreground"
         >
           {key}
         </kbd>

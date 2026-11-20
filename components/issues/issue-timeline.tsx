@@ -152,11 +152,8 @@ export function IssueTimeline({ issueId }: { issueId: Id<"issues"> }) {
   const canLoadMore = comments.status === "CanLoadMore" || activities.status === "CanLoadMore";
 
   return (
-    <section aria-label="Activity" className="mt-10">
-      <h2 className="flex items-center gap-3 text-[15px] font-medium">
-        <span aria-hidden className="h-6 w-[3px] rounded-full bg-state-completed" />
-        Activity
-      </h2>
+    <section aria-label="Activity" className="mt-10 border-t border-rule pt-5">
+      <h2 className="signal-label text-foreground">Activity</h2>
       {canLoadMore && (
         <Button
           variant="ghost"
@@ -181,17 +178,17 @@ export function IssueTimeline({ issueId }: { issueId: Id<"issues"> }) {
                 {describe(entry.activity, memberById)}
               </span>
               {entry.activity.viaAssistant && (
-                <span className="iris-ring rounded-full px-2 text-[12px] leading-5 text-foreground [--iris-fill:var(--panel)]">
+                <span className="data border border-rule px-1.5 text-[11px] leading-5 text-foreground uppercase">
                   via assistant
                 </span>
               )}
-              <span className="ml-auto shrink-0 tabular-nums">{time.format(entry.activity._creationTime)}</span>
+              <span className="data ml-auto shrink-0 text-[12px]">{time.format(entry.activity._creationTime)}</span>
             </li>
           ),
         )}
       </ol>
       <form
-        className="mt-4 grid gap-3 rounded-[18px] bg-tile p-4"
+        className="mt-4 grid gap-3 border border-rule p-3"
         onSubmit={async (event) => {
           event.preventDefault();
           if (body.trim() === "") return;

@@ -25,7 +25,7 @@ function General() {
   const base = `/${orgSlug}/settings`;
 
   return (
-    <div className="grid gap-5">
+    <div className="grid">
       <SettingsPanel
         title="Workspace"
         description="The name, URL and logo are managed with members and invitations."
