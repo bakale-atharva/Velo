@@ -135,7 +135,7 @@ export function ConnectPanel({ runtime, isMaster }: { runtime: Runtime; isMaster
     >
       <div className="grid gap-5">
         <div className="flex flex-wrap items-center gap-3">
-          <div role="radiogroup" aria-label="Client" className="flex border border-rule">
+          <div role="radiogroup" aria-label="Client" className="flex max-w-full overflow-x-auto border border-rule">
             {CLIENTS.map((option) => (
               <button
                 key={option.value}
@@ -143,7 +143,7 @@ export function ConnectPanel({ runtime, isMaster }: { runtime: Runtime; isMaster
                 role="radio"
                 aria-checked={client === option.value}
                 onClick={() => setClient(option.value)}
-                className={`data h-8 px-3 text-[12px] uppercase ${
+                className={`data h-8 shrink-0 px-3 text-[12px] whitespace-nowrap uppercase ${
                   client === option.value ? "inverted" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -151,8 +151,8 @@ export function ConnectPanel({ runtime, isMaster }: { runtime: Runtime; isMaster
               </button>
             ))}
           </div>
-          <Button type="button" variant="ghost" size="sm" onClick={() => void copy(url, "the endpoint")}>
-            <span className="data text-[12px]">{url}</span>
+          <Button type="button" variant="ghost" size="sm" className="min-w-0 max-w-full" onClick={() => void copy(url, "the endpoint")}>
+            <span className="data min-w-0 truncate text-[12px]">{url}</span>
             <Copy className="size-3.5" aria-hidden />
           </Button>
         </div>

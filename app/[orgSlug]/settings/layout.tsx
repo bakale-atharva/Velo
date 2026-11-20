@@ -30,7 +30,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex flex-1 flex-col">
       <TeamPageHeader title="Settings" nav={nav} />
-      <div className="flex flex-1 flex-col px-3 pt-6 pb-12 md:px-6">{children}</div>
+      <div className="flex flex-1 flex-col px-3 pt-6 pb-12 @3xl/main:px-6">{children}</div>
     </div>
   );
 }

@@ -18,7 +18,7 @@ export function SettingsPanel({
   return (
     <section
       aria-labelledby={id}
-      className="grid max-w-6xl gap-x-12 gap-y-4 border-b border-rule py-8 first:pt-2 md:grid-cols-[260px_minmax(0,1fr)]"
+      className="grid max-w-6xl gap-x-12 gap-y-4 border-b border-rule py-8 first:pt-2 @3xl/main:grid-cols-[260px_minmax(0,1fr)]"
     >
       <div className="min-w-0">
         <h2 id={id} className="text-[17px] leading-6 font-semibold tracking-[-0.02em]">

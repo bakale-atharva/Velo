@@ -94,7 +94,7 @@ function Agents() {
         <ul className="flex flex-col border-t border-border" aria-label="Agents">
           <li
             aria-hidden
-            className="signal-label hidden h-9 items-center gap-4 border-b border-border px-2 text-muted-foreground md:flex"
+            className="signal-label hidden h-9 items-center gap-4 border-b border-border px-2 text-muted-foreground @3xl/main:flex"
           >
             <span className="flex-1">Agent</span>
             <span className="w-40">Runs on</span>
@@ -123,14 +123,14 @@ function Agents() {
                       <span className="data shrink-0 text-[11px] tracking-[0.14em] uppercase">Disabled</span>
                     )}
                   </span>
-                  <span className="data hidden w-40 truncate text-[12px] text-muted-foreground group-focus-visible:text-background md:block">
+                  <span className="data hidden w-40 truncate text-[12px] text-muted-foreground group-focus-visible:text-background @3xl/main:block">
                     {runtimeLabel(agent.runtime)}
                     {agent.model !== null && ` · ${agent.model}`}
                   </span>
-                  <span className="data hidden w-16 text-right text-[12px] text-muted-foreground tabular-nums group-focus-visible:text-background md:block">
+                  <span className="data hidden w-16 text-right text-[12px] text-muted-foreground tabular-nums group-focus-visible:text-background @3xl/main:block">
                     {agent.isMaster ? (childCount.get(agent._id) ?? 0) : ""}
                   </span>
-                  <span className="data hidden w-28 truncate text-[12px] text-muted-foreground group-focus-visible:text-background md:block">
+                  <span className="data hidden w-28 truncate text-[12px] text-muted-foreground group-focus-visible:text-background @3xl/main:block">
                     {agent.teamIds.map((id) => teamKey.get(id)).filter(Boolean).join(" ") || "—"}
                   </span>
                   <span className="data w-20 text-right text-[12px] text-muted-foreground tabular-nums group-focus-visible:text-background">
