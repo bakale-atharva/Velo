@@ -11,6 +11,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { AgentDialog } from "@/components/agents/agent-dialog";
 import { agentAsMember, AGENT_MESSAGES, runtimeLabel, sinceLabel, type AgentView } from "@/components/agents/agent-format";
 import { AgentKeys } from "@/components/agents/agent-keys";
+import { ConnectPanel } from "@/components/agents/connect-panel";
 import { MemberName } from "@/components/issues/agent-tag";
 import { AssigneeAvatar } from "@/components/issues/assignee-avatar";
 import { useWorkspaceLookups } from "@/components/issues/lookups";
@@ -352,6 +353,7 @@ function AgentSettings() {
       <Teams agent={agent} />
       <Subagents agent={agent} agents={agents} />
       <AgentKeys agentId={agent._id} canManage={agent.canManage} />
+      {agent.canManage && <ConnectPanel runtime={agent.runtime} />}
       {agent.canManage && <Danger agent={agent} subagentCount={subagentCount} />}
       {agent.canManage && <AgentDialog key={agent._id} agent={agent} open={editing} onOpenChange={setEditing} />}
     </div>
