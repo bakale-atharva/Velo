@@ -4,9 +4,14 @@ Velo has an MCP server, so AI agents such as Claude Code, Claude Desktop and Ope
 
 - read and change issues
 - run teams, projects and cycles
-- create subagents and hand them work
+- build their own team of agents and hand them work
 
-Every change an agent makes is recorded under its own name.
+Agents come in two levels:
+
+- **Master agents** are the ones you create (workspace admins only). A master acts as an admin and can create agents.
+- **Its agents** are the ones a master creates over MCP. They're regular members and can't create agents. Their master manages them: profile, keys, teams and deletion.
+
+Roles are set automatically; you never pick one. Every change an agent makes is recorded under its own name.
 
 - **Endpoint:** `https://<your-deployment>.convex.site/mcp`. On the dev deployment that is `https://spotted-ptarmigan-217.convex.site/mcp`. Use the **`.convex.site`** host, not `.convex.cloud`.
 - **Auth:** each agent has its own API key, sent as `Authorization: Bearer velo_…`.
@@ -24,16 +29,16 @@ node scripts/agent-jwt-keys.mjs --prod
 
 Run the two `npx convex env set --prod …` commands it prints. Until both variables are set, the endpoint answers `503`.
 
-## 2. Create an agent and a key
+## 2. Create a master agent and a key
 
 Agents are members of a workspace. They don't use plan seats.
 
-**In the app** (once the agents settings page ships): Settings → Agents → New agent, then **Create key**. Copy the key; it's shown only once.
+**In the app:** Settings → Agents → **New agent** (workspace admins only). That makes a master agent. On its page, under API keys, make a key and copy it; it's shown only once. The Connect panel on the same page has the steps below, already filled in.
 
-**Before then, from the command line**, run these as a workspace admin. Use your own Clerk user id, org id and org slug; `npx convex data memberships` and `npx convex data organizations` show them.
+**From the command line**, as a workspace admin, use your own Clerk user id, org id and org slug; `npx convex data memberships` and `npx convex data organizations` show them.
 
 ```bash
-npx convex run agents:create '{"name":"Builder","runtime":"claude","model":"claude-opus-5-5","canManageAgents":true}' --identity '{"subject":"<your user_… id>","tokenIdentifier":"cli|<your user_… id>","o":{"id":"<org_… id>","rol":"admin","slg":"<org slug>"}}'
+npx convex run agents:create '{"name":"Builder","runtime":"claude","model":"claude-opus-5-5"}' --identity '{"subject":"<your user_… id>","tokenIdentifier":"cli|<your user_… id>","o":{"id":"<org_… id>","rol":"admin","slg":"<org slug>"}}'
 ```
 
 ```bash
@@ -54,9 +59,9 @@ Things you can set on an agent:
 | `imageUrl` | `https:` URL of its profile photo (or upload one in the app) |
 | `model`, `runtime` | For display: e.g. `claude-opus-5-5`, `claude` / `openclaw` / `other` |
 | `metadata` | Up to 20 free-form key/value pairs |
-| `role` | `member` (default) or `admin`; never higher than its creator's |
-| `canManageAgents` | May create and manage its own subagents |
 | `teamIds` | Teams to join (matters for private teams) |
+
+There's no role field: an agent you create is a master (admin), and an agent a master creates is a member.
 
 ## 3. Connect Claude Code
 
@@ -130,27 +135,29 @@ With `auto`, read tools run freely and destructive ones still ask, because Velo 
 
 ---
 
-## Subagents and delegation
+## A master builds its team
 
-An agent with **can manage agents** can build its own team:
+Once a master agent is connected, it can create agents and delegate to them. `whoami` returns `canCreateAgents: true` for a master.
 
-1. **Create the subagent:** `create_agent` with name, photo URL, description, model, metadata and `teams: ["ENG"]`. The subagent sits below its creator, with at most the creator's role.
-2. **Give it its own key**, if it will run as a separate process: `create_agent_key`.
+1. **Create an agent:** `create_agent` with name, photo URL, description, model, metadata and `teams: ["ENG"]`. It's a regular member and can't create agents of its own.
+2. **Give it its own key**, if it will run as a separate process: `create_agent_key`. Paste that key into the new agent's client config, using the same steps as above.
 3. **Add it to more teams:** `add_team_member`.
-4. **Hand it work:** `create_issue` / `update_issue` with `assignee: "<subagent name>"`. You can also assign it from the app; agents appear in every member picker.
+4. **Hand it work:** `create_issue` / `update_issue` with `assignee: "<agent name>"`. You can also assign it from the app; agents appear in every member picker.
 
-The subagent connects with its own key and finds its work with `my_issues`.
+The agent connects with its own key and finds its work with `my_issues`.
 
 Rules:
-- A parent manages only the agents below it.
-- Any agent may edit its own profile, but not its own role.
-- People with the `agents.manage` permission (admins by default) manage every agent, but never one with a higher role than their own.
-- Deleting an agent deletes its whole subtree and unassigns their issues.
+- Only workspace admins create master agents. Masters act as admins.
+- A master manages only the agents it created, not other masters or their agents.
+- A master's agents are members. They can't create agents or do admin-only work.
+- Any agent may edit its own profile.
+- Workspace admins manage every agent from Settings → Agents.
+- Deleting a master deletes its agents too, revokes their keys and unassigns their issues.
 
 ## Example prompts
 
 - "Use Velo: what's assigned to me? Start the most urgent one and move it to In Progress."
-- "Create a subagent called Reviewer running claude-opus-5-5, add it to ENG, and assign it every open issue labelled `needs-review`."
+- (master) "Create an agent called Reviewer running claude-opus-5-5, add it to ENG, give it its own key, and assign it every open issue labelled `needs-review`."
 - "Make a project 'Launch' due 2027-01-15, file issues for the checklist in LAUNCH.md under it, and put them in the current ENG cycle."
 - "Summarize what changed on ENG-42 today from its activity and comments."
 
@@ -175,9 +182,9 @@ Not available to agents: billing, inviting or removing people (Clerk), and Velo'
 ## Permissions
 
 An agent has exactly the permissions of its role, the same as a person:
-- **Members** can create and edit issues, projects, cycles and views.
-- **Deleting issues** and **managing teams and labels** need `issues.delete`, `teams.manage` and `labels.manage`. Admins have them, or you can grant them with a custom role (Business plan) via `assign_role`.
-- **Private teams** are visible only to their members, agents included.
+- **Master agents are admins.** They can do everything an admin can over MCP: delete issues, manage teams, labels and workflow states, and use roles and the audit log on Business.
+- **A master's agents are members.** They can create and edit issues, projects, cycles and views. Deleting issues and managing teams and labels need `issues.delete`, `teams.manage` and `labels.manage`, which a master (or you) can grant with a custom role (Business plan) via `assign_role`.
+- **Private teams** are visible only to their members, agents included. Admins get no exception, so add an agent to a private team for it to see that team's issues.
 
 ## Keys: rotation and revocation
 
@@ -194,7 +201,7 @@ An agent has exactly the permissions of its role, the same as a person:
 | `401` "Invalid, revoked or disabled API key" | Wrong key, revoked key, or the agent is disabled or deleted |
 | `429` with `Retry-After` | Over 120 requests a minute on this key |
 | `503` "Agent access is not set up" | Run step 1 on this deployment |
-| Tool result `FORBIDDEN: …` | The agent's role doesn't allow it (see Permissions) |
+| Tool result `FORBIDDEN: …` | A master's agent tried admin-only work or `create_agent`, or a master touched another master's agents (see Permissions) |
 | Tool result `NOT_FOUND: …` | Wrong reference, or something the agent can't see (private team, other workspace) |
 | Tool result `INVALID_INPUT: …` | A value failed validation; the message names the field |
 | `404` from the server | The URL uses `.convex.cloud` instead of `.convex.site`, or the path isn't `/mcp` |

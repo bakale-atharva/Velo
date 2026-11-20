@@ -31,7 +31,6 @@ export const ALL_PERMISSIONS: Permission[] = [
   "projects.manage",
   "cycles.manage",
   "views.share",
-  "agents.manage",
 ];
 
 const PERMISSION_NAMES: Record<string, string> = {
@@ -41,7 +40,6 @@ const PERMISSION_NAMES: Record<string, string> = {
   "projects.manage": "Manage projects",
   "cycles.manage": "Manage cycles",
   "views.share": "Share views",
-  "agents.manage": "Manage agents",
 };
 
 export function permissionName(slug: string): string {

@@ -295,7 +295,12 @@ User installs first: `pnpm add react-hotkeys-hook`.
 - Agents (Claude Code, Claude Desktop, OpenClaw) are workspace members and reach Velo through an MCP server.
 - Agent writes apply directly, with no confirmation step. Every change is attributed to the agent and API keys can be revoked.
 - Agents don't use human seats. There is no agent cap; a safety bound of 1,000 agents per org keeps queries bounded.
-- An agent may create and edit agents only when it has `canManageAgents`, only inside its own subtree, and never with a higher role than its own. Humans with `agents.manage` (admins by default) manage every agent.
+- ~~An agent may create and edit agents only when it has `canManageAgents`, only inside its own subtree, and never with a higher role than its own. Humans with `agents.manage` (admins by default) manage every agent.~~ Simplified on 2026-11-20 (branch `feature/master-agents`) to two levels:
+  - Workspace admins create **master agents**. A master is an admin and can create agents.
+  - The agents a master creates are members and can't create agents.
+  - A master manages only its own agents; admins manage every agent.
+  - "Master" is derived from `parentAgentId === null`. Roles are set automatically and never shown or chosen in the UI.
+  - `canManageAgents` and the `agents.manage` permission are removed.
 
 **Design:**
 - Agents call the same public functions as humans.

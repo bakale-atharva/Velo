@@ -25,8 +25,6 @@ type Draft = {
   imageUrl: string;
   model: string;
   runtime: Runtime;
-  role: "member" | "admin";
-  canManageAgents: boolean;
   teamIds: Id<"teams">[];
   metadata: { key: string; value: string }[];
 };
@@ -39,8 +37,6 @@ function draftOf(agent: AgentView | undefined): Draft {
     imageUrl: agent?.imageUrl?.includes("/api/storage/") ? "" : (agent?.imageUrl ?? ""),
     model: agent?.model ?? "",
     runtime: agent?.runtime ?? "claude",
-    role: agent?.role === "admin" ? "admin" : "member",
-    canManageAgents: agent?.canManageAgents ?? false,
     teamIds: agent?.teamIds ?? [],
     metadata: Object.entries(agent?.metadata ?? {}).map(([key, value]) => ({ key, value })),
   };
@@ -63,8 +59,9 @@ export function useAvatarUpload() {
 }
 
 /**
- * Creates an agent, or edits one when `agent` is given. The role can't be
- * above your own; the backend enforces that and the subtree rules too.
+ * Creates a master agent (workspace admins only), or edits an agent's
+ * profile when `agent` is given. Roles are never chosen here: the backend
+ * makes masters admins and the agents they create members.
  */
 export function AgentDialog({
   agent,
@@ -80,7 +77,6 @@ export function AgentDialog({
   const create = useMutation(api.agents.create);
   const update = useMutation(api.agents.update);
   const upload = useAvatarUpload();
-  const me = useQuery(api.members.me, {});
   const teams = useQuery(api.teams.list, {});
   const [draft, setDraft] = useState<Draft>(() => draftOf(agent));
   const [file, setFile] = useState<File | null>(null);
@@ -137,15 +133,11 @@ export function AgentDialog({
           ...(file === null && (urlChanged || removePhoto)
             ? { imageUrl: draft.imageUrl.trim() === "" ? null : draft.imageUrl.trim() }
             : {}),
-          role: draft.role,
-          canManageAgents: draft.canManageAgents,
         });
       } else {
         agentId = await create({
           ...profile,
           imageUrl: draft.imageUrl.trim() === "" ? null : draft.imageUrl.trim(),
-          role: draft.role,
-          canManageAgents: draft.canManageAgents,
           teamIds: draft.teamIds,
         });
       }
@@ -172,6 +164,11 @@ export function AgentDialog({
         <form onSubmit={submit} className="grid gap-5">
           <DialogHeader>
             <DialogTitle>{editing ? `Edit ${agent.name}` : "New agent"}</DialogTitle>
+            {!editing && (
+              <p className="text-[13.5px] leading-6 text-muted-foreground">
+                It can create agents of its own once connected, and hand them issues.
+              </p>
+            )}
           </DialogHeader>
 
           <Input
@@ -277,27 +274,6 @@ export function AgentDialog({
                 onChange={(e) => set("model", e.target.value)}
                 className={`${fieldClass} font-mono text-[13px]`}
               />
-            </label>
-            <label htmlFor={`${id}-role`} className="grid gap-1.5">
-              <span className="signal-label text-muted-foreground">Role</span>
-              <select
-                id={`${id}-role`}
-                className={fieldClass}
-                value={draft.role}
-                onChange={(e) => set("role", e.target.value as "member" | "admin")}
-              >
-                <option value="member">Member</option>
-                <option value="admin" disabled={me?.role !== "admin"}>
-                  Admin{me?.role !== "admin" ? " (above your role)" : ""}
-                </option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2.5 self-end pb-2 text-[14px]">
-              <Checkbox
-                checked={draft.canManageAgents}
-                onCheckedChange={(next) => set("canManageAgents", next === true)}
-              />
-              Can create subagents
             </label>
           </div>
 

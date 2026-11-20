@@ -130,12 +130,12 @@ export default defineSchema({
     model: v.union(v.string(), v.null()),
     runtime: agentRuntime,
     metadata: v.record(v.string(), v.string()),
-    // The agent that created this one; null for agents people created.
+    // The master agent that created this one; null for master agents (which
+    // workspace admins create). Masters are admins and can create agents;
+    // their agents are members and can't.
     parentAgentId: v.union(v.id("agents"), v.null()),
-    // User id (person or agent) that created it.
+    // User id (person or master agent) that created it.
     createdBy: v.string(),
-    // May create and edit agents in its own subtree.
-    canManageAgents: v.boolean(),
     disabledAt: v.union(v.number(), v.null()),
     // Set when the agent is deleted: it disappears at once and a scheduled
     // job unassigns its issues and removes its rows (agents.deleteStep).

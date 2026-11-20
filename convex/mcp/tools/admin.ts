@@ -16,7 +16,6 @@ const permission = z.enum([
   "projects.manage",
   "cycles.manage",
   "views.share",
-  "agents.manage",
 ]);
 const roleRef = z.string().describe("Custom role name or id");
 

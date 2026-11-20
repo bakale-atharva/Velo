@@ -69,20 +69,24 @@ async function agentUser(t: T, agentId: Id<"agents">) {
   return await t.run(async (ctx) => (await ctx.db.get("agents", agentId))!);
 }
 
-/** Org A with team ENG, a lead agent that may manage agents, and org B. */
+/** Org A with team ENG, a master agent "Lead" (an admin), and org B. */
 async function setup() {
   const t = newTest();
   await join(t, ORG_A, "admin_a", "org:admin");
   await join(t, ORG_B, "admin_b", "org:admin");
   const adminA = as(t, "admin_a", ORG_A, "admin");
   await adminA.mutation(api.teams.create, { name: "Engineering", key: "ENG" });
-  const leadId = await adminA.mutation(api.agents.create, {
-    name: "Lead",
-    canManageAgents: true,
-    runtime: "claude",
-  });
+  const leadId = await adminA.mutation(api.agents.create, { name: "Lead", runtime: "claude" });
   const lead = await agentUser(t, leadId);
-  return { t, adminA, leadId, lead: clientFor(t, lead.userId, ORG_A), leadUserId: lead.userId };
+  return { t, adminA, leadId, lead: clientFor(t, lead.userId, ORG_A, "admin"), leadUserId: lead.userId };
+}
+
+/** One of Lead's agents (a member), with a client acting as it. */
+async function makeWorker(t: T, lead: AgentClient, name = "Worker") {
+  const created = JSON.parse((await call(lead, "create_agent", { name })).content![0].text) as {
+    userId: string;
+  };
+  return { userId: created.userId, client: clientFor(t, created.userId, ORG_A, "member") };
 }
 
 type Body = {
@@ -221,8 +225,8 @@ describe("MCP tools", () => {
     const { t, lead, leadUserId } = await setup();
 
     const me = await ok(lead, "whoami");
-    expect(me.you).toMatchObject({ userId: leadUserId, isAgent: true, role: "member" });
-    expect(me.canManageAgents).toBe(true);
+    expect(me.you).toMatchObject({ userId: leadUserId, isAgent: true, role: "admin" });
+    expect(me).toMatchObject({ isMaster: true, canCreateAgents: true });
 
     const sub = await ok(lead, "create_agent", {
       name: "Reviewer",
@@ -281,17 +285,57 @@ describe("MCP tools", () => {
     expect(done.issues[0].identifier).toBe("ENG-1");
   });
 
-  test("a member-role agent can't do admin work", async () => {
-    const { lead } = await setup();
-    const archive = await call(lead, "archive_team", { team: "ENG" });
+  test("a master's agent can't do admin work or create agents", async () => {
+    const { t, lead } = await setup();
+    const worker = await makeWorker(t, lead);
+    const archive = await call(worker.client, "archive_team", { team: "ENG" });
     expect(archive.content![0].text).toMatch(/^FORBIDDEN/);
-    const del = await call(lead, "delete_team", { team: "ENG", confirmKey: "ENG" });
+    const del = await call(worker.client, "delete_team", { team: "ENG", confirmKey: "ENG" });
     expect(del.isError).toBe(true);
     expect(del.content![0].text).toMatch(/^FORBIDDEN/);
-    const label = await call(lead, "create_label", { name: "bug" });
+    const label = await call(worker.client, "create_label", { name: "bug" });
     expect(label.content![0].text).toMatch(/^FORBIDDEN/);
-    const admin = await call(lead, "create_agent", { name: "Boss", role: "admin" });
-    expect(admin.content![0].text).toMatch(/^FORBIDDEN/);
+    const agent = await call(worker.client, "create_agent", { name: "Grandchild" });
+    expect(agent.content![0].text).toMatch(/^FORBIDDEN/);
+  });
+
+  test("a master does admin work its agents can't", async () => {
+    const { t, lead } = await setup();
+    await ok(lead, "create_label", { name: "bug" });
+    await ok(lead, "create_team", { name: "Design", key: "DES" });
+    await ok(lead, "archive_team", { team: "DES" });
+    const worker = await makeWorker(t, lead);
+    const me = await ok(worker.client, "whoami");
+    expect(me.you).toMatchObject({ userId: worker.userId, role: "member" });
+    expect(me).toMatchObject({ isMaster: false, canCreateAgents: false });
+    expect((await call(worker.client, "unarchive_team", { team: "DES" })).content![0].text).toMatch(/^FORBIDDEN/);
+  });
+
+  test("a role sent with create_agent is ignored", async () => {
+    const { t, lead } = await setup();
+    const sneaky = await ok(lead, "create_agent", { name: "Sneaky", role: "admin", canManageAgents: true });
+    expect(sneaky).toMatchObject({ role: "member", isMaster: false });
+    const client = clientFor(t, sneaky.userId, ORG_A, "member");
+    expect((await call(client, "create_agent", { name: "Nope" })).content![0].text).toMatch(/^FORBIDDEN/);
+  });
+
+  test("masters can't touch each other's agents", async () => {
+    const { t, adminA, lead } = await setup();
+    const otherId = await adminA.mutation(api.agents.create, { name: "Other" });
+    const other = clientFor(t, (await agentUser(t, otherId)).userId, ORG_A, "admin");
+    const theirs = await makeWorker(t, other, "Theirs");
+    const mine = await makeWorker(t, lead, "Mine");
+    expect((await call(lead, "update_agent", { agent: "Theirs", name: "Taken" })).content![0].text).toMatch(
+      /^FORBIDDEN/,
+    );
+    expect((await call(lead, "create_agent_key", { agent: "Theirs", label: "x" })).content![0].text).toMatch(
+      /^FORBIDDEN/,
+    );
+    expect((await call(lead, "delete_agent", { agent: "Other" })).content![0].text).toMatch(/^FORBIDDEN/);
+    await ok(lead, "create_agent_key", { agent: "Mine", label: "mine" });
+    const agents = (await ok(lead, "list_agents")).agents as { userId: string; canManage: boolean }[];
+    expect(agents.find((a) => a.userId === mine.userId)?.canManage).toBe(true);
+    expect(agents.find((a) => a.userId === theirs.userId)?.canManage).toBe(false);
   });
 
   test("private teams stay hidden from agents outside them", async () => {
@@ -356,13 +400,14 @@ describe("MCP tools", () => {
     expect(filtered.issues).toHaveLength(1);
   });
 
-  test("an admin agent manages roles and reads the audit log", async () => {
+  test("a master agent manages roles and reads the audit log", async () => {
     const { t, adminA } = await setup();
     await setPlan(t, ORG_A, "business");
-    const opsId = await adminA.mutation(api.agents.create, { name: "Ops", role: "admin" });
+    const opsId = await adminA.mutation(api.agents.create, { name: "Ops" });
     const ops = clientFor(t, (await agentUser(t, opsId)).userId, ORG_A, "admin");
+    const worker = await makeWorker(t, ops);
     await ok(ops, "create_role", { name: "Triager", permissions: ["issues.delete", "labels.manage"] });
-    await ok(ops, "assign_role", { member: "Lead", role: "triager" });
+    await ok(ops, "assign_role", { member: worker.userId, role: "triager" });
     const assignments = await ok(ops, "role_assignments");
     expect(assignments.assignments).toHaveLength(1);
     const audit = await ok(ops, "audit_log", { limit: 50 });
@@ -394,7 +439,7 @@ describe("MCP door", () => {
     const keyHash = await hashKey(key);
 
     const accepted = await t.mutation(internal.mcp.auth.authenticate, { keyHash });
-    expect(accepted).toMatchObject({ ok: true, caller: { userId: leadUserId, orgId: ORG_A, role: "member" } });
+    expect(accepted).toMatchObject({ ok: true, caller: { userId: leadUserId, orgId: ORG_A, role: "admin" } });
     const wrong = await t.mutation(internal.mcp.auth.authenticate, { keyHash: await hashKey(`${key}x`) });
     expect(wrong).toEqual({ ok: false, reason: "INVALID_KEY" });
 
