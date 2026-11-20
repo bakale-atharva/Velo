@@ -48,7 +48,7 @@ This file is also the design doc. Phase 0 commits a copy to `docs/superpowers/sp
 
 ## Non-goals
 
-External agents (no API keys, agent members, public API, MCP server). Notifications/inbox. Scheduled report delivery. SSO/verified domains. Marketing site beyond a pricing page. File attachments. Mobile layouts beyond "doesn't break".
+~~External agents (no API keys, agent members, public API, MCP server).~~ Lifted on 2026-11-20: agent members and an MCP server are planned in B8, B9 and F8 below. A general public REST API and OAuth for MCP clients remain non-goals. Notifications/inbox. Scheduled report delivery. SSO/verified domains. Marketing site beyond a pricing page. File attachments. Mobile layouts beyond "doesn't break".
 
 ## Approaches considered (auth/entitlements)
 
@@ -286,6 +286,57 @@ User installs first: `pnpm add react-hotkeys-hook`.
 3. **`feat: add issue suggestions`** — on issue detail: suggested labels/priority as chips with accept/dismiss; "Summarize" button showing the summary; "Possible duplicates" list.
 4. **`feat: add reports`** — "Generate summary" on cycle and project pages and "Standup digest" in the assistant; result rendered as Markdown with a copy button.
 5. **`feat: add AI limit and unavailable states`** — usage meter; friendly messages for `LIMIT_REACHED` and `MODEL_UNAVAILABLE`; whole panel replaced by the upgrade prompt without `ai_assistant`.
+
+---
+
+## Agents (added 2026-11-20)
+
+**Decided with the user:**
+- Agents (Claude Code, Claude Desktop, OpenClaw) are workspace members and reach Velo through an MCP server.
+- Agent writes apply directly, with no confirmation step. Every change is attributed to the agent and API keys can be revoked.
+- Agents don't use human seats. There is no agent cap; a safety bound of 1,000 agents per org keeps queries bounded.
+- An agent may create and edit agents only when it has `canManageAgents`, only inside its own subtree, and never with a higher role than its own. Humans with `agents.manage` (admins by default) manage every agent.
+
+**Design:**
+- Agents call the same public functions as humans.
+- The MCP HTTP action checks the agent's API key (the SHA-256 hash is stored, the key is shown once). It then mints a 60-second ES256 JWT shaped like Clerk's (`sub` = agent user id `agent_…`, `o: { id, slg, rol }`, `aud: "velo-agent"`) and calls `api.*` through `ConvexHttpClient`.
+- `convex/auth.config.ts` trusts that issuer as a `customJwt` provider whose JWKS is given as a `data:` URI from env.
+- Agents get a `memberships` row (`kind: "agent"`) and a mirror `users` row (`isAgent: true`), so assignees, private teams, permissions and name lookups work unchanged.
+- Left out of the tool set: billing, human Clerk invitations, Velo's own AI assistant.
+
+### B8 Agent members — branch `backend/8-agents`
+
+1. **`docs: plan agent members and MCP`** — lift the non-goal in `PRODUCT.md` and here; add this section.
+2. **`feat(convex): add membership kind`** — optional `memberships.kind` (`human | agent`); Clerk sync writes `human`; internal `memberships.backfillKind`, which the user runs with `npx convex run memberships:backfillKind`.
+3. **`feat(convex): require membership kind and count only human seats`** — `kind` required; index `by_orgId_and_kind`; `hasSeat` and `seatUsage` count humans only; agents always have a seat.
+4. **`feat(convex): add agents and the agents.manage permission`** — `agents` table (name, image, description, model, runtime, metadata, parent, creator, `canManageAgents`, `disabledAt`, `lastActiveAt`); `users.isAgent`; `agents.manage` permission; `convex/lib/agentAccess.ts` (subtree rule, depth limit 5).
+5. **`feat(convex): add agent create, update, disable and delete`** — `convex/agents.ts`: `list`, `get`, `create`, `update`, avatar upload, `disable`, `enable`, `remove` (subtree; unassigns issues in scheduled batches); audit-logged.
+6. **`feat(convex): add agent API keys`** — `agentKeys` (prefix, hash, label, last used, revoked); action `createKey` returns the key once; `listKeys`, `revokeKey`; org deletion cleans up agents and keys.
+7. **`test(convex): agent members, keys and limits`**.
+8. **`chore(convex): authz review fixes`**.
+
+### B9 MCP server — branch `backend/9-mcp`
+
+User runs first: `node scripts/agent-jwt-keys.mjs`, then the two `npx convex env set` commands it prints (`AGENT_JWT_PRIVATE_KEY`, `AGENT_JWT_JWKS`).
+
+1. **`feat(convex): trust Velo-signed agent tokens`**
+2. **`feat(convex): authenticate MCP requests`** — key check, per-key rate limit, last-used tracking.
+3. **`feat(convex): add the MCP endpoint`** — stateless Streamable HTTP JSON-RPC at `POST /mcp` (`initialize`, `ping`, `tools/list`, `tools/call`).
+4. **`feat(convex): add workspace, member and agent tools`**
+5. **`feat(convex): add team, state and label tools`**
+6. **`feat(convex): add issue, comment and activity tools`**
+7. **`feat(convex): add project, cycle and view tools`**
+8. **`feat(convex): add role and audit tools`**
+9. **`test(convex): MCP protocol and tools`**
+10. **`docs: add agent setup guide`** — `docs/agents-mcp.md` covering Claude Code, Claude Desktop and OpenClaw.
+
+### F8 Agents UI — branch `frontend/8-agents`
+
+1. **`feat: show agents in member pickers`**
+2. **`feat: add agents settings`**
+3. **`feat: add agent detail with keys and subagents`**
+4. **`feat: add connect instructions`**
+5. **`feat: mark agent actions in activity`**
 
 ---
 
