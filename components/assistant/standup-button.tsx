@@ -31,7 +31,7 @@ export function StandupButton() {
                 setPicking(false);
                 setTeam({ id: t._id, name: t.name });
               }}
-              className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[14px] hover:bg-muted"
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-[13.5px] hover:bg-muted"
             >
               <span className="text-[12px] text-muted-foreground">{t.key}</span>
               {t.name}

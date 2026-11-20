@@ -15,9 +15,9 @@ import { aiErrorMessage } from "./ai-errors";
 type Duplicate = { issueId: Id<"issues">; identifier: string; title: string; stateType: string; score: number };
 
 const chip =
-  "inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-tile pl-3 pr-1 text-[13px]";
+  "inline-flex h-7 items-center gap-1.5 border border-rule pl-2.5 pr-0.5 text-[13px]";
 const chipButton =
-  "grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring";
+  "grid size-6 place-items-center text-muted-foreground hover:bg-foreground hover:text-background focus-visible:outline-1 focus-visible:outline-ring";
 
 function SuggestionChips({ suggestions }: { suggestions: Doc<"aiSuggestions">[] }) {
   const accept = useMutation(api.ai.suggestions.acceptSuggestion);
@@ -86,13 +86,13 @@ function Summary({ issueId, stored }: { issueId: Id<"issues">; stored: string | 
         </Button>
       </div>
       {stored !== undefined && (
-        <div className="group relative rounded-[14px] bg-tile p-3 pr-9 text-[14px] leading-6">
+        <div className="group relative border-l border-rule py-1 pr-9 pl-3 text-[13.5px] leading-6">
           {stored}
           <button
             type="button"
             aria-label="Copy summary"
             onClick={() => void navigator.clipboard.writeText(stored).then(() => toast.success("Copied"))}
-            className="absolute top-2 right-2 grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="absolute top-1 right-0 grid size-6 place-items-center text-muted-foreground hover:bg-foreground hover:text-background"
           >
             <Copy className="size-3.5" />
           </button>
@@ -141,11 +141,11 @@ function Duplicates({ issueId }: { issueId: Id<"issues"> }) {
               <li key={d.issueId}>
                 <Link
                   href={`/${orgSlug}/issue/${d.identifier}`}
-                  className="flex items-center gap-2 rounded-[12px] px-2 py-1.5 text-[14px] hover:bg-tile"
+                  className="flex items-center gap-2 border-b border-border py-1.5 text-[13.5px] hover:bg-tile"
                 >
-                  <span className="shrink-0 text-[13px] text-muted-foreground tabular-nums">{d.identifier}</span>
+                  <span className="data shrink-0 text-[11px] text-muted-foreground">{d.identifier}</span>
                   <span className="min-w-0 flex-1 truncate">{d.title}</span>
-                  <span className="text-[12px] text-muted-foreground tabular-nums">{Math.round(d.score * 100)}%</span>
+                  <span className="data text-[11px] text-muted-foreground">{Math.round(d.score * 100)}%</span>
                 </Link>
               </li>
             ))}
@@ -160,9 +160,9 @@ function Assist({ issueId }: { issueId: Id<"issues"> }) {
   const suggestions = useQuery(api.ai.suggestions.listForIssue, { issueId });
   const summary = suggestions?.find((s) => s.kind === "summary")?.payload.text;
   return (
-    <section aria-labelledby="issue-assist" className="panel grid gap-5 p-5">
-      <h2 id="issue-assist" className="inline-flex items-center gap-2 text-[15px] font-medium">
-        <Sparkles className="size-4" aria-hidden />
+    <section aria-labelledby="issue-assist" className="grid gap-5 border-t border-rule pt-6">
+      <h2 id="issue-assist" className="signal-label inline-flex items-center gap-2 text-foreground">
+        <Sparkles className="size-3.5" aria-hidden />
         Assistant
       </h2>
       <SuggestionChips suggestions={suggestions ?? []} />

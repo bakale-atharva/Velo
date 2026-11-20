@@ -41,11 +41,9 @@ export function ProposalCard({ proposal }: { proposal: Doc<"aiProposals"> }) {
   return (
     <section
       aria-label="Proposed change"
-      className={`rounded-[18px] border p-4 ${
-        proposal.status === "pending" ? "iris-ring border-transparent [--iris-fill:var(--panel)]" : "border-border bg-panel"
-      }`}
+      className={`border p-4 ${proposal.status === "pending" ? "border-foreground" : "border-border"}`}
     >
-      <h3 className="inline-flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+      <h3 className="signal-label inline-flex items-center gap-2">
         <Wand2 className="size-3.5" aria-hidden />
         {proposal.status === "pending"
           ? "Proposed change"
@@ -53,7 +51,7 @@ export function ProposalCard({ proposal }: { proposal: Doc<"aiProposals"> }) {
             ? "Applied"
             : "Dismissed"}
       </h3>
-      <ul className="mt-2 grid gap-1.5 text-[15px]">
+      <ul className="mt-3 grid gap-1.5 text-[14px]">
         {proposal.descriptions.map((line, index) => (
           <li key={index} className={proposal.status === "rejected" ? "text-muted-foreground line-through" : ""}>
             {line}
@@ -86,7 +84,7 @@ export function ProposalCard({ proposal }: { proposal: Doc<"aiProposals"> }) {
             <Link
               key={identifier}
               href={`/${orgSlug}/issue/${identifier}`}
-              className="rounded-lg bg-chip px-2 py-0.5 font-medium text-muted-foreground hover:text-foreground"
+              className="data border border-rule px-1.5 py-0.5 text-[12px] text-muted-foreground hover:border-foreground hover:text-foreground"
             >
               {identifier}
             </Link>

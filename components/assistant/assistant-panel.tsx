@@ -79,7 +79,7 @@ function Messages({ threadId }: { threadId: Id<"aiThreads"> }) {
         const role = m.message?.role;
         if (role === "user") {
           return (
-            <div key={m._id} className="max-w-[85%] self-end rounded-[18px] rounded-br-md bg-primary px-4 py-2.5 text-[15px] leading-6 whitespace-pre-wrap text-primary-foreground">
+            <div key={m._id} className="inverted max-w-[85%] self-end px-3.5 py-2 text-[14px] leading-6 whitespace-pre-wrap">
               {m.text}
             </div>
           );
@@ -88,7 +88,7 @@ function Messages({ threadId }: { threadId: Id<"aiThreads"> }) {
           return <Thinking key={m._id} />;
         }
         return (
-          <div key={m._id} className="max-w-full rounded-[18px] rounded-bl-md bg-tile px-4 py-3 text-[15px]">
+          <div key={m._id} className="max-w-full border-l border-rule pl-3.5 text-[14px]">
             <Markdown>{m.text ?? ""}</Markdown>
           </div>
         );
@@ -100,12 +100,12 @@ function Messages({ threadId }: { threadId: Id<"aiThreads"> }) {
 
 function Thinking() {
   return (
-    <div role="status" className="inline-flex items-center gap-2 self-start rounded-[18px] bg-tile px-4 py-3 text-[14px] text-muted-foreground">
-      <span className="flex gap-1" aria-hidden>
+    <div role="status" className="data inline-flex items-center gap-2.5 self-start border-l border-rule pl-3.5 text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+      <span className="flex h-3 items-end gap-[2px]" aria-hidden>
         {[0, 150, 300].map((delay) => (
           <span
             key={delay}
-            className="size-1.5 animate-pulse rounded-full bg-muted-foreground motion-reduce:animate-none"
+            className="h-full w-[2px] animate-pulse bg-muted-foreground motion-reduce:animate-none"
             style={{ animationDelay: `${delay}ms` }}
           />
         ))}
@@ -157,7 +157,7 @@ function Chat() {
           value={current ?? ""}
           onChange={(e) => setThreadId(e.target.value === "" ? null : (e.target.value as Id<"aiThreads">))}
           disabled={threads === undefined || threads.length === 0}
-          className="h-9 min-w-0 flex-1 rounded-[10px] border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
+          className="h-8 min-w-0 flex-1 rounded-sm border border-input bg-popover px-2 text-[13px] focus-visible:outline-1 focus-visible:outline-ring"
         >
           {(threads ?? []).length === 0 && <option value="">New conversation</option>}
           {(threads ?? []).map((thread) => (
@@ -183,7 +183,7 @@ function Chat() {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
         {current === null ? (
           <div className="grid gap-3 pt-6">
-            <p className="text-[15px] text-muted-foreground">
+            <p className="text-[14px] leading-6 text-muted-foreground">
               Ask about your workspace, or ask it to draft issues. It shows every change as a proposal you apply yourself.
             </p>
             {STARTERS.map((starter) => (
@@ -191,7 +191,7 @@ function Chat() {
                 key={starter}
                 type="button"
                 onClick={() => void submit(starter)}
-                className="rounded-[14px] bg-tile px-4 py-3 text-left text-[15px] hover:bg-muted"
+                className="border border-rule px-3.5 py-2.5 text-left text-[14px] hover:border-foreground"
               >
                 {starter}
               </button>
@@ -204,7 +204,7 @@ function Chat() {
       </div>
 
       {notice !== null && (
-        <p role="alert" className={`mx-4 mb-2 rounded-[12px] px-3 py-2 text-[13px] ${notice.tone === "error" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+        <p role="alert" className={`mx-4 mb-2 border px-3 py-2 text-[13px] ${notice.tone === "error" ? "border-destructive/60 text-destructive" : "border-rule text-muted-foreground"}`}>
           {notice.text}
         </p>
       )}
@@ -216,7 +216,7 @@ function Chat() {
           void submit(text);
         }}
       >
-        <div className="flex items-end gap-2 rounded-[16px] border border-input bg-popover p-2 focus-within:outline-2 focus-within:outline-ring">
+        <div className="flex items-end gap-2 border border-input bg-popover p-2 focus-within:border-foreground">
           <textarea
             aria-label="Message the assistant"
             rows={2}
@@ -230,9 +230,9 @@ function Chat() {
                 void submit(text);
               }
             }}
-            className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-1.5 text-[15px] outline-none placeholder:text-muted-foreground"
+            className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-1.5 text-[14px] outline-none placeholder:text-muted-foreground"
           />
-          <Button type="submit" size="icon" aria-label="Send" disabled={sending || spent || text.trim() === ""} className="rounded-full">
+          <Button type="submit" size="icon" aria-label="Send" disabled={sending || spent || text.trim() === ""}>
             <ArrowUp aria-hidden />
           </Button>
         </div>

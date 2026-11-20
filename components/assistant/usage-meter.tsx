@@ -3,12 +3,18 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
-/** The workspace's assistant requests used today, as a thin bar and a count. */
+const TICKS = 40;
+
+/**
+ * The workspace's assistant requests used today, as a row of hairline ticks
+ * and a count. Near the limit the used ticks and the count turn destructive.
+ */
 export function UsageMeter({ className = "" }: { className?: string }) {
   const usage = useQuery(api.ai.guard.usage, {});
   if (usage === undefined || usage.limit === 0) return null;
   const share = Math.min(1, usage.used / usage.limit);
   const near = share >= 0.9;
+  const filled = Math.round(share * TICKS);
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div
@@ -17,15 +23,14 @@ export function UsageMeter({ className = "" }: { className?: string }) {
         aria-valuemin={0}
         aria-valuemax={usage.limit}
         aria-valuenow={usage.used}
-        className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+        className={`flex h-2.5 flex-1 justify-between ${near ? "text-destructive" : "text-foreground"}`}
       >
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${share * 100}%`, background: near ? "var(--destructive)" : "var(--count-teal)" }}
-        />
+        {Array.from({ length: TICKS }, (_, index) => (
+          <span key={index} className={`w-px ${index < filled ? "bg-current" : "bg-rule"}`} />
+        ))}
       </div>
-      <span className={`shrink-0 text-[12px] tabular-nums ${near ? "text-destructive" : "text-muted-foreground"}`}>
-        {usage.used} / {usage.limit} today
+      <span className={`data shrink-0 text-[11px] uppercase ${near ? "text-destructive" : "text-muted-foreground"}`}>
+        {usage.used}/{usage.limit} today
       </span>
     </div>
   );
