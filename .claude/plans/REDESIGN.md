@@ -20,6 +20,10 @@ Picked by the user from a direction round (2026-11-18): **Datamatics**, after Ry
   3. **Signal flash:** a teammate's live change lands as a brief frame of inversion on that row.
 - **Kept from the round:** a fixed-scale stage gauge on every row; identifiers as typeable coordinates; cycle capacity that visibly overflows; inversion reserved for the active path.
 
+## Status (2026-11-20)
+
+Phases 0–10 are built and committed on `design/redesign`. The favicon, apple icon and in-app mark are the barcode V. `DESIGN.md` is regenerated from the built app. Open items: the cycle capacity bar (needs a capacity field), and a signed-in visual pass of every screen in both themes.
+
 ## Phases
 
 Each phase ends with a check in the browser in both themes and a commit. The user nitpicks each phase before the next starts.
