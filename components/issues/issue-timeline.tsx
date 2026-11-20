@@ -8,6 +8,7 @@ import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/lib/errors";
+import { AgentTag, MemberName } from "./agent-tag";
 import { AssigneeAvatar } from "./assignee-avatar";
 import { displayName, PRIORITY_LABELS, useWorkspaceLookups, type Member } from "./lookups";
 import { Markdown } from "./markdown";
@@ -74,7 +75,7 @@ function CommentItem({ comment, me }: { comment: Doc<"comments">; me: string | u
       <AssigneeAvatar member={author} size={24} />
       <div className="min-w-0">
         <p className="text-xs">
-          <span className="font-semibold">{displayName(author)}</span>{" "}
+          <MemberName member={author} className="font-semibold" />{" "}
           <span className="text-muted-foreground tabular-nums">
             {time.format(comment._creationTime)}
             {comment.editedAt !== null && " · edited"}
@@ -174,7 +175,8 @@ export function IssueTimeline({ issueId }: { issueId: Id<"issues"> }) {
           ) : (
             <li key={entry.activity._id} className="flex items-baseline gap-2 py-2 pl-9 text-[13px] text-muted-foreground">
               <span>
-                <span className="font-medium text-foreground">{actorName(entry.activity.actorId, memberById)}</span>{" "}
+                <span className="font-medium text-foreground">{actorName(entry.activity.actorId, memberById)}</span>
+                {memberById.get(entry.activity.actorId)?.isAgent && <AgentTag className="mx-1.5 align-[1px]" />}{" "}
                 {describe(entry.activity, memberById)}
               </span>
               {entry.activity.viaAssistant && (

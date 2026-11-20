@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import { AgentTag } from "@/components/issues/agent-tag";
 import { AssigneeAvatar } from "@/components/issues/assignee-avatar";
 import { displayName, useWorkspaceLookups } from "@/components/issues/lookups";
 import { SettingsPanel } from "@/components/settings/settings-panel";
@@ -97,7 +98,9 @@ function AuditLogBody() {
             >
               <AssigneeAvatar member={memberById.get(entry.actorId)} size={22} />
               <p className="min-w-0 text-[14px] leading-6">
-                <span className="font-medium">{nameOf(entry.actorId)}</span> {describe(entry, nameOf)}
+                <span className="font-medium">{nameOf(entry.actorId)}</span>
+                {memberById.get(entry.actorId)?.isAgent && <AgentTag className="mx-1.5 align-[1px]" />}{" "}
+                {describe(entry, nameOf)}
               </p>
               <time
                 dateTime={new Date(entry._creationTime).toISOString()}
