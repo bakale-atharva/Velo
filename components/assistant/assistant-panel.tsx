@@ -216,7 +216,7 @@ function Chat() {
           void submit(text);
         }}
       >
-        <div className="flex items-end gap-2 border border-input bg-popover p-2 focus-within:border-foreground">
+        <div className="flex items-stretch border border-input bg-popover focus-within:border-foreground">
           <textarea
             aria-label="Message the assistant"
             rows={2}
@@ -230,9 +230,9 @@ function Chat() {
                 void submit(text);
               }
             }}
-            className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-1.5 text-[14px] outline-none placeholder:text-muted-foreground"
+            className="field-sizing-content max-h-40 min-h-14 flex-1 resize-none bg-transparent px-3 py-2 text-[14px] leading-5 outline-none placeholder:text-muted-foreground"
           />
-          <Button type="submit" size="icon" aria-label="Send" disabled={sending || spent || text.trim() === ""}>
+          <Button type="submit" size="icon" aria-label="Send" disabled={sending || spent || text.trim() === ""} className="size-14 shrink-0 self-end rounded-none border-0 [&_svg]:size-5!">
             <ArrowUp aria-hidden />
           </Button>
         </div>
