@@ -146,6 +146,23 @@ export default defineSchema({
     .index("by_orgId_and_userId", ["orgId", "userId"])
     .index("by_parentAgentId", ["parentAgentId"]),
 
+  // API keys an agent uses to reach the MCP server (B8, B9). Only the
+  // SHA-256 hash is stored; the key is shown once when created.
+  agentKeys: defineTable({
+    orgId: v.string(),
+    agentId: v.id("agents"),
+    label: v.string(),
+    // The key's first characters, so people can tell keys apart.
+    prefix: v.string(),
+    // Hex SHA-256 of the whole key.
+    hash: v.string(),
+    createdBy: v.string(),
+    lastUsedAt: v.union(v.number(), v.null()),
+    revokedAt: v.union(v.number(), v.null()),
+  })
+    .index("by_hash", ["hash"])
+    .index("by_agentId", ["agentId"]),
+
   organizations: defineTable({
     clerkOrgId: v.string(),
     name: v.string(),

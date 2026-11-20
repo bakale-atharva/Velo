@@ -214,6 +214,7 @@ async function deleteOrganization(ctx: MutationCtx, data: Json) {
     await ctx.db.delete("subscriptions", subscription._id);
   }
   await deleteMembershipsOfOrg(ctx, clerkOrgId);
+  await ctx.scheduler.runAfter(0, internal.agents.deleteOrgAgents, { orgId: clerkOrgId });
 }
 
 async function deleteMembershipsOfOrg(ctx: MutationCtx, orgId: string) {

@@ -606,6 +606,33 @@ export const remove = mutation({
 });
 
 /**
+ * When an organization is deleted: marks its agents as deleting and
+ * schedules their delete steps, in batches.
+ */
+export const deleteOrgAgents = internalMutation({
+  args: { orgId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const agents = await ctx.db
+      .query("agents")
+      .withIndex("by_orgId", (q) => q.eq("orgId", args.orgId))
+      .take(MAX_AGENTS_PER_ORG);
+    const now = Date.now();
+    let marked = 0;
+    for (const agent of agents) {
+      if (agent.deletingAt !== null) continue;
+      await ctx.db.patch("agents", agent._id, { deletingAt: now, disabledAt: agent.disabledAt ?? now });
+      await ctx.scheduler.runAfter(0, internal.agents.deleteStep, { agentId: agent._id });
+      if (++marked === STEP_BATCH) {
+        await ctx.scheduler.runAfter(0, internal.agents.deleteOrgAgents, { orgId: args.orgId });
+        return null;
+      }
+    }
+    return null;
+  },
+});
+
+/**
  * One step of deleting an agent: unassigns its issues, then removes its team
  * memberships, keys, membership, photo and the agent row. The mirror `users`
  * row stays so history still shows its name. Reschedules until done.
@@ -651,6 +678,18 @@ export const deleteStep = internalMutation({
       await ctx.db.delete("teamMembers", row._id);
     }
     if (teamRows.length === STEP_BATCH) {
+      await again();
+      return null;
+    }
+
+    const keys = await ctx.db
+      .query("agentKeys")
+      .withIndex("by_agentId", (q) => q.eq("agentId", agent._id))
+      .take(STEP_BATCH);
+    for (const key of keys) {
+      await ctx.db.delete("agentKeys", key._id);
+    }
+    if (keys.length === STEP_BATCH) {
       await again();
       return null;
     }
