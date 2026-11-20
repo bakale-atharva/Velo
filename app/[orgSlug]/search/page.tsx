@@ -47,7 +47,7 @@ function Search() {
   return (
     <div className="flex flex-1 flex-col">
       <TeamPageHeader title="Search" />
-      <div className="border-b border-rule px-3 pt-6 pb-4 md:px-6">
+      <div className="border-b border-rule px-3 pt-6 pb-4 @3xl/main:px-6">
         <label className="flex h-14 max-w-3xl items-center gap-3 border-b border-input focus-within:border-foreground">
           <SearchIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
           <input
@@ -73,7 +73,7 @@ function Search() {
       </div>
 
       {query !== "" && results !== undefined && results.length === 0 && !pending && (
-        <div className="px-3 pt-6 md:px-6">
+        <div className="px-3 pt-6 @3xl/main:px-6">
           <EmptyState title={`Nothing matches “${query}”`}>
             Try fewer or different words. Archived issues aren’t searched.
           </EmptyState>

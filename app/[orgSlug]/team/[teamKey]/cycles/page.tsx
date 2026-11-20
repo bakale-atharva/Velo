@@ -38,11 +38,11 @@ function CycleRow({
   return (
     <Link
       href={href}
-      className={`${TABLE_ROW} grid h-11 grid-cols-[minmax(0,1fr)_auto] gap-4 sm:grid-cols-[minmax(0,1fr)_220px_130px]`}
+      className={`${TABLE_ROW} grid h-11 grid-cols-[minmax(0,1fr)_auto] gap-4 @xl/main:grid-cols-[minmax(0,1fr)_220px_130px]`}
     >
       <span className="truncate text-[14px] font-medium">{cycle.name}</span>
       <span className={`data text-[12px] uppercase ${ROW_MUTED}`}>{cycleRange(cycle)}</span>
-      <span className="data hidden text-right text-[12px] uppercase sm:block">
+      <span className="data hidden text-right text-[12px] uppercase @xl/main:block">
         {cycle.status === "active" && `${left} ${left === 1 ? "day" : "days"} left`}
         {cycle.status === "upcoming" &&
           `in ${Math.max(1, Math.ceil((cycle.startsAt - now) / 86_400_000))} days`}
@@ -79,7 +79,7 @@ function TeamCycles() {
       <CycleDialog team={team} cycles={cycles} open={creating} onOpenChange={setCreating} />
 
       {cycles.length === 0 ? (
-        <div className="px-3 pt-8 md:px-6">
+        <div className="px-3 pt-8 @3xl/main:px-6">
           <EmptyState
             title="No cycles yet"
             action={<Button onClick={() => setCreating(true)}>New cycle</Button>}
@@ -99,7 +99,7 @@ function TeamCycles() {
             if (inSection.length === 0) return null;
             return (
               <section key={section.status} aria-labelledby={`cycles-${section.status}`} className={GROUP_PANEL}>
-                <div className="px-3 pt-5 pb-2 md:px-6">
+                <div className="px-3 pt-5 pb-2 @3xl/main:px-6">
                   <StateHeading
                     id={`cycles-${section.status}`}
                     name={section.title}

@@ -20,7 +20,7 @@ import { PageSkeleton } from "@/components/states/page-skeleton";
 import { formatDate } from "@/lib/dates";
 
 const ROW =
-  "grid grid-cols-[minmax(0,1fr)_130px] gap-4 md:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px]";
+  "grid grid-cols-[minmax(0,1fr)_130px] gap-4 @3xl/main:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px]";
 
 function Projects() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
@@ -52,7 +52,7 @@ function Projects() {
       />
 
       {projects.length === 0 ? (
-        <div className="px-3 pt-8 md:px-6">
+        <div className="px-3 pt-8 @3xl/main:px-6">
           <EmptyState
             title="No projects yet"
             action={<Button onClick={() => setCreating(true)}>New project</Button>}
@@ -65,9 +65,9 @@ function Projects() {
           <div role="row" className={`${ROW} ${TABLE_HEAD}`}>
             <span role="columnheader">Name</span>
             <span role="columnheader">Status</span>
-            <span role="columnheader" className="hidden md:block">Lead</span>
-            <span role="columnheader" className="hidden md:block">Target</span>
-            <span role="columnheader" className="hidden md:block">Progress</span>
+            <span role="columnheader" className="hidden @3xl/main:block">Lead</span>
+            <span role="columnheader" className="hidden @3xl/main:block">Target</span>
+            <span role="columnheader" className="hidden @3xl/main:block">Progress</span>
           </div>
           <div role="rowgroup" className="flex flex-col">
             {projects.map((project) => {
@@ -85,7 +85,7 @@ function Projects() {
                   <span role="cell">
                     <ProjectStatusTag status={project.status} />
                   </span>
-                  <span role="cell" className="hidden min-w-0 items-center gap-2 text-[13px] md:flex">
+                  <span role="cell" className="hidden min-w-0 items-center gap-2 text-[13px] @3xl/main:flex">
                     {lead === null ? (
                       <span className={ROW_MUTED}>No lead</span>
                     ) : (
@@ -95,14 +95,14 @@ function Projects() {
                       </>
                     )}
                   </span>
-                  <span role="cell" className="data hidden text-[12px] uppercase md:block">
+                  <span role="cell" className="data hidden text-[12px] uppercase @3xl/main:block">
                     {project.targetDate === null ? (
                       <span className={ROW_MUTED}>—</span>
                     ) : (
                       formatDate(project.targetDate)
                     )}
                   </span>
-                  <span role="cell" className="hidden md:block">
+                  <span role="cell" className="hidden @3xl/main:block">
                     <Progress completed={project.completedIssueCount} total={project.issueCount} />
                   </span>
                 </Link>

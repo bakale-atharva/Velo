@@ -31,7 +31,7 @@ function MyIssues() {
         actions={<MemberStack />}
       />
       {issues.length === 0 ? (
-        <div className="px-3 pt-8 md:px-6">
+        <div className="px-3 pt-8 @3xl/main:px-6">
           <EmptyState title="Nothing assigned to you">
             Issues you are assigned to in any team show up here.
           </EmptyState>

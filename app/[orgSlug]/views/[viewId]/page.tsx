@@ -94,7 +94,7 @@ function ViewBody({ view, orgSlug, isOwner, isAdmin }: {
           </>
         }
       />
-      <div className="px-3 pt-8 pb-6 md:px-6">
+      <div className="px-3 pt-8 pb-6 @3xl/main:px-6">
       <FilterBar
         filter={filter}
         onChange={setFilter}
