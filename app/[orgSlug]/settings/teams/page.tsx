@@ -29,19 +29,19 @@ function Teams() {
       {teams.length === 0 ? (
         <p className="px-3 text-[15px] text-muted-foreground">No teams yet.</p>
       ) : (
-        <ul className="flex flex-col gap-0.5">
+        <ul className="flex flex-col border-t border-border">
           {teams.map((team) => (
             <li key={team._id}>
               <Link
                 href={`/${orgSlug}/settings/teams/${team.key}`}
-                className="flex items-center gap-3 rounded-[14px] px-3 py-3 hover:bg-tile focus-visible:bg-tile focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                className="group flex h-11 items-center gap-4 border-b border-border px-2 hover:bg-tile focus-visible:bg-foreground focus-visible:text-background focus-visible:outline-none"
               >
-                <span className="inline-flex h-7 min-w-12 items-center justify-center rounded-lg bg-chip px-2 text-[13px] font-medium text-muted-foreground">
+                <span className="data w-12 text-[12px] text-muted-foreground group-focus-visible:text-background">
                   {team.key}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{team.name}</span>
+                <span className="min-w-0 flex-1 truncate text-[14px] font-medium">{team.name}</span>
                 {team.isPrivate && (
-                  <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
+                  <span className="data inline-flex items-center gap-1 text-[11px] text-muted-foreground uppercase group-focus-visible:text-background">
                     <Lock className="size-3.5" aria-hidden />
                     Private
                   </span>

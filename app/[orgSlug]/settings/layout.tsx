@@ -13,7 +13,7 @@ const PAGES = [
   { path: "/audit-log", label: "Audit log" },
 ];
 
-/** Settings pages share one header whose diamond links switch between them. */
+/** Settings pages share one header whose tabs switch between them. */
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const pathname = usePathname();
@@ -29,7 +29,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex flex-1 flex-col">
       <TeamPageHeader title="Settings" nav={nav} />
-      <div className="flex flex-1 flex-col px-3 pt-8 pb-12 md:px-6">{children}</div>
+      <div className="flex flex-1 flex-col px-3 pt-6 pb-12 md:px-6">{children}</div>
     </div>
   );
 }

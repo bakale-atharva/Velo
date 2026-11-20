@@ -30,6 +30,14 @@ const CLERK_APPEARANCE = {
     fontFamily: "var(--font-geist)",
     borderRadius: "2px",
   },
+  // Datamatics: hairline frames instead of shadows on every Clerk surface.
+  elements: {
+    cardBox: "shadow-none border border-rule",
+    card: "shadow-none",
+    popoverBox: "shadow-none border border-rule",
+    userButtonPopoverCard: "shadow-none border border-rule",
+    organizationSwitcherPopoverCard: "shadow-none border border-rule",
+  },
 };
 
 export const metadata: Metadata = {

@@ -23,7 +23,7 @@ const TYPES: { value: StateType; label: string }[] = [
 const typeLabel = (type: StateType) => TYPES.find((t) => t.value === type)!.label;
 
 const iconButton =
-  "grid size-8 place-items-center rounded-[10px] text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ring";
+  "grid size-8 place-items-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ring";
 
 const MESSAGES = {
   INVALID_INPUT: "That didn’t work. A state in use by issues can’t be deleted, and a team keeps at least one state.",
@@ -57,7 +57,7 @@ function StateRow({
     });
 
   return (
-    <li className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] px-3 py-2 hover:bg-tile/60 sm:grid-cols-[32px_minmax(0,1fr)_110px_auto]">
+    <li className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-2 py-2 hover:bg-tile sm:grid-cols-[32px_minmax(0,1fr)_110px_auto]">
       <input
         type="color"
         aria-label={`Colour of ${state.name}`}
@@ -65,7 +65,7 @@ function StateRow({
         value={color}
         onChange={(e) => setColor(e.target.value)}
         onBlur={() => color !== state.color && save({ color })}
-        className="size-8 cursor-pointer rounded-[10px] border border-input bg-transparent p-1 disabled:cursor-default"
+        className="size-8 cursor-pointer rounded-sm border border-input bg-transparent p-1 disabled:cursor-default"
       />
       <Input
         aria-label="State name"
@@ -171,7 +171,7 @@ export function WorkflowStates({
             aria-label="New state colour"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            className="size-9 cursor-pointer rounded-[10px] border border-input bg-transparent p-1"
+            className="size-9 cursor-pointer rounded-sm border border-input bg-transparent p-1"
           />
           <Input
             aria-label="New state name"
@@ -185,7 +185,7 @@ export function WorkflowStates({
             aria-label="New state type"
             value={type}
             onChange={(e) => setType(e.target.value as StateType)}
-            className="h-9 rounded-[10px] border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
+            className="h-9 rounded-sm border border-input bg-popover px-2 text-[14px] focus-visible:outline-2 focus-visible:outline-ring"
           >
             {TYPES.map((t) => (
               <option key={t.value} value={t.value}>

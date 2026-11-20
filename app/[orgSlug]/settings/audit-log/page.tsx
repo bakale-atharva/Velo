@@ -85,19 +85,19 @@ function AuditLogBody() {
       {results.length === 0 ? (
         <p className="px-3 text-[15px] text-muted-foreground">Nothing recorded yet.</p>
       ) : (
-        <ol className="flex flex-col gap-0.5">
+        <ol className="flex flex-col border-t border-border">
           {results.map((entry) => (
             <li
               key={entry._id}
-              className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-3 rounded-[14px] px-3 py-2.5 hover:bg-tile/60 sm:grid-cols-[24px_minmax(0,1fr)_130px]"
+              className="grid grid-cols-[24px_minmax(0,1fr)] items-start gap-3 border-b border-border px-2 py-2.5 hover:bg-tile sm:grid-cols-[24px_minmax(0,1fr)_150px]"
             >
-              <AssigneeAvatar member={memberById.get(entry.actorId)} size={24} />
-              <p className="min-w-0 text-[15px] leading-6">
+              <AssigneeAvatar member={memberById.get(entry.actorId)} size={22} />
+              <p className="min-w-0 text-[14px] leading-6">
                 <span className="font-medium">{nameOf(entry.actorId)}</span> {describe(entry, nameOf)}
               </p>
               <time
                 dateTime={new Date(entry._creationTime).toISOString()}
-                className="col-start-2 text-[13px] text-muted-foreground tabular-nums sm:col-start-auto sm:text-right"
+                className="data col-start-2 text-[11px] text-muted-foreground uppercase sm:col-start-auto sm:pt-1 sm:text-right"
               >
                 {TIME.format(entry._creationTime)}
               </time>
