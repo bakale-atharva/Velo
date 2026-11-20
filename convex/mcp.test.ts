@@ -299,6 +299,45 @@ describe("MCP tools", () => {
     expect(agent.content![0].text).toMatch(/^FORBIDDEN/);
   });
 
+  test("a master does admin work its agents can't", async () => {
+    const { t, lead } = await setup();
+    await ok(lead, "create_label", { name: "bug" });
+    await ok(lead, "create_team", { name: "Design", key: "DES" });
+    await ok(lead, "archive_team", { team: "DES" });
+    const worker = await makeWorker(t, lead);
+    const me = await ok(worker.client, "whoami");
+    expect(me.you).toMatchObject({ userId: worker.userId, role: "member" });
+    expect(me).toMatchObject({ isMaster: false, canCreateAgents: false });
+    expect((await call(worker.client, "unarchive_team", { team: "DES" })).content![0].text).toMatch(/^FORBIDDEN/);
+  });
+
+  test("a role sent with create_agent is ignored", async () => {
+    const { t, lead } = await setup();
+    const sneaky = await ok(lead, "create_agent", { name: "Sneaky", role: "admin", canManageAgents: true });
+    expect(sneaky).toMatchObject({ role: "member", isMaster: false });
+    const client = clientFor(t, sneaky.userId, ORG_A, "member");
+    expect((await call(client, "create_agent", { name: "Nope" })).content![0].text).toMatch(/^FORBIDDEN/);
+  });
+
+  test("masters can't touch each other's agents", async () => {
+    const { t, adminA, lead } = await setup();
+    const otherId = await adminA.mutation(api.agents.create, { name: "Other" });
+    const other = clientFor(t, (await agentUser(t, otherId)).userId, ORG_A, "admin");
+    const theirs = await makeWorker(t, other, "Theirs");
+    const mine = await makeWorker(t, lead, "Mine");
+    expect((await call(lead, "update_agent", { agent: "Theirs", name: "Taken" })).content![0].text).toMatch(
+      /^FORBIDDEN/,
+    );
+    expect((await call(lead, "create_agent_key", { agent: "Theirs", label: "x" })).content![0].text).toMatch(
+      /^FORBIDDEN/,
+    );
+    expect((await call(lead, "delete_agent", { agent: "Other" })).content![0].text).toMatch(/^FORBIDDEN/);
+    await ok(lead, "create_agent_key", { agent: "Mine", label: "mine" });
+    const agents = (await ok(lead, "list_agents")).agents as { userId: string; canManage: boolean }[];
+    expect(agents.find((a) => a.userId === mine.userId)?.canManage).toBe(true);
+    expect(agents.find((a) => a.userId === theirs.userId)?.canManage).toBe(false);
+  });
+
   test("private teams stay hidden from agents outside them", async () => {
     const { t, adminA, lead } = await setup();
     await setPlan(t, ORG_A, "business");
