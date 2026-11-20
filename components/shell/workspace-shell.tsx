@@ -20,7 +20,8 @@ export function WorkspaceShell({
         <AppSidebar orgSlug={orgSlug} />
         <SidebarInset className="min-w-0 bg-background">
           <TopBar orgSlug={orgSlug} />
-          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+          {/* Layout inside the work field keys off its width (`@…/main:`), not the viewport's. */}
+          <div className="@container/main flex min-w-0 flex-1 flex-col">{children}</div>
         </SidebarInset>
       </CommandCenterProvider>
       <Toaster position="bottom-right" />

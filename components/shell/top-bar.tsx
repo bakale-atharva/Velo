@@ -15,16 +15,18 @@ import { ThemeToggle } from "./theme-toggle";
 export function TopBar({ orgSlug }: { orgSlug: string }) {
   const { openPalette } = useCommandCenter();
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 border-b border-rule px-3 md:px-6">
-      <SidebarTrigger aria-label="Open navigation" className="md:hidden" />
+    <div className="@container/top shrink-0 border-b border-rule">
+    <div className="flex h-12 items-center gap-2 px-3 @3xl/top:px-6">
+      {/* The sidebar turns into a sheet below the md viewport, so its trigger follows the viewport. */}
+      <SidebarTrigger aria-label="Open navigation" className="size-9 md:hidden" />
       <nav aria-label="Workspace" className="flex min-w-0 items-center gap-2">
         <Link
           href={`/${orgSlug}/my-issues`}
-          className="signal-label hidden hover:text-foreground sm:inline"
+          className="signal-label hidden hover:text-foreground @xl/top:inline"
         >
           Workspace
         </Link>
-        <span aria-hidden className="data hidden text-[12px] text-faint sm:inline">
+        <span aria-hidden className="data hidden text-[12px] text-faint @xl/top:inline">
           /
         </span>
         <OrganizationSwitcher
@@ -43,18 +45,20 @@ export function TopBar({ orgSlug }: { orgSlug: string }) {
           }}
         />
       </nav>
-      <div className="ml-auto hidden sm:block">
+      <div className="ml-auto hidden @xl/top:block">
         <ThemeToggle />
       </div>
       <button
         type="button"
         onClick={() => openPalette()}
-        className="ml-auto inline-flex h-8 items-center gap-2 border border-rule px-3 text-[13px] hover:border-foreground sm:ml-0"
+        aria-label="Commands"
+        className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 border border-rule px-3 text-[13px] hover:border-foreground @xl/top:ml-0 @xl/top:h-8"
       >
         <Command className="size-3.5" aria-hidden />
-        Commands
-        <kbd className="data hidden text-[11px] text-muted-foreground sm:inline">⌘K</kbd>
+        <span className="hidden @md/top:inline">Commands</span>
+        <kbd className="data hidden text-[11px] text-muted-foreground @xl/top:inline pointer-coarse:hidden">⌘K</kbd>
       </button>
+    </div>
     </div>
   );
 }
