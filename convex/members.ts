@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, type QueryCtx } from "./_generated/server";
+import { isAgentUserId } from "./lib/agentIds";
 import { requireMember } from "./lib/auth";
 import { permissionsOf, permissionValidator } from "./lib/permissions";
 
@@ -12,6 +13,8 @@ const memberValidator = v.object({
   name: v.union(v.string(), v.null()),
   email: v.union(v.string(), v.null()),
   imageUrl: v.union(v.string(), v.null()),
+  // Agent members (B8) have an "agent_..." user id and no email.
+  isAgent: v.boolean(),
 });
 
 async function loadProfile(ctx: QueryCtx, userId: string) {
@@ -21,8 +24,9 @@ async function loadProfile(ctx: QueryCtx, userId: string) {
     .unique();
   return {
     name: user?.name ?? null,
-    email: user?.email ?? null,
+    email: user?.email || null,
     imageUrl: user?.imageUrl ?? null,
+    isAgent: isAgentUserId(userId),
   };
 }
 

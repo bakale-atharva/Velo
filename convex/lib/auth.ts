@@ -1,5 +1,6 @@
 import type { UserIdentity } from "convex/server";
 import type { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
+import { agentIssuer } from "../mcp/issuer";
 import { appError } from "./errors";
 import { hasSeat } from "./seats";
 
@@ -25,16 +26,24 @@ export type MemberInfo = {
 };
 
 /**
- * Reads the active organization from a Clerk v2 session token.
- * The token carries a nested claim `o: { id, slg, rol }` (verified against a
- * real dev token). `rol` has no "org:" prefix, but strip it defensively.
+ * Reads the active organization from a session token.
+ * A Clerk v2 token carries a nested claim `o: { id, slg, rol }` (verified
+ * against a real dev token). Agent tokens Velo signs (B9) carry the same
+ * claim, but Convex flattens nested claims of custom JWT providers into
+ * "o.id", "o.slg" and "o.rol"; those keys are read only for tokens from
+ * Velo's own agent issuer. `rol` has no "org:" prefix, but strip it
+ * defensively.
  */
 export function readOrgClaims(identity: UserIdentity): OrgClaims {
   const o: unknown = identity["o"];
-  if (typeof o !== "object" || o === null || Array.isArray(o)) {
+  let claims: Record<string, unknown>;
+  if (typeof o === "object" && o !== null && !Array.isArray(o)) {
+    claims = o as Record<string, unknown>;
+  } else if (identity.issuer === agentIssuer()) {
+    claims = { id: identity["o.id"], slg: identity["o.slg"], rol: identity["o.rol"] };
+  } else {
     return { orgId: null, orgSlug: null, role: null };
   }
-  const claims = o as Record<string, unknown>;
   const str = (value: unknown) =>
     typeof value === "string" && value.length > 0 ? value : null;
   const role = str(claims.rol);

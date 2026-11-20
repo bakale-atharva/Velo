@@ -21,6 +21,9 @@ export type Tool<Input extends z.ZodObject = z.ZodObject> = {
   run: (client: AgentClient, input: z.infer<Input>) => Promise<unknown>;
 };
 
+/** A tool-level problem (bad reference, ambiguous name) shown to the agent as is. */
+export class ToolError extends Error {}
+
 export function defineTool<Input extends z.ZodObject>(tool: Tool<Input>): Tool {
   return tool as unknown as Tool;
 }

@@ -1,6 +1,6 @@
 import { ConvexError } from "convex/values";
 import type { AgentClient } from "./client";
-import { inputJsonSchema, type Tool } from "./registry";
+import { inputJsonSchema, ToolError, type Tool } from "./registry";
 
 // A stateless MCP server over Streamable HTTP, as one pure function so it
 // can be tested without HTTP. It speaks both protocol eras:
@@ -100,6 +100,9 @@ async function callTool(tool: Tool, args: unknown, client: AgentClient) {
       isError: false,
     };
   } catch (error) {
+    if (error instanceof ToolError) {
+      return toolError(error.message);
+    }
     const code = errorCode(error);
     if (code !== null) {
       return toolError(`${code}: ${ERROR_MESSAGES[code] ?? code}`);
