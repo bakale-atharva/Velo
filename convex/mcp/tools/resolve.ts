@@ -64,6 +64,29 @@ export async function resolveAgentId(client: AgentClient, ref: string): Promise<
   )._id;
 }
 
+/** A workflow state of a team, by id or name (case-insensitive). */
+export async function resolveStateId(
+  client: AgentClient,
+  teamId: Id<"teams">,
+  ref: string,
+): Promise<Id<"workflowStates">> {
+  const states = await client.query(api.workflowStates.list, { teamId });
+  return pickOne(
+    states.filter((s) => s._id === ref || norm(s.name) === norm(ref)),
+    "state",
+    ref,
+  )._id;
+}
+
+/** A label by id or name (case-insensitive). */
+export async function resolveLabelIds(client: AgentClient, refs: string[]): Promise<Id<"labels">[]> {
+  if (refs.length === 0) return [];
+  const labels = await client.query(api.labels.list, {});
+  return refs.map(
+    (ref) => pickOne(labels.filter((l) => l._id === ref || norm(l.name) === norm(ref)), "label", ref)._id,
+  );
+}
+
 /** "YYYY-MM-DD" (or any ISO date) to ms; null stays null. */
 export function parseDate(value: string | null): number | null {
   if (value === null) return null;

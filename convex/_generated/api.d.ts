@@ -56,6 +56,7 @@ import type * as mcp_token from "../mcp/token.js";
 import type * as mcp_tools_agents from "../mcp/tools/agents.js";
 import type * as mcp_tools_index from "../mcp/tools/index.js";
 import type * as mcp_tools_resolve from "../mcp/tools/resolve.js";
+import type * as mcp_tools_teams from "../mcp/tools/teams.js";
 import type * as mcp_tools_workspace from "../mcp/tools/workspace.js";
 import type * as members from "../members.js";
 import type * as organizations from "../organizations.js";
@@ -122,6 +123,7 @@ declare const fullApi: ApiFromModules<{
   "mcp/tools/agents": typeof mcp_tools_agents;
   "mcp/tools/index": typeof mcp_tools_index;
   "mcp/tools/resolve": typeof mcp_tools_resolve;
+  "mcp/tools/teams": typeof mcp_tools_teams;
   "mcp/tools/workspace": typeof mcp_tools_workspace;
   members: typeof members;
   organizations: typeof organizations;
