@@ -139,18 +139,81 @@ describe("projects", () => {
     expect(issues.page.map((i) => i.title)).toEqual(["A"]);
   });
 
-  test("removing a project detaches its issues", async () => {
-    const { t, memberA, teamId } = await setup();
+  test("removing a project deletes its issues and nothing else", async () => {
+    const { t, adminA, memberA, teamId } = await setup();
     const projectId = await memberA.mutation(api.projects.create, { name: "Launch" });
-    const { identifier } = await memberA.mutation(api.issues.create, {
+    const otherProject = await memberA.mutation(api.projects.create, { name: "Other" });
+    const inProject = await memberA.mutation(api.issues.create, { teamId, title: "A", projectId });
+    await memberA.mutation(api.comments.create, { issueId: inProject.issueId, body: "Hi" });
+    const elsewhere = await memberA.mutation(api.issues.create, {
       teamId,
-      title: "A",
-      projectId,
+      title: "Child elsewhere",
+      projectId: otherProject,
+      parentId: inProject.issueId,
     });
-    await memberA.mutation(api.projects.remove, { projectId });
+    const loose = await memberA.mutation(api.issues.create, { teamId, title: "No project" });
+
+    // A member without issues.delete can't delete issues by deleting their project.
+    await expect(memberA.mutation(api.projects.remove, { projectId })).rejects.toThrow(/FORBIDDEN/);
+    await adminA.mutation(api.projects.remove, { projectId });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
-    expect((await memberA.query(api.issues.get, { identifier })).projectId).toBeNull();
+
     await expect(memberA.query(api.projects.get, { projectId })).rejects.toThrow(/NOT_FOUND/);
+    await expect(memberA.query(api.issues.get, { identifier: inProject.identifier })).rejects.toThrow(
+      /NOT_FOUND/,
+    );
+    const comments = await t.run((ctx) =>
+      ctx.db
+        .query("comments")
+        .withIndex("by_issueId", (q) => q.eq("issueId", inProject.issueId))
+        .take(10),
+    );
+    expect(comments).toEqual([]);
+    // Issues outside the project stay; a sub-issue elsewhere only loses its parent.
+    const child = await memberA.query(api.issues.get, { identifier: elsewhere.identifier });
+    expect(child).toMatchObject({ projectId: otherProject, parentId: null });
+    expect((await memberA.query(api.issues.get, { identifier: loose.identifier })).title).toBe("No project");
+    const audit = await t.run((ctx) => ctx.db.query("auditLogs").take(50));
+    expect(audit.map((entry) => entry.action)).toEqual(
+      expect.arrayContaining(["project.deleted", "issue.deleted"]),
+    );
+
+    // An empty project needs only projects.manage.
+    const empty = await memberA.mutation(api.projects.create, { name: "Empty" });
+    await memberA.mutation(api.projects.remove, { projectId: empty });
+    await expect(memberA.query(api.projects.get, { projectId: empty })).rejects.toThrow(/NOT_FOUND/);
+  });
+
+  test("the orphan repair deletes only issues whose project is gone", async () => {
+    const { t, memberA, teamId } = await setup();
+    const liveProject = await memberA.mutation(api.projects.create, { name: "Live" });
+    const goneProject = await memberA.mutation(api.projects.create, { name: "Gone" });
+    const live = await memberA.mutation(api.issues.create, { teamId, title: "Live", projectId: liveProject });
+    const loose = await memberA.mutation(api.issues.create, { teamId, title: "Loose" });
+    const orphan = await memberA.mutation(api.issues.create, { teamId, title: "Orphan", projectId: goneProject });
+    // Deleted behind the app's back, as happened in production.
+    await t.run((ctx) => ctx.db.delete("projects", goneProject));
+
+    const dry = await t.mutation(internal.projects.deleteOrphanedIssues, { orgId: ORG_A, dryRun: true });
+    expect(dry).toMatchObject({ scanned: 3, deleted: 0 });
+    expect(dry.orphans.map((o) => o.identifier)).toEqual([orphan.identifier]);
+    expect((await memberA.query(api.issues.get, { identifier: orphan.identifier })).title).toBe("Orphan");
+
+    // Another org's run sees none of these.
+    expect(
+      (await t.mutation(internal.projects.deleteOrphanedIssues, { orgId: ORG_B, dryRun: false })).orphans,
+    ).toEqual([]);
+
+    const real = await t.mutation(internal.projects.deleteOrphanedIssues, { orgId: ORG_A, dryRun: false });
+    expect(real.deleted).toBe(1);
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    await expect(memberA.query(api.issues.get, { identifier: orphan.identifier })).rejects.toThrow(/NOT_FOUND/);
+    expect((await memberA.query(api.issues.get, { identifier: live.identifier })).title).toBe("Live");
+    expect((await memberA.query(api.issues.get, { identifier: loose.identifier })).title).toBe("Loose");
+    // Running it again finds nothing.
+    expect(
+      (await t.mutation(internal.projects.deleteOrphanedIssues, { orgId: ORG_A, dryRun: true })).orphans,
+    ).toEqual([]);
   });
 
   test("another org cannot read, change or use a project", async () => {

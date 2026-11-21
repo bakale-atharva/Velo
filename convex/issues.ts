@@ -6,21 +6,15 @@ import {
 } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
-import {
-  internalMutation,
-  mutation,
-  query,
-  type MutationCtx,
-  type QueryCtx,
-} from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
+import { internalMutation, mutation, query, type QueryCtx } from "./_generated/server";
 import { loadCycle } from "./cycles";
 import { assertFilter, issueFilter, matchesFilter, type IssueFilter } from "./issueFilters";
 import { logActivity } from "./lib/activity";
-import { logAudit } from "./lib/audit";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { hasFeature } from "./lib/entitlements";
 import { appError } from "./lib/errors";
+import { cleanUpAfterRemoval, deleteIssueForGood } from "./lib/issueDeletion";
 import {
   createIssue,
   issueValidator,
@@ -37,7 +31,6 @@ import { loadProject } from "./projects";
 const MAX_STATES = 50;
 const BOARD_COLUMN_SIZE = 200;
 const MAX_SUB_ISSUES = 100;
-const CLEANUP_BATCH = 100;
 
 const nullableString = v.union(v.string(), v.null());
 const nullableNumber = v.union(v.number(), v.null());
@@ -337,38 +330,6 @@ export const archive = mutation({
   },
 });
 
-/**
- * Detaches or deletes what pointed at a deleted issue, one batch per table. Returns
- * whether anything may be left.
- */
-async function cleanUpAfterRemoval(
-  ctx: MutationCtx,
-  issueId: Id<"issues">,
-): Promise<boolean> {
-  const children = await ctx.db
-    .query("issues")
-    .withIndex("by_parentId", (q) => q.eq("parentId", issueId))
-    .take(CLEANUP_BATCH);
-  for (const child of children) {
-    await ctx.db.patch("issues", child._id, { parentId: null });
-  }
-  const comments = await ctx.db
-    .query("comments")
-    .withIndex("by_issueId", (q) => q.eq("issueId", issueId))
-    .take(CLEANUP_BATCH);
-  for (const comment of comments) {
-    await ctx.db.delete("comments", comment._id);
-  }
-  const activities = await ctx.db
-    .query("activities")
-    .withIndex("by_issueId", (q) => q.eq("issueId", issueId))
-    .take(CLEANUP_BATCH);
-  for (const activity of activities) {
-    await ctx.db.delete("activities", activity._id);
-  }
-  return [children, comments, activities].some((rows) => rows.length === CLEANUP_BATCH);
-}
-
 export const continueCleanup = internalMutation({
   args: { issueId: v.id("issues") },
   returns: v.null(),
@@ -390,19 +351,7 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const member = await requirePermission(ctx, "issues.delete");
     const { issue } = await loadIssue(ctx, member, args.issueId);
-    await ctx.db.delete("issues", issue._id);
-    await syncProjectCounts(ctx, issue, null);
-    await logAudit(ctx, member, {
-      action: "issue.deleted",
-      targetType: "issue",
-      targetId: issue._id,
-      metadata: { identifier: issue.identifier, title: issue.title },
-    });
-    if (await cleanUpAfterRemoval(ctx, issue._id)) {
-      await ctx.scheduler.runAfter(0, internal.issues.continueCleanup, {
-        issueId: issue._id,
-      });
-    }
+    await deleteIssueForGood(ctx, member, issue);
     return null;
   },
 });
