@@ -36,7 +36,8 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 function ProjectIssues({ project, orgSlug }: { project: Doc<"projects">; orgSlug: string }) {
   const { results, status, loadMore } = usePaginatedQuery(
     api.projects.listIssues,
-    { projectId: project._id },
+    // Sub-issues live on their parent's page, not in the list.
+    { projectId: project._id, topLevel: true },
     { initialNumItems: PAGE_SIZE },
   );
   if (status === "LoadingFirstPage") {

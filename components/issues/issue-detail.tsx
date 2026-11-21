@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/lib/errors";
 import { IssueAssist } from "@/components/assistant/issue-assist";
+import { byName, SortSelect, useSort, type SortOption } from "@/components/states/sort-select";
 import {
   AssigneeSelect,
   CycleSelect,
@@ -219,15 +220,36 @@ function ParentRow({ issue }: { issue: Issue }) {
   );
 }
 
+type SubIssueSort = "created" | "name" | "name-desc";
+
+const SUB_ISSUE_SORTS: SortOption<SubIssueSort>[] = [
+  { value: "created", label: "Oldest" },
+  { value: "name", label: "Name A–Z" },
+  { value: "name-desc", label: "Name Z–A" },
+];
+
+function sortSubIssues(children: Issue[], sort: SubIssueSort) {
+  // The query returns them oldest first.
+  if (sort === "created") return children;
+  const sorted = [...children].sort((a, b) => byName(a.title, b.title));
+  return sort === "name" ? sorted : sorted.reverse();
+}
+
 function SubIssues({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
   const children = useQuery(api.issues.listSubIssues, { issueId: issue._id });
   const create = useMutation(api.issues.create);
   const [title, setTitle] = useState("");
+  const [sort, setSort] = useSort("sub-issues", SUB_ISSUE_SORTS);
   return (
     <section aria-label="Sub-issues" className="mt-10 border-t border-rule pt-5">
-      <StateHeading name="Sub-issues" count={children?.length ?? 0} />
+      <div className="flex min-h-8 items-center justify-between gap-3">
+        <StateHeading name="Sub-issues" count={children?.length ?? 0} />
+        {children !== undefined && children.length > 1 && (
+          <SortSelect label="Sort sub-issues" value={sort} options={SUB_ISSUE_SORTS} onChange={setSort} />
+        )}
+      </div>
       <ul className="-mx-3 mt-3 flex flex-col @3xl/main:-mx-6">
-        {children?.map((child) => (
+        {children !== undefined && sortSubIssues(children, sort).map((child) => (
           <li key={child._id}>
             <IssueRow issue={child} orgSlug={orgSlug} />
           </li>

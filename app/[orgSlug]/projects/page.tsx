@@ -17,7 +17,38 @@ import { ProjectStatusTag } from "@/components/projects/project-status";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
+import { byName, SortSelect, useSort, type SortOption } from "@/components/states/sort-select";
+import type { Doc } from "@/convex/_generated/dataModel";
 import { formatDate } from "@/lib/dates";
+
+type ProjectSort = "name" | "name-desc" | "newest" | "oldest" | "target";
+
+const PROJECT_SORTS: SortOption<ProjectSort>[] = [
+  { value: "name", label: "Name A–Z" },
+  { value: "name-desc", label: "Name Z–A" },
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "target", label: "Target date" },
+];
+
+function sortProjects(projects: Doc<"projects">[], sort: ProjectSort) {
+  const sorted = [...projects];
+  switch (sort) {
+    case "name":
+      return sorted.sort((a, b) => byName(a.name, b.name));
+    case "name-desc":
+      return sorted.sort((a, b) => byName(b.name, a.name));
+    case "newest":
+      return sorted.sort((a, b) => b._creationTime - a._creationTime);
+    case "oldest":
+      return sorted.sort((a, b) => a._creationTime - b._creationTime);
+    case "target":
+      // Soonest first; projects without a target date go last.
+      return sorted.sort(
+        (a, b) => (a.targetDate ?? Infinity) - (b.targetDate ?? Infinity) || byName(a.name, b.name),
+      );
+  }
+}
 
 const ROW =
   "grid grid-cols-[minmax(0,1fr)_130px] gap-4 @3xl/main:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px]";
@@ -28,6 +59,7 @@ function Projects() {
   const projects = useQuery(api.projects.list, {});
   const { memberById } = useWorkspaceLookups();
   const [creating, setCreating] = useState(false);
+  const [sort, setSort] = useSort("projects", PROJECT_SORTS);
 
   if (projects === undefined) {
     return <PageSkeleton />;
@@ -39,10 +71,15 @@ function Projects() {
         title="Projects"
         subtitle={projects.length === 0 ? undefined : `${projects.length} total`}
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus aria-hidden />
-            New project
-          </Button>
+          <div className="flex items-center gap-2">
+            {projects.length > 1 && (
+              <SortSelect label="Sort projects" value={sort} options={PROJECT_SORTS} onChange={setSort} />
+            )}
+            <Button onClick={() => setCreating(true)}>
+              <Plus aria-hidden />
+              New project
+            </Button>
+          </div>
         }
       />
       <ProjectDialog
@@ -70,7 +107,7 @@ function Projects() {
             <span role="columnheader" className="hidden @3xl/main:block">Progress</span>
           </div>
           <div role="rowgroup" className="flex flex-col">
-            {projects.map((project) => {
+            {sortProjects(projects, sort).map((project) => {
               const lead = project.leadId === null ? null : memberById.get(project.leadId);
               return (
                 <Link
