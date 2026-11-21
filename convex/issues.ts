@@ -6,7 +6,7 @@ import {
 } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type QueryCtx } from "./_generated/server";
 import { loadCycle } from "./cycles";
 import { assertFilter, issueFilter, matchesFilter, type IssueFilter } from "./issueFilters";
