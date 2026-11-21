@@ -164,9 +164,11 @@ export function IssueBoard({
   states: Doc<"workflowStates">[];
   orgSlug: string;
 }) {
-  const columns = useQuery(api.issues.listForBoard, { teamId });
+  // Sub-issues live on their parent's page, not on the board.
+  const boardArgs = { teamId, topLevel: true };
+  const columns = useQuery(api.issues.listForBoard, boardArgs);
   const move = useMutation(api.issues.move).withOptimisticUpdate((store, args) => {
-    const current = store.getQuery(api.issues.listForBoard, { teamId });
+    const current = store.getQuery(api.issues.listForBoard, boardArgs);
     if (current === undefined) return;
     const moving = current.flatMap((column) => column.issues).find((issue) => issue._id === args.issueId);
     const state = states.find((s) => s._id === args.stateId);
@@ -174,7 +176,7 @@ export function IssueBoard({
     const updated = { ...moving, stateId: args.stateId, stateType: state.type };
     store.setQuery(
       api.issues.listForBoard,
-      { teamId },
+      boardArgs,
       current.map((column) => {
         const rest = column.issues.filter((issue) => issue._id !== args.issueId);
         if (column.stateId !== args.stateId) return { ...column, issues: rest };

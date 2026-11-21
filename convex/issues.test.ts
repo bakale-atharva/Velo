@@ -508,6 +508,21 @@ describe("issues", () => {
     expect(listed.page.map((i) => i.title).sort()).toEqual(["C", "P"]);
     expect(await activityTypes(memberA, gone.issueId)).toEqual(["created", "archived"]);
 
+    // The app's lists and board show top-level issues; sub-issues sit under their parent.
+    const topLevel = await memberA.query(api.issues.listByTeam, { teamId, topLevel: true, paginationOpts: PAGE });
+    expect(topLevel.page.map((i) => i.title)).toEqual(["P"]);
+    const board = await memberA.query(api.issues.listForBoard, { teamId, topLevel: true });
+    expect(board.flatMap((column) => column.issues).map((i) => i.title)).toEqual(["P"]);
+    const filtered = await memberA.query(api.issues.listFiltered, {
+      filter: { teamId },
+      topLevel: true,
+      paginationOpts: PAGE,
+    });
+    expect(filtered.page.map((i) => i.title)).toEqual(["P"]);
+    expect((await memberA.query(api.issues.listSubIssues, { issueId: parent.issueId })).map((i) => i.title)).toEqual([
+      "C",
+    ]);
+
     await expect(
       memberA.mutation(api.issues.remove, { issueId: parent.issueId }),
     ).rejects.toThrow(/FORBIDDEN/);
@@ -518,6 +533,9 @@ describe("issues", () => {
     expect(
       (await memberA.query(api.issues.get, { identifier: child.identifier })).parentId,
     ).toBeNull();
+    // With its parent gone, the sub-issue is a top-level issue again.
+    const orphaned = await memberA.query(api.issues.listByTeam, { teamId, topLevel: true, paginationOpts: PAGE });
+    expect(orphaned.page.map((i) => i.title)).toEqual(["C"]);
     const leftovers = await t.run(async (ctx) => ({
       comments: await ctx.db
         .query("comments")

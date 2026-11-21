@@ -65,7 +65,8 @@ export function IssueList({
 }) {
   const { results, status, loadMore } = usePaginatedQuery(
     api.issues.listByTeam,
-    { teamId },
+    // Sub-issues live on their parent's page, not in the list.
+    { teamId, topLevel: true },
     { initialNumItems: PAGE_SIZE },
   );
 

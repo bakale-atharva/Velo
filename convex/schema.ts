@@ -293,6 +293,14 @@ export default defineSchema({
       "stateId",
       "rank",
     ])
+    // The same, top-level issues only (parentId null): the app's lists and board.
+    .index("by_teamId_and_archivedAt_and_parentId_and_stateId_and_rank", [
+      "teamId",
+      "archivedAt",
+      "parentId",
+      "stateId",
+      "rank",
+    ])
     .index("by_orgId_and_assigneeId", ["orgId", "assigneeId"])
     .index("by_parentId", ["parentId"])
     .index("by_orgId_and_identifier", ["orgId", "identifier"])

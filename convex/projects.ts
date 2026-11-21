@@ -229,7 +229,12 @@ export const get = query({
  * teams the caller is not in are left out, so a page can be shorter than asked.
  */
 export const listIssues = query({
-  args: { projectId: v.id("projects"), paginationOpts: paginationOptsValidator },
+  args: {
+    projectId: v.id("projects"),
+    // true leaves sub-issues out (they show on their parent's page).
+    topLevel: v.optional(v.boolean()),
+    paginationOpts: paginationOptsValidator,
+  },
   returns: paginationResultValidator(issueValidator),
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
@@ -238,7 +243,9 @@ export const listIssues = query({
       .query("issues")
       .withIndex("by_projectId", (q) => q.eq("projectId", project._id))
       .paginate(args.paginationOpts);
-    const open = result.page.filter((issue) => issue.archivedAt === null);
+    const open = result.page.filter(
+      (issue) => issue.archivedAt === null && (args.topLevel !== true || issue.parentId === null),
+    );
     const visible = await filterVisibleIssues(ctx, member, open);
     return { ...result, page: visible.map(toPublicIssue) };
   },

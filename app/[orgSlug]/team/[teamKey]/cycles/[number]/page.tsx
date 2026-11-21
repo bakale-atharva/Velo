@@ -52,7 +52,8 @@ function CycleIssues({
 }) {
   const { results, status, loadMore } = usePaginatedQuery(
     api.cycles.listIssues,
-    { cycleId: cycle._id },
+    // Sub-issues live on their parent's page, not in the list.
+    { cycleId: cycle._id, topLevel: true },
     { initialNumItems: PAGE_SIZE },
   );
   const move = useMutation(api.issues.move);

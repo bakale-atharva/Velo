@@ -43,7 +43,8 @@ export function FilteredIssues({
 }) {
   const { results, status, loadMore } = usePaginatedQuery(
     api.issues.listFiltered,
-    { filter },
+    // Sub-issues live on their parent's page, not in the list.
+    { filter, topLevel: true },
     { initialNumItems: PAGE_SIZE },
   );
   const move = useMutation(api.issues.move);

@@ -95,6 +95,34 @@ export const get = query({
   },
 });
 
+/** `topLevel: true` leaves sub-issues out (they show on their parent's page). */
+const topLevelArg = v.optional(v.boolean());
+
+/** Drops sub-issues when only top-level issues were asked for. */
+function keepTopLevel<I extends { parentId: Id<"issues"> | null }>(issues: I[], topLevel: boolean | undefined): I[] {
+  return topLevel === true ? issues.filter((issue) => issue.parentId === null) : issues;
+}
+
+/** A team's open issues in one state by rank, optionally top-level only. */
+function teamStateQuery(
+  ctx: QueryCtx,
+  teamId: Id<"teams">,
+  stateId: Id<"workflowStates"> | undefined,
+  topLevel: boolean | undefined,
+) {
+  const issues = ctx.db.query("issues");
+  if (topLevel === true) {
+    return issues.withIndex("by_teamId_and_archivedAt_and_parentId_and_stateId_and_rank", (q) => {
+      const top = q.eq("teamId", teamId).eq("archivedAt", null).eq("parentId", null);
+      return stateId === undefined ? top : top.eq("stateId", stateId);
+    });
+  }
+  return issues.withIndex("by_teamId_and_archivedAt_and_stateId_and_rank", (q) => {
+    const open = q.eq("teamId", teamId).eq("archivedAt", null);
+    return stateId === undefined ? open : open.eq("stateId", stateId);
+  });
+}
+
 /**
  * A team's open (not archived) issues, page by page, ordered by rank within
  * each state. Pass `stateId` to read a single state.
@@ -103,21 +131,16 @@ export const listByTeam = query({
   args: {
     teamId: v.id("teams"),
     stateId: v.optional(v.id("workflowStates")),
+    topLevel: topLevelArg,
     paginationOpts: paginationOptsValidator,
   },
   returns: paginationResultValidator(issueValidator),
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
     const team = await requireTeamAccess(ctx, member, args.teamId);
-    const { stateId } = args;
-    const result = await ctx.db
-      .query("issues")
-      .withIndex("by_teamId_and_archivedAt_and_stateId_and_rank", (q) =>
-        stateId === undefined
-          ? q.eq("teamId", team._id).eq("archivedAt", null)
-          : q.eq("teamId", team._id).eq("archivedAt", null).eq("stateId", stateId),
-      )
-      .paginate(args.paginationOpts);
+    const result = await teamStateQuery(ctx, team._id, args.stateId, args.topLevel).paginate(
+      args.paginationOpts,
+    );
     return { ...result, page: result.page.map(toPublicIssue) };
   },
 });
@@ -171,7 +194,7 @@ async function pageForFilter(
  * private teams the caller is not in are left out.
  */
 export const listFiltered = query({
-  args: { filter: issueFilter, paginationOpts: paginationOptsValidator },
+  args: { filter: issueFilter, topLevel: topLevelArg, paginationOpts: paginationOptsValidator },
   returns: paginationResultValidator(issueValidator),
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
@@ -181,7 +204,7 @@ export const listFiltered = query({
       await requireTeamAccess(ctx, member, filter.teamId);
     }
     const result = await pageForFilter(ctx, member, filter, args.paginationOpts);
-    const matching = result.page.filter(
+    const matching = keepTopLevel(result.page, args.topLevel).filter(
       (issue) => issue.orgId === member.orgId && issue.archivedAt === null && matchesFilter(issue, filter),
     );
     const visible = await filterVisibleIssues(ctx, member, matching);
@@ -231,7 +254,7 @@ export const listMine = query({
 
 /** The board: every state of the team with its first 200 issues by rank. */
 export const listForBoard = query({
-  args: { teamId: v.id("teams") },
+  args: { teamId: v.id("teams"), topLevel: topLevelArg },
   returns: v.array(
     v.object({ stateId: v.id("workflowStates"), issues: v.array(issueValidator) }),
   ),
@@ -244,12 +267,9 @@ export const listForBoard = query({
       .take(MAX_STATES);
     return await Promise.all(
       states.map(async (state) => {
-        const issues = await ctx.db
-          .query("issues")
-          .withIndex("by_teamId_and_archivedAt_and_stateId_and_rank", (q) =>
-            q.eq("teamId", team._id).eq("archivedAt", null).eq("stateId", state._id),
-          )
-          .take(BOARD_COLUMN_SIZE);
+        const issues = await teamStateQuery(ctx, team._id, state._id, args.topLevel).take(
+          BOARD_COLUMN_SIZE,
+        );
         return { stateId: state._id, issues: issues.map(toPublicIssue) };
       }),
     );

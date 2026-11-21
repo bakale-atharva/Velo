@@ -200,7 +200,12 @@ export const get = query({
 
 /** A cycle's issues (archived ones left out), page by page. */
 export const listIssues = query({
-  args: { cycleId: v.id("cycles"), paginationOpts: paginationOptsValidator },
+  args: {
+    cycleId: v.id("cycles"),
+    // true leaves sub-issues out (they show on their parent's page).
+    topLevel: v.optional(v.boolean()),
+    paginationOpts: paginationOptsValidator,
+  },
   returns: paginationResultValidator(issueValidator),
   handler: async (ctx, args) => {
     const member = await requireMember(ctx);
@@ -212,7 +217,9 @@ export const listIssues = query({
       .paginate(args.paginationOpts);
     return {
       ...result,
-      page: result.page.filter((issue) => issue.archivedAt === null).map(toPublicIssue),
+      page: result.page
+        .filter((issue) => issue.archivedAt === null && (args.topLevel !== true || issue.parentId === null))
+        .map(toPublicIssue),
     };
   },
 });
