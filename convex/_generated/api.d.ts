@@ -40,6 +40,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_entitlements from "../lib/entitlements.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_input from "../lib/input.js";
+import type * as lib_issueDeletion from "../lib/issueDeletion.js";
 import type * as lib_issueOps from "../lib/issueOps.js";
 import type * as lib_permissions from "../lib/permissions.js";
 import type * as lib_plans from "../lib/plans.js";
@@ -111,6 +112,7 @@ declare const fullApi: ApiFromModules<{
   "lib/entitlements": typeof lib_entitlements;
   "lib/errors": typeof lib_errors;
   "lib/input": typeof lib_input;
+  "lib/issueDeletion": typeof lib_issueDeletion;
   "lib/issueOps": typeof lib_issueOps;
   "lib/permissions": typeof lib_permissions;
   "lib/plans": typeof lib_plans;

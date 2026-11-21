@@ -105,7 +105,8 @@ export const planningTools: Tool[] = [
   defineTool({
     name: "delete_project",
     title: "Delete project",
-    description: "Deletes a project; its issues stay and lose the project. Needs projects.manage.",
+    description:
+      "Deletes a project and every issue in it, with their comments and activity. Can't be undone. Needs projects.manage, and issues.delete if the project has issues.",
     input: z.object({ project: projectRef }),
     annotations: DESTRUCTIVE,
     run: async (client, { project }) => {

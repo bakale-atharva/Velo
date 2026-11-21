@@ -13,6 +13,7 @@ import { logAudit } from "./lib/audit";
 import { requireMember, type MemberInfo } from "./lib/auth";
 import { appError } from "./lib/errors";
 import { cleanText } from "./lib/input";
+import { deleteIssueForGood } from "./lib/issueDeletion";
 import { issueValidator, toPublicIssue } from "./lib/issueOps";
 import { requirePermission } from "./lib/permissions";
 import { filterVisibleIssues, withVisibleTeams } from "./lib/teamAccess";
@@ -24,7 +25,7 @@ import schema, { projectStatus } from "./schema";
 const MAX_PROJECTS = 500;
 const MAX_NAME_LENGTH = 120;
 const MAX_DESCRIPTION_LENGTH = 50_000;
-const DETACH_BATCH = 100;
+const DELETE_BATCH = 50;
 
 const projectValidator = schema.doc("projects");
 const nullableNumber = v.union(v.number(), v.null());
@@ -153,36 +154,69 @@ export const update = mutation({
   },
 });
 
-/** Takes up to one batch of issues out of a deleted project. */
-async function detachIssues(ctx: MutationCtx, projectId: Id<"projects">): Promise<boolean> {
+/**
+ * Deletes up to one batch of a deleted project's issues, recorded under
+ * `member`. Returns whether more may be left.
+ */
+async function deleteProjectIssues(
+  ctx: MutationCtx,
+  member: MemberInfo,
+  project: { _id: Id<"projects">; name: string },
+): Promise<boolean> {
   const issues = await ctx.db
     .query("issues")
-    .withIndex("by_projectId", (q) => q.eq("projectId", projectId))
-    .take(DETACH_BATCH);
+    .withIndex("by_projectId", (q) => q.eq("projectId", project._id))
+    .take(DELETE_BATCH);
   for (const issue of issues) {
-    await ctx.db.patch("issues", issue._id, { projectId: null });
+    // Only this org's issues, however the project id got onto them.
+    if (issue.orgId === member.orgId) {
+      await deleteIssueForGood(ctx, member, issue, { viaProject: project.name });
+    }
   }
-  return issues.length === DETACH_BATCH;
+  return issues.length === DELETE_BATCH;
 }
 
-export const continueDetach = internalMutation({
-  args: { projectId: v.id("projects") },
+export const continueDeleteIssues = internalMutation({
+  args: {
+    projectId: v.id("projects"),
+    projectName: v.string(),
+    orgId: v.string(),
+    userId: v.string(),
+    role: v.string(),
+  },
   returns: v.null(),
-  handler: async (ctx, args) => {
-    if (await detachIssues(ctx, args.projectId)) {
-      await ctx.scheduler.runAfter(0, internal.projects.continueDetach, args);
+  handler: async (ctx, { projectId, projectName, ...member }) => {
+    if (await deleteProjectIssues(ctx, member, { _id: projectId, name: projectName })) {
+      await ctx.scheduler.runAfter(0, internal.projects.continueDeleteIssues, {
+        projectId,
+        projectName,
+        ...member,
+      });
     }
     return null;
   },
 });
 
-/** Deletes a project. Its issues stay and lose their project. */
+/**
+ * Deletes a project and its issues for good (with their comments and
+ * activity). Needs `projects.manage`, and `issues.delete` when the project
+ * has issues. Sub-issues in other projects stay and lose their parent.
+ */
 export const remove = mutation({
   args: { projectId: v.id("projects") },
   returns: v.null(),
   handler: async (ctx, args) => {
     const member = await requirePermission(ctx, "projects.manage");
     const project = await loadProject(ctx, member, args.projectId);
+    const hasIssues =
+      (await ctx.db
+        .query("issues")
+        .withIndex("by_projectId", (q) => q.eq("projectId", project._id))
+        .first()) !== null;
+    if (hasIssues) {
+      // Deleting the issues must not be a way around issues.delete.
+      await requirePermission(ctx, "issues.delete");
+    }
     await ctx.db.delete("projects", project._id);
     await logAudit(ctx, member, {
       action: "project.deleted",
@@ -190,12 +224,78 @@ export const remove = mutation({
       targetId: project._id,
       metadata: { name: project.name },
     });
-    if (await detachIssues(ctx, project._id)) {
-      await ctx.scheduler.runAfter(0, internal.projects.continueDetach, {
+    if (await deleteProjectIssues(ctx, member, project)) {
+      await ctx.scheduler.runAfter(0, internal.projects.continueDeleteIssues, {
         projectId: project._id,
+        projectName: project.name,
+        orgId: member.orgId,
+        userId: member.userId,
+        role: member.role,
       });
     }
     return null;
+  },
+});
+
+const ORPHAN_SCAN_LIMIT = 5000;
+const ORPHAN_DELETE_LIMIT = 200;
+
+/**
+ * One-off repair: finds the org's issues whose project no longer exists (or
+ * belongs to another org) and, unless `dryRun`, deletes them like a project
+ * deletion would. Issues without a project, or with a live project, are never
+ * touched. Run a dry run first:
+ *   npx convex run projects:deleteOrphanedIssues '{"orgId":"org_...","dryRun":true}'
+ */
+export const deleteOrphanedIssues = internalMutation({
+  args: { orgId: v.string(), dryRun: v.boolean() },
+  returns: v.object({
+    scanned: v.number(),
+    orphans: v.array(
+      v.object({ identifier: v.string(), title: v.string(), projectId: v.id("projects") }),
+    ),
+    deleted: v.number(),
+  }),
+  handler: async (ctx, { orgId, dryRun }) => {
+    const issues = await ctx.db
+      .query("issues")
+      .withIndex("by_orgId_and_teamId", (q) => q.eq("orgId", orgId))
+      .take(ORPHAN_SCAN_LIMIT + 1);
+    if (issues.length > ORPHAN_SCAN_LIMIT) {
+      throw appError("LIMIT_REACHED");
+    }
+    const live = new Map<Id<"projects">, boolean>();
+    const orphans: Doc<"issues">[] = [];
+    for (const issue of issues) {
+      const { projectId } = issue;
+      // No project at all: not an orphan, never touched.
+      if (projectId === null || projectId === undefined) continue;
+      let exists = live.get(projectId);
+      if (exists === undefined) {
+        const project = await ctx.db.get("projects", projectId);
+        exists = project !== null && project.orgId === orgId;
+        live.set(projectId, exists);
+      }
+      if (!exists) orphans.push(issue);
+    }
+    if (orphans.length > ORPHAN_DELETE_LIMIT) {
+      throw appError("LIMIT_REACHED");
+    }
+    if (!dryRun) {
+      const repair: MemberInfo = { orgId, userId: "system:repair", role: "admin" };
+      for (const issue of orphans) {
+        await deleteIssueForGood(ctx, repair, issue, { reason: "project no longer exists" });
+      }
+    }
+    return {
+      scanned: issues.length,
+      orphans: orphans.map((issue) => ({
+        identifier: issue.identifier,
+        title: issue.title,
+        projectId: issue.projectId!,
+      })),
+      deleted: dryRun ? 0 : orphans.length,
+    };
   },
 });
 
