@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import { CycleBurndown } from "@/components/charts/cycle-burndown";
 import { cycleRange, daysLeft } from "@/components/cycles/cycle-dates";
 import { CycleDialog } from "@/components/cycles/cycle-dialog";
 import { Board } from "@/components/issues/issue-board";
@@ -88,6 +89,9 @@ function CycleIssues({
           </dd>
         </div>
       </dl>
+
+      {/* Upcoming cycles have no days behind them to draw. */}
+      {cycle.status !== "upcoming" && results.length > 0 && <CycleBurndown cycleId={cycle._id} />}
 
       {results.length === 0 ? (
         <div className="px-3 @3xl/main:px-6">

@@ -8,6 +8,8 @@ import { useQuery } from "convex/react";
 import { Suspense, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import { useToday } from "@/components/charts/format";
+import { Sparkline } from "@/components/charts/sparkline";
 import { AssigneeAvatar } from "@/components/issues/assignee-avatar";
 import { displayName, useWorkspaceLookups } from "@/components/issues/lookups";
 import { TeamPageHeader } from "@/components/issues/team-page-header";
@@ -50,13 +52,17 @@ function sortProjects(projects: Doc<"projects">[], sort: ProjectSort) {
   }
 }
 
+// The 12-week sparkline column joins only on wide work fields, where it fits beside progress.
 const ROW =
-  "grid grid-cols-[minmax(0,1fr)_130px] gap-4 @3xl/main:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px]";
+  "grid grid-cols-[minmax(0,1fr)_130px] gap-4 @3xl/main:grid-cols-[minmax(0,1fr)_130px_180px_100px_240px] @5xl/main:grid-cols-[minmax(0,1fr)_130px_180px_100px_88px_240px]";
 
 function Projects() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const router = useRouter();
   const projects = useQuery(api.projects.list, {});
+  const today = useToday();
+  const sparkRows = useQuery(api.insights.projectSparklines, { now: today });
+  const sparks = sparkRows === undefined ? undefined : new Map(sparkRows.map((row) => [row.projectId, row.weeks]));
   const { memberById } = useWorkspaceLookups();
   const [creating, setCreating] = useState(false);
   const [sort, setSort] = useSort("projects", PROJECT_SORTS);
@@ -104,6 +110,7 @@ function Projects() {
             <span role="columnheader">Status</span>
             <span role="columnheader" className="hidden @3xl/main:block">Lead</span>
             <span role="columnheader" className="hidden @3xl/main:block">Target</span>
+            <span role="columnheader" className="hidden @5xl/main:block">12 weeks</span>
             <span role="columnheader" className="hidden @3xl/main:block">Progress</span>
           </div>
           <div role="rowgroup" className="flex flex-col">
@@ -137,6 +144,14 @@ function Projects() {
                       <span className={ROW_MUTED}>—</span>
                     ) : (
                       formatDate(project.targetDate)
+                    )}
+                  </span>
+                  <span role="cell" className={`hidden @5xl/main:flex ${ROW_MUTED}`}>
+                    {sparks !== undefined && (
+                      <Sparkline
+                        values={sparks.get(project._id) ?? []}
+                        label={`${(sparks.get(project._id) ?? []).reduce((a, b) => a + b, 0)} issues completed in the last 12 weeks`}
+                      />
                     )}
                   </span>
                   <span role="cell" className="hidden @3xl/main:block">
