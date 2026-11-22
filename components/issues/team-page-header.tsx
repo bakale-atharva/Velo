@@ -118,5 +118,6 @@ export function teamNav(orgSlug: string, teamKey: string, pathname: string): Pag
   return [
     { href: `${base}/issues`, label: "Issues" },
     { href: `${base}/cycles`, label: "Cycles" },
+    { href: `${base}/insights`, label: "Insights" },
   ].map((item) => ({ ...item, active: pathname === item.href || pathname.startsWith(`${item.href}/`) }));
 }

@@ -60,11 +60,43 @@ export function ChartFrame({
   );
 }
 
-/** A grid of chart panels, ruled like a figure strip: one column narrow, two from 48rem. */
+/**
+ * A grid of chart panels, ruled like a figure strip: one column narrow, two
+ * from 48rem. An odd last panel spans the row.
+ */
 export function ChartGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 border-t border-rule @3xl/main:grid-cols-2 [&>*]:border-b [&>*]:border-rule [&>*]:px-3 [&>*]:py-6 @3xl/main:[&>*]:px-6 @3xl/main:[&>*:nth-child(odd)]:border-r">
+    <div className="grid grid-cols-1 @3xl/main:grid-cols-2 [&>*]:border-b [&>*]:border-rule [&>*]:px-3 [&>*]:py-6 @3xl/main:[&>*]:px-6 @3xl/main:[&>*:nth-child(odd)]:border-r @3xl/main:[&>*:last-child:nth-child(odd)]:col-span-2 @3xl/main:[&>*:last-child:nth-child(odd)]:border-r-0">
       {children}
     </div>
+  );
+}
+
+/**
+ * Key numbers as a figure strip: equal cells behind vertical hairlines, a
+ * signal label over a large mono value. Two columns narrow, all in a row
+ * from 48rem.
+ */
+export function FigureStrip({ items }: { items: { label: string; value: React.ReactNode; note?: string }[] }) {
+  return (
+    <dl
+      className="grid grid-cols-2 border-b border-rule @3xl/main:[grid-template-columns:repeat(var(--cells),minmax(0,1fr))]"
+      style={{ "--cells": items.length } as React.CSSProperties}
+    >
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="flex flex-col gap-3 border-b border-border px-3 py-5 odd:border-r @3xl/main:border-b-0 @3xl/main:border-r @3xl/main:px-6 @3xl/main:last:border-r-0"
+        >
+          <dt className="signal-label">{item.label}</dt>
+          <dd className="flex items-baseline gap-2">
+            <span className="data text-[28px] leading-none tracking-[-0.03em]">{item.value}</span>
+            {item.note !== undefined && (
+              <span className="data text-[11px] tracking-[0.08em] text-muted-foreground uppercase">{item.note}</span>
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }

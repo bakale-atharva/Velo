@@ -70,6 +70,7 @@ function TeamGroup({
   const pages = [
     { href: `${teamBase}/issues`, label: "Issues" },
     { href: `${teamBase}/cycles`, label: "Cycles" },
+    { href: `${teamBase}/insights`, label: "Insights" },
   ];
   return (
     <SidebarMenuItem>
