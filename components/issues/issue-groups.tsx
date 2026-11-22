@@ -22,7 +22,16 @@ const GROUPS: { type: StateType; name: string }[] = [
  * states differently, so the type is what they share). Each group is headed
  * by its name and count on a state-coloured rule.
  */
-export function IssueGroups({ issues, orgSlug }: { issues: Issue[]; orgSlug: string }) {
+export function IssueGroups({
+  issues,
+  orgSlug,
+  showDue = false,
+}: {
+  issues: Issue[];
+  orgSlug: string;
+  /** Keep each row's due date visible at every width. */
+  showDue?: boolean;
+}) {
   return (
     <>
       {GROUPS.map((group) => {
@@ -41,7 +50,7 @@ export function IssueGroups({ issues, orgSlug }: { issues: Issue[]; orgSlug: str
             <ul className="flex flex-col pb-2">
               {inGroup.map((issue) => (
                 <li key={issue._id}>
-                  <IssueRow issue={issue} orgSlug={orgSlug} />
+                  <IssueRow issue={issue} orgSlug={orgSlug} showDue={showDue} />
                 </li>
               ))}
             </ul>
