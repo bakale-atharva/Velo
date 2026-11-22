@@ -309,6 +309,8 @@ export default defineSchema({
     .index("by_orgId_and_teamId", ["orgId", "teamId"])
     // Completions in a time window (insights charts) as a range read.
     .index("by_teamId_and_completedAt", ["teamId", "completedAt"])
+    .index("by_projectId_and_completedAt", ["projectId", "completedAt"])
+    .index("by_orgId_and_assigneeId_and_completedAt", ["orgId", "assigneeId", "completedAt"])
     .searchIndex("search_text", {
       searchField: "searchText",
       filterFields: ["orgId", "teamId"],

@@ -29,6 +29,7 @@ import type * as comments from "../comments.js";
 import type * as crons from "../crons.js";
 import type * as cycles from "../cycles.js";
 import type * as http from "../http.js";
+import type * as insights from "../insights.js";
 import type * as issueFilters from "../issueFilters.js";
 import type * as issues from "../issues.js";
 import type * as labels from "../labels.js";
@@ -101,6 +102,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   cycles: typeof cycles;
   http: typeof http;
+  insights: typeof insights;
   issueFilters: typeof issueFilters;
   issues: typeof issues;
   labels: typeof labels;
