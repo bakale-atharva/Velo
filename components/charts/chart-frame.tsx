@@ -16,8 +16,11 @@ export function ChartFrame({
   footnote,
   loading = false,
   className = "",
+  height = "h-40 @3xl/main:h-48",
   children,
 }: {
+  /** Height of the loading and empty bands; match the chart's own height. */
+  height?: string;
   title: string;
   summary: string;
   figure?: React.ReactNode;
@@ -42,9 +45,9 @@ export function ChartFrame({
       </div>
       <div aria-hidden className="relative">
         {loading ? (
-          <div className="h-40 animate-pulse border-y border-border bg-tile @3xl/main:h-48" />
+          <div className={`animate-pulse border-y border-border bg-tile ${height}`} />
         ) : empty ? (
-          <div className="flex h-40 items-end border-y border-rule @3xl/main:h-48" style={{ background: SCAN_LINES }}>
+          <div className={`flex items-end border-y border-rule ${height}`} style={{ background: SCAN_LINES }}>
             <p className="data bg-background px-2 py-1 text-[11px] tracking-[0.08em] text-muted-foreground uppercase">
               {emptyText}
             </p>

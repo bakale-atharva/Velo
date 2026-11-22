@@ -43,6 +43,7 @@ export function ProjectCharts({ projectId }: { projectId: Id<"projects"> }) {
         figure={loading ? undefined : `${percent}%`}
         figureLabel={`${done}/${scope} done`}
         loading={loading}
+        height="h-48 @3xl/main:h-56"
         empty={scope === 0}
         emptyText="No issues in this project yet"
         summary={`${done} of ${plural(scope, "issue")} done (${percent}%).${data?.targetDate ? ` Target ${shortDate(data.targetDate)}.` : ""} ${paceNote}`}

@@ -24,6 +24,7 @@ export function CycleBurndown({ cycleId }: { cycleId: Id<"cycles"> }) {
         figure={loading ? undefined : remaining}
         figureLabel="remaining"
         loading={loading}
+        height="h-44 @3xl/main:h-52"
         empty={(data?.total ?? 0) === 0}
         emptyText="No issues in this cycle"
         summary={`${plural(remaining, "issue")} remaining of ${data?.total ?? 0}. ${

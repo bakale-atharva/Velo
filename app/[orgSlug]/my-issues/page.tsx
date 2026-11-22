@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { MyThroughput } from "@/components/charts/my-throughput";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
 import { PageSkeleton } from "@/components/states/page-skeleton";
@@ -29,6 +30,7 @@ function MyIssues() {
         title="My issues"
         subtitle={issues.length === 0 ? undefined : `${open} open`}
         actions={<MemberStack />}
+        signal={<MyThroughput />}
       />
       {issues.length === 0 ? (
         <div className="px-3 pt-8 @3xl/main:px-6">
