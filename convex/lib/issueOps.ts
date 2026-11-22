@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import { generateKeyBetween } from "fractional-indexing";
 import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
@@ -21,6 +22,10 @@ const MAX_DESCRIPTION_LENGTH = 50_000;
 const MAX_LABELS_PER_ISSUE = 20;
 const MAX_PARENT_DEPTH = 20;
 const MAX_STATES = 50;
+// Sub-issues read per parent when a project or cycle change follows down the tree,
+// and the most issues one change may carry with it.
+const MAX_CHILDREN = 100;
+const MAX_CASCADE = 300;
 
 /** An issue as returned to clients (without the search-only field). */
 export const issueValidator = schema.doc("issues").omit("searchText");
@@ -107,6 +112,17 @@ async function defaultState(
     throw appError("INVALID_INPUT");
   }
   return state;
+}
+
+/** Whether a check passes; an app error (INVALID_INPUT, NOT_FOUND, ...) means no. */
+async function fits(check: () => Promise<unknown>): Promise<boolean> {
+  try {
+    await check();
+    return true;
+  } catch (error) {
+    if (error instanceof ConvexError) return false;
+    throw error;
+  }
 }
 
 /** An assignee must be in the org, and in the team if the team is private. */
@@ -327,21 +343,30 @@ export async function createIssue(
     input.stateId === undefined
       ? await defaultState(ctx, team)
       : await loadState(ctx, team, input.stateId);
-  const assigneeId = input.assigneeId ?? null;
-  if (assigneeId !== null) {
-    await assertAssignee(ctx, team, assigneeId);
-  }
   const labelIds = await cleanLabelIds(ctx, member.orgId, input.labelIds ?? []);
   const parentId = input.parentId ?? null;
-  if (parentId !== null) {
-    await loadParent(ctx, team, null, parentId);
+  const parent = parentId === null ? null : await loadParent(ctx, team, null, parentId);
+
+  // A sub-issue takes its parent's assignee, project and cycle unless the
+  // caller says otherwise (null included), so its progress counts where the
+  // parent's does. An inherited value that no longer fits (the assignee left,
+  // the cycle ended) is dropped rather than refused.
+  let assigneeId = input.assigneeId ?? null;
+  if (input.assigneeId === undefined && parent !== null && parent.assigneeId !== null) {
+    assigneeId = (await fits(() => assertAssignee(ctx, team, parent.assigneeId!))) ? parent.assigneeId : null;
+  } else if (assigneeId !== null) {
+    await assertAssignee(ctx, team, assigneeId);
   }
-  const projectId = input.projectId ?? null;
-  if (projectId !== null) {
+  let projectId = input.projectId ?? null;
+  if (input.projectId === undefined && parent !== null && (parent.projectId ?? null) !== null) {
+    projectId = (await fits(() => loadProjectForIssue(ctx, team, parent.projectId!))) ? parent.projectId! : null;
+  } else if (projectId !== null) {
     await loadProjectForIssue(ctx, team, projectId);
   }
-  const cycleId = input.cycleId ?? null;
-  if (cycleId !== null) {
+  let cycleId = input.cycleId ?? null;
+  if (input.cycleId === undefined && parent !== null && (parent.cycleId ?? null) !== null) {
+    cycleId = (await fits(() => loadCycleForIssue(ctx, team, parent.cycleId!))) ? parent.cycleId! : null;
+  } else if (cycleId !== null) {
     await loadCycleForIssue(ctx, team, cycleId);
   }
 
@@ -558,6 +583,89 @@ export async function updateIssue(
       ...change,
     });
   }
+  if (patch.projectId !== undefined || patch.cycleId !== undefined) {
+    await followParent(ctx, member, team, issue, patch, options, { left: MAX_CASCADE });
+  }
+}
+
+/**
+ * Carries a parent's new project or cycle down to its sub-issues that were in
+ * the parent's old one, so the tree keeps counting toward the same progress.
+ * Sub-issues placed elsewhere on purpose keep their own. Each child goes
+ * through `updateIssue`, so counts and the activity feed stay right and
+ * grandchildren follow too, up to `budget` issues for one change.
+ */
+async function followParent(
+  ctx: MutationCtx,
+  member: MemberInfo,
+  team: Doc<"teams">,
+  parent: Doc<"issues">,
+  patch: Partial<Doc<"issues">>,
+  options: WriteOptions,
+  budget: { left: number },
+): Promise<void> {
+  const oldProjectId = parent.projectId ?? null;
+  const oldCycleId = parent.cycleId ?? null;
+  const children = await ctx.db
+    .query("issues")
+    .withIndex("by_parentId", (q) => q.eq("parentId", parent._id))
+    .take(MAX_CHILDREN);
+  for (const child of children) {
+    if (budget.left <= 0) return;
+    if (child.archivedAt !== null) continue;
+    const input: UpdateIssueInput = {};
+    if (patch.projectId !== undefined && (child.projectId ?? null) === oldProjectId) {
+      input.projectId = patch.projectId;
+    }
+    if (patch.cycleId !== undefined && (child.cycleId ?? null) === oldCycleId) {
+      input.cycleId = patch.cycleId;
+    }
+    if (input.projectId === undefined && input.cycleId === undefined) continue;
+    budget.left--;
+    await applyScope(ctx, member, team, child, input, options, budget);
+  }
+}
+
+/** `updateIssue` for a followed project or cycle, sharing the cascade budget. */
+async function applyScope(
+  ctx: MutationCtx,
+  member: MemberInfo,
+  team: Doc<"teams">,
+  issue: Doc<"issues">,
+  input: UpdateIssueInput,
+  options: WriteOptions,
+  budget: { left: number },
+): Promise<void> {
+  const patch: Partial<Doc<"issues">> = {};
+  if (input.projectId !== undefined) {
+    const project = input.projectId === null ? null : await loadProjectForIssue(ctx, team, input.projectId);
+    patch.projectId = input.projectId;
+    await logActivity(ctx, {
+      orgId: member.orgId,
+      issueId: issue._id,
+      actorId: member.userId,
+      viaAssistant: options.viaAssistant,
+      type: "project",
+      from: await projectName(ctx, issue.projectId ?? null),
+      to: project === null ? null : project.name,
+    });
+  }
+  if (input.cycleId !== undefined) {
+    const cycle = input.cycleId === null ? null : await loadCycleForIssue(ctx, team, input.cycleId);
+    patch.cycleId = input.cycleId;
+    await logActivity(ctx, {
+      orgId: member.orgId,
+      issueId: issue._id,
+      actorId: member.userId,
+      viaAssistant: options.viaAssistant,
+      type: "cycle",
+      from: await cycleName(ctx, issue.cycleId ?? null),
+      to: cycle === null ? null : cycle.name,
+    });
+  }
+  await ctx.db.patch("issues", issue._id, patch);
+  await syncProjectCounts(ctx, issue, { ...issue, ...patch });
+  await followParent(ctx, member, team, issue, patch, options, budget);
 }
 
 /** Moves an issue to a position in a state column (board drag and drop). */

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/lib/errors";
 import { IssueAssist } from "@/components/assistant/issue-assist";
+import { Progress } from "@/components/projects/progress";
 import { byName, SortSelect, useSort, type SortOption } from "@/components/states/sort-select";
 import {
   AssigneeSelect,
@@ -240,6 +241,9 @@ function SubIssues({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
   const create = useMutation(api.issues.create);
   const [title, setTitle] = useState("");
   const [sort, setSort] = useSort("sub-issues", SUB_ISSUE_SORTS);
+  // Canceled sub-issues leave the count, as they do for projects and cycles.
+  const counted = (children ?? []).filter((child) => child.stateType !== "canceled");
+  const done = counted.filter((child) => child.stateType === "completed").length;
   return (
     <section aria-label="Sub-issues" className="mt-10 border-t border-rule pt-5">
       <div className="flex min-h-8 items-center justify-between gap-3">
@@ -248,6 +252,7 @@ function SubIssues({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
           <SortSelect label="Sort sub-issues" value={sort} options={SUB_ISSUE_SORTS} onChange={setSort} />
         )}
       </div>
+      {counted.length > 0 && <Progress className="mt-3 max-w-md" completed={done} total={counted.length} />}
       <ul className="-mx-3 mt-3 flex flex-col @3xl/main:-mx-6">
         {children !== undefined && sortSubIssues(children, sort).map((child) => (
           <li key={child._id}>

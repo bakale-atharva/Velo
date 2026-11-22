@@ -8,6 +8,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { CycleBurndown } from "@/components/charts/cycle-burndown";
+import { useToday } from "@/components/charts/format";
 import { cycleRange, daysLeft } from "@/components/cycles/cycle-dates";
 import { CycleDialog } from "@/components/cycles/cycle-dialog";
 import { Board } from "@/components/issues/issue-board";
@@ -58,15 +59,16 @@ function CycleIssues({
     { initialNumItems: PAGE_SIZE },
   );
   const move = useMutation(api.issues.move);
-  if (status === "LoadingFirstPage") {
+  // Progress counts every issue in the cycle, sub-issues included; the list shows top-level ones.
+  const today = useToday();
+  const stats = useQuery(api.insights.cycle, { cycleId: cycle._id, now: today });
+  if (status === "LoadingFirstPage" || stats === undefined) {
     return <PageSkeleton rows={5} />;
   }
 
-  const done = results.filter((issue) => issue.stateType === "completed").length;
-  const points = results.reduce((sum, issue) => sum + (issue.estimate ?? 0), 0);
-  const donePoints = results
-    .filter((issue) => issue.stateType === "completed")
-    .reduce((sum, issue) => sum + (issue.estimate ?? 0), 0);
+  const done = stats.completed;
+  const points = stats.estimate.total;
+  const donePoints = stats.estimate.done;
   const more = status === "CanLoadMore" || status === "LoadingMore";
 
   const columns = states.map((state) => ({
@@ -79,13 +81,13 @@ function CycleIssues({
   return (
     <>
       <dl className="grid grid-cols-3 border-b border-rule @xl/main:grid-cols-[minmax(140px,auto)_minmax(140px,auto)_minmax(140px,auto)_minmax(200px,1fr)]">
-        <Figure label="Scope" value={`${results.length}${more ? "+" : ""}`} />
+        <Figure label="Scope" value={`${stats.total}${stats.truncated ? "+" : ""}`} />
         <Figure label="Completed" value={done} />
         <Figure label="Points" value={points === 0 ? "—" : `${donePoints}/${points}`} />
         <div className="col-span-3 grid content-between gap-2 px-3 py-5 @xl/main:col-span-1 @3xl/main:px-6">
           <dt className="signal-label">Progress</dt>
           <dd>
-            <Progress completed={done} total={results.length} />
+            <Progress completed={done} total={stats.total} />
           </dd>
         </div>
       </dl>
