@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import { ProjectCharts } from "@/components/charts/project-charts";
 import { AssigneeAvatar } from "@/components/issues/assignee-avatar";
 import { IssueGroups } from "@/components/issues/issue-groups";
 import { displayName, useWorkspaceLookups } from "@/components/issues/lookups";
@@ -135,6 +136,8 @@ function ProjectDetail() {
           <Markdown>{project.description}</Markdown>
         </div>
       )}
+
+      <ProjectCharts projectId={project._id} />
 
       <ProjectIssues project={project} orgSlug={orgSlug} />
     </div>
