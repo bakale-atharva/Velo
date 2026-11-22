@@ -108,6 +108,30 @@ describe("sub-issues", () => {
     expect([project.issueCount, project.completedIssueCount]).toEqual([2, 1]);
   });
 
+  test("the backfill puts old sub-issues in their ancestor's project and cycle", async () => {
+    const { t, memberA, teamId, projectId, cycleId } = await setup();
+    const parent = await memberA.mutation(api.issues.create, { teamId, title: "Parent", projectId, cycleId });
+    const child = await memberA.mutation(api.issues.create, { teamId, title: "Child", parentId: parent.issueId });
+    const grandchild = await memberA.mutation(api.issues.create, { teamId, title: "Grandchild", parentId: child.issueId });
+    // As they were before sub-issues inherited: no project, no cycle, not counted.
+    await t.run(async (ctx) => {
+      for (const id of [child.issueId, grandchild.issueId]) await ctx.db.patch("issues", id, { projectId: null, cycleId: null });
+      await ctx.db.patch("projects", projectId, { issueCount: 1 });
+    });
+
+    await t.mutation(internal.subIssueBackfill.run, {});
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    for (const id of [child.issueId, grandchild.issueId]) {
+      const doc = await getIssue(t, id);
+      expect([doc.projectId, doc.cycleId]).toEqual([projectId, cycleId]);
+    }
+    expect((await memberA.query(api.projects.get, { projectId })).issueCount).toBe(3);
+    // A second run changes nothing.
+    await t.mutation(internal.subIssueBackfill.run, {});
+    expect((await memberA.query(api.projects.get, { projectId })).issueCount).toBe(3);
+  });
+
   test("moving a parent to another project or cycle brings its sub-issues along", async () => {
     const { t, memberA, teamId, projectId, cycleId } = await setup();
     const other = await memberA.mutation(api.projects.create, { name: "Other" });
