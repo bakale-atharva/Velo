@@ -38,7 +38,8 @@ function MyIssues() {
         </div>
       ) : (
         <div className="pt-8 pb-12">
-          <IssueGroups issues={issues} orgSlug={orgSlug} />
+          {/* Your own work: due dates stay visible at every width. */}
+          <IssueGroups issues={issues} orgSlug={orgSlug} showDue />
         </div>
       )}
     </div>

@@ -15,9 +15,18 @@ type Issue = Omit<Doc<"issues">, "searchText">;
 /**
  * One issue as a table row: id, stage gauge, priority, title with labels,
  * then due date, estimate and assignee in fixed columns. The focused row
- * (J/K or Tab) is the active path and inverts.
+ * (J/K or Tab) is the active path and inverts. The due date shows only on
+ * wide work fields unless `showDue` keeps it at every width.
  */
-export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
+export function IssueRow({
+  issue,
+  orgSlug,
+  showDue = false,
+}: {
+  issue: Issue;
+  orgSlug: string;
+  showDue?: boolean;
+}) {
   const { labelById, memberById } = useWorkspaceLookups();
   const finished = issue.stateType === "completed" || issue.stateType === "canceled";
   const now = useNow();
@@ -57,7 +66,7 @@ export function IssueRow({ issue, orgSlug }: { issue: Issue; orgSlug: string }) 
       </span>
       <span className="data flex items-center gap-5 text-[12px] text-muted-foreground group-focus-visible:text-background">
         {issue.dueDate !== null && (
-          <span className="hidden @3xl/main:inline">
+          <span className={showDue ? "inline" : "hidden @3xl/main:inline"}>
             <DuePill dueDate={issue.dueDate} finished={finished} now={now} />
           </span>
         )}
