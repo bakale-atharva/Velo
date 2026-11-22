@@ -206,6 +206,18 @@ A 64px band between two section rules: completions full height, creations three 
 ### Progress and usage
 Rows of hairline ticks (24 for progress, 40 for assistant usage) with a mono count; used ticks draw in ink, or destructive near a limit.
 
+### Charts
+Charts are signal too: drawn only from real data (`convex/insights.ts`), never placeholder bars. Axis charts use the shadcn chart component on Recharts (`components/ui/chart.tsx`, restyled); marks that sit in rows and legends are hand-built (`components/charts/`).
+- **Frame:** every chart is a `<figure>` with a signal-label title, an optional big mono figure on the right (`22px`), the drawing (`aria-hidden`), a mono footnote, and an `aria-label` sentence that states the numbers. Empty charts show a flat band of scan lines and a mono message; loading shows a `tile` band of the same height.
+- **Bars over time:** square ink bars (no radius), max 28px wide, 22% gaps; a second series draws in ink at 35%. Hairline horizontal grid in `border`, baseline in `rule`, no vertical grid. Mono 10px uppercase ticks (`05 JAN`); x ticks thin out by themselves on narrow widths, the y axis shows three ticks.
+- **Step lines:** actuals are `stepAfter` lines (work lands in whole issues): done in ink at 1.5px, scope in muted ink at 1px. Pace and ideal lines are dashed `faint`. Today is a 1px `rule` vertical with a mono `TODAY` label. Actuals stop at today; guides run on to the target.
+- **Tooltip:** an inverted square block in mono, swatches with a hairline so ink series still show.
+- **State bar:** one 12px 100% bar of state tints with 2px gaps, then a ruled legend (gauge, name, count, share), so no tint stands alone.
+- **Bar list:** ruled rows of label, a 2px ink bar over a hairline track, and a mono count. Used for assignees and cycle-time buckets.
+- **Sparkline:** 12 tiny columns in `currentColor` (latest in full ink, others 55%, empty weeks a 1px floor), so it inverts with a focused row.
+- **Layout:** chart panels sit in a ruled grid (one column narrow, two from `@3xl/main`, an odd last panel spans the row) under a figure strip of the key numbers. Heights are fixed per chart (`h-40` to `h-56`) and widths follow the work field.
+- Reduced motion turns chart animation off; otherwise bars and lines draw in 200ms.
+
 ### Assistant
 Your messages are inverted blocks aligned right; replies sit behind a 1px left rule. Pending proposals have an ink frame; resolved ones a faint frame.
 
