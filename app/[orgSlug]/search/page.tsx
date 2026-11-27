@@ -5,7 +5,7 @@ import { Search as SearchIcon } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
-import { IssueRow } from "@/components/issues/issue-row";
+import { IssueTreeList } from "@/components/issues/issue-tree";
 import { TeamPageHeader } from "@/components/issues/team-page-header";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorBoundary } from "@/components/states/error-boundary";
@@ -80,13 +80,7 @@ function Search() {
         </div>
       )}
       {results !== undefined && results.length > 0 && (
-        <ul className={`mb-12 flex flex-col ${pending ? "opacity-60" : ""}`}>
-          {results.map((issue) => (
-            <li key={issue._id}>
-              <IssueRow issue={issue} orgSlug={orgSlug} />
-            </li>
-          ))}
-        </ul>
+        <IssueTreeList issues={results} orgSlug={orgSlug} className={`mb-12 flex flex-col ${pending ? "opacity-60" : ""}`} />
       )}
     </div>
   );

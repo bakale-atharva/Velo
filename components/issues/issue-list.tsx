@@ -6,7 +6,7 @@ import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/states/empty-state";
 import { PageSkeleton } from "@/components/states/page-skeleton";
-import { IssueRow } from "./issue-row";
+import { IssueTreeList } from "./issue-tree";
 import { StateHeading } from "./state-heading";
 
 /** A group of issue rows: full width, opened by a hairline rule. */
@@ -36,13 +36,7 @@ export function StateSections({
             <div className="px-3 pt-5 pb-2 @3xl/main:px-6">
               <StateHeading id={`state-${state._id}`} name={state.name} count={inState.length} type={state.type} />
             </div>
-            <ul className="flex flex-col pb-2">
-              {inState.map((issue) => (
-                <li key={issue._id}>
-                  <IssueRow issue={issue} orgSlug={orgSlug} />
-                </li>
-              ))}
-            </ul>
+            <IssueTreeList issues={inState} orgSlug={orgSlug} />
           </section>
         );
       })}

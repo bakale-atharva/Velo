@@ -22,10 +22,17 @@ export function IssueRow({
   issue,
   orgSlug,
   showDue = false,
+  indent,
 }: {
   issue: Issue;
   orgSlug: string;
   showDue?: boolean;
+  /**
+   * Inside a sub-issue tree: extra left padding (px) for the expand toggle
+   * slot and the nesting depth. The toggle itself sits beside the row (see
+   * IssueTreeRow), since a button may not live inside a link.
+   */
+  indent?: number;
 }) {
   const { labelById, memberById } = useWorkspaceLookups();
   const finished = issue.stateType === "completed" || issue.stateType === "canceled";
@@ -36,9 +43,14 @@ export function IssueRow({
       // J/K selection and S/A/P/L act on the focused row (components/commands/shortcuts.tsx).
       data-issue-row=""
       data-identifier={issue.identifier}
+      style={indent === undefined ? undefined : ({ "--row-indent": `${indent}px` } as React.CSSProperties)}
       // Narrow work fields drop the stage gauge (the section heading already names the state)
       // and tighten the id column, so the title keeps its room.
-      className="group relative grid h-11 grid-cols-[minmax(52px,auto)_14px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-3 hover:bg-tile focus-visible:bg-foreground focus-visible:text-background focus-visible:outline-none @xl/main:h-10 @xl/main:grid-cols-[84px_56px_14px_minmax(0,1fr)_auto] @xl/main:gap-4 @3xl/main:px-6"
+      className={`peer group relative grid h-11 grid-cols-[minmax(52px,auto)_14px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border hover:bg-tile focus-visible:bg-foreground focus-visible:text-background focus-visible:outline-none @xl/main:h-10 @xl/main:grid-cols-[84px_56px_14px_minmax(0,1fr)_auto] @xl/main:gap-4 ${
+        indent === undefined
+          ? "px-3 @3xl/main:px-6"
+          : "pr-3 pl-[calc(0.75rem+var(--row-indent))] @3xl/main:pr-6 @3xl/main:pl-[calc(1.5rem+var(--row-indent))]"
+      }`}
     >
       <span className="data text-[12px] text-muted-foreground group-focus-visible:text-background">
         {issue.identifier}
