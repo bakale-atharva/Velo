@@ -31,6 +31,19 @@ async function join(t: T, orgId: string, userId: string, role = "org:member") {
   });
 }
 
+/** Business plan for org A, so it can have private teams. */
+async function setPlan(t: T) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert("subscriptions", {
+      orgId: ORG_A,
+      clerkSubscriptionId: `sub_${ORG_A}`,
+      planSlug: "business",
+      status: "active",
+      updatedAt: 1,
+    });
+  });
+}
+
 async function setup() {
   const t = convexTest(schema, modules);
   await join(t, ORG_A, "admin_a", "org:admin");
@@ -106,6 +119,33 @@ describe("sub-issues", () => {
     await memberA.mutation(api.issues.update, { issueId: child.issueId, stateId: state("Done") });
     const project = await memberA.query(api.projects.get, { projectId });
     expect([project.issueCount, project.completedIssueCount]).toEqual([2, 1]);
+  });
+
+  test("counts sub-issues for list rows, hiding what the caller can't see", async () => {
+    const { t, adminA, memberA, teamId } = await setup();
+    await join(t, "org_b", "admin_b", "org:admin");
+    const adminB = as(t, "admin_b", "org_b", "admin");
+    const parent = await memberA.mutation(api.issues.create, { teamId, title: "Parent" });
+    const lone = await memberA.mutation(api.issues.create, { teamId, title: "Lone" });
+    const a = await memberA.mutation(api.issues.create, { teamId, title: "A", parentId: parent.issueId });
+    await memberA.mutation(api.issues.create, { teamId, title: "B", parentId: parent.issueId });
+    await memberA.mutation(api.issues.create, { teamId, title: "A1", parentId: a.issueId });
+    await memberA.mutation(api.issues.archive, { issueId: a.issueId });
+
+    const counts = await memberA.query(api.issues.subIssueCounts, { issueIds: [parent.issueId, lone.issueId, a.issueId] });
+    // A is archived, so the parent has one live sub-issue; A still counts its own child.
+    expect(counts).toEqual([
+      { issueId: parent.issueId, count: 1 },
+      { issueId: a.issueId, count: 1 },
+    ]);
+    expect(await adminB.query(api.issues.subIssueCounts, { issueIds: [parent.issueId] })).toEqual([]);
+
+    await setPlan(t);
+    const secret = await adminA.mutation(api.teams.create, { name: "Secret", key: "SEC", isPrivate: true });
+    const hidden = await adminA.mutation(api.issues.create, { teamId: secret, title: "Hidden" });
+    await adminA.mutation(api.issues.create, { teamId: secret, title: "Child", parentId: hidden.issueId });
+    expect(await memberA.query(api.issues.subIssueCounts, { issueIds: [hidden.issueId] })).toEqual([]);
+    expect(await adminA.query(api.issues.subIssueCounts, { issueIds: [hidden.issueId] })).toHaveLength(1);
   });
 
   test("the backfill puts old sub-issues in their ancestor's project and cycle", async () => {

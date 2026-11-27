@@ -25,7 +25,7 @@ import {
 } from "./lib/issueOps";
 import { requirePermission } from "./lib/permissions";
 import { syncProjectCounts } from "./lib/projectCounts";
-import { filterVisibleIssues, requireTeamAccess } from "./lib/teamAccess";
+import { canAccessTeam, filterVisibleIssues, requireTeamAccess } from "./lib/teamAccess";
 import { loadProject } from "./projects";
 
 const MAX_STATES = 50;
@@ -281,6 +281,47 @@ export const listSubIssues = query({
       .withIndex("by_parentId", (q) => q.eq("parentId", issue._id))
       .take(MAX_SUB_ISSUES);
     return children.filter((child) => child.archivedAt === null).map(toPublicIssue);
+  },
+});
+
+const MAX_COUNTED_PARENTS = 200;
+// Counts stop here; the UI only needs to know a row has sub-issues and roughly how many.
+const MAX_COUNTED_CHILDREN = 50;
+
+/**
+ * How many (unarchived) sub-issues each of the given issues has, for the
+ * expand toggles on list rows. Issues the caller cannot see, and issues with
+ * none, are left out.
+ */
+export const subIssueCounts = query({
+  args: { issueIds: v.array(v.id("issues")) },
+  returns: v.array(v.object({ issueId: v.id("issues"), count: v.number() })),
+  handler: async (ctx, args) => {
+    const member = await requireMember(ctx);
+    if (args.issueIds.length > MAX_COUNTED_PARENTS) {
+      throw appError("INVALID_INPUT");
+    }
+    const access = new Map<Id<"teams">, boolean>();
+    const counts: { issueId: Id<"issues">; count: number }[] = [];
+    for (const issueId of new Set(args.issueIds)) {
+      const issue = await ctx.db.get("issues", issueId);
+      if (issue === null || issue.orgId !== member.orgId) continue;
+      let allowed = access.get(issue.teamId);
+      if (allowed === undefined) {
+        const team = await ctx.db.get("teams", issue.teamId);
+        allowed = team !== null && (await canAccessTeam(ctx, member, team));
+        access.set(issue.teamId, allowed);
+      }
+      if (!allowed) continue;
+      // Sub-issues share the parent's team, so the parent's access check covers them.
+      const children = await ctx.db
+        .query("issues")
+        .withIndex("by_parentId", (q) => q.eq("parentId", issue._id))
+        .take(MAX_COUNTED_CHILDREN);
+      const count = children.filter((child) => child.archivedAt === null).length;
+      if (count > 0) counts.push({ issueId, count });
+    }
+    return counts;
   },
 });
 
