@@ -21,7 +21,7 @@ import {
   ProjectSelect,
   StateSelect,
 } from "./fields";
-import { IssueRow } from "./issue-row";
+import { IssueTreeList } from "./issue-tree";
 import { useWorkspaceLookups } from "./lookups";
 import { Markdown } from "./markdown";
 import { StageGauge, StateHeading } from "./state-heading";
@@ -253,13 +253,13 @@ function SubIssues({ issue, orgSlug }: { issue: Issue; orgSlug: string }) {
         )}
       </div>
       {counted.length > 0 && <Progress className="mt-3 max-w-md" completed={done} total={counted.length} />}
-      <ul className="-mx-3 mt-3 flex flex-col @3xl/main:-mx-6">
-        {children !== undefined && sortSubIssues(children, sort).map((child) => (
-          <li key={child._id}>
-            <IssueRow issue={child} orgSlug={orgSlug} />
-          </li>
-        ))}
-      </ul>
+      {children !== undefined && (
+        <IssueTreeList
+          issues={sortSubIssues(children, sort)}
+          orgSlug={orgSlug}
+          className="-mx-3 mt-3 flex flex-col @3xl/main:-mx-6"
+        />
+      )}
       <form
         className="mt-2 flex gap-2"
         onSubmit={async (event) => {

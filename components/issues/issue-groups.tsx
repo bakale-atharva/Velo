@@ -2,7 +2,7 @@
 
 import type { Doc } from "@/convex/_generated/dataModel";
 import { GROUP_PANEL } from "./issue-list";
-import { IssueRow } from "./issue-row";
+import { IssueTreeList } from "./issue-tree";
 import { StateHeading } from "./state-heading";
 
 type Issue = Omit<Doc<"issues">, "searchText">;
@@ -47,13 +47,7 @@ export function IssueGroups({
                 type={group.type}
               />
             </div>
-            <ul className="flex flex-col pb-2">
-              {inGroup.map((issue) => (
-                <li key={issue._id}>
-                  <IssueRow issue={issue} orgSlug={orgSlug} showDue={showDue} />
-                </li>
-              ))}
-            </ul>
+            <IssueTreeList issues={inGroup} orgSlug={orgSlug} showDue={showDue} />
           </section>
         );
       })}
