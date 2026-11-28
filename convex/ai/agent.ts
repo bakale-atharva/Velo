@@ -1,7 +1,7 @@
 import { Agent, stepCountIs } from "@convex-dev/agent";
 import type { ToolSet } from "ai";
 import { components } from "../_generated/api";
-import { aiConfigured, CHAT_CHAIN, type chatModel } from "./models";
+import { aiConfigured, CHAT_CHAIN, isFreeDailyCap, isFreeModel, type chatModel } from "./models";
 
 const INSTRUCTIONS = `You are the assistant inside Velo, an issue tracker for product teams.
 Answer questions about the user's workspace using the tools: search and read issues, and list teams, members, projects, cycles and labels. Never invent issue identifiers, people or data you did not get from a tool.
@@ -24,8 +24,10 @@ export type ModelResult<T> = { ok: true; value: T } | { ok: false; reason: "MODE
 
 /**
  * Runs `attempt` with each model of CHAT_CHAIN in turn until one succeeds
- * (rate limits and provider errors are common on free models). Reports
- * MODEL_UNAVAILABLE instead of throwing when all fail or no key is set.
+ * (rate limits and provider errors are common on free models). Once
+ * OpenRouter reports its daily free-model cap, the remaining free models are
+ * skipped and the paid ones tried. Reports MODEL_UNAVAILABLE instead of
+ * throwing when all fail or no key is set.
  */
 export async function withFallback<T>(
   attempt: (model: ReturnType<typeof chatModel>) => Promise<T>,
@@ -33,11 +35,22 @@ export async function withFallback<T>(
   if (!aiConfigured()) {
     return { ok: false, reason: "MODEL_UNAVAILABLE" };
   }
-  for (const model of CHAT_CHAIN) {
+  return await runChain(CHAT_CHAIN, attempt);
+}
+
+/** The fallback loop over any chain of models (exported for tests). */
+export async function runChain<M, T>(
+  chain: readonly { id: string; model: () => M }[],
+  attempt: (model: M) => Promise<T>,
+): Promise<ModelResult<T>> {
+  let freeCapped = false;
+  for (const { id, model } of chain) {
+    if (freeCapped && isFreeModel(id)) continue;
     try {
       return { ok: true, value: await attempt(model()) };
     } catch (error) {
-      console.warn("Assistant model failed", error instanceof Error ? error.message : error);
+      if (isFreeDailyCap(error)) freeCapped = true;
+      console.warn("Assistant model failed", id, error instanceof Error ? error.message : error);
     }
   }
   return { ok: false, reason: "MODEL_UNAVAILABLE" };
