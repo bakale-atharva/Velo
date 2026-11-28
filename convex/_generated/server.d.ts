@@ -34,6 +34,7 @@ type Env = {
   readonly AGENT_JWT_PRIVATE_KEY: string | undefined;
   readonly CLERK_WEBHOOK_SIGNING_SECRET: string | undefined;
   readonly OPENROUTER_API_KEY: string | undefined;
+  readonly PRIORITY_ORG_IDS: string | undefined;
 };
 
 /**
