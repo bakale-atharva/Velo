@@ -23,6 +23,7 @@ import {
   toPublicIssue,
   updateIssue,
 } from "./lib/issueOps";
+import { isAgentUserId } from "./lib/agentIds";
 import { requirePermission } from "./lib/permissions";
 import { syncProjectCounts } from "./lib/projectCounts";
 import { canAccessTeam, filterVisibleIssues, requireTeamAccess } from "./lib/teamAccess";
@@ -55,7 +56,9 @@ export const create = mutation({
     const member = await requireMember(ctx);
     const team = await requireTeamAccess(ctx, member, teamId);
     const issue = await createIssue(ctx, member, team, input);
-    if (await hasFeature(ctx, member.orgId, "ai_assistant")) {
+    // Agents set their own labels and priority and create issues in bulk;
+    // suggesting for them would spend the free AI allowance people need.
+    if (!isAgentUserId(member.userId) && (await hasFeature(ctx, member.orgId, "ai_assistant"))) {
       await ctx.scheduler.runAfter(0, internal.ai.suggestions.suggestForIssue, { issueId: issue._id });
     }
     return { issueId: issue._id, identifier: issue.identifier };

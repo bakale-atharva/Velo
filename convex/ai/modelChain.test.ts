@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { runChain } from "./agent";
-import { CHAT_MODELS, isFreeDailyCap, isFreeModel } from "./models";
+import { CHAT_MODELS, isFreeDailyCap, isFreeModel, MODEL_RETRIES } from "./models";
 
 const CAP = new Error(
   "Failed after 3 attempts. Last error: AI_APICallError: Rate limit exceeded: free-models-per-day. Add 10 credits",
@@ -9,13 +9,21 @@ const CAP = new Error(
 const chainOf = (ids: string[]) => ids.map((id) => ({ id, model: () => id }));
 
 describe("assistant model chain", () => {
-  test("free models first, then paid ones, without the retired free Ling", () => {
-    const free = CHAT_MODELS.filter(isFreeModel);
-    const paid = CHAT_MODELS.filter((id) => !isFreeModel(id));
-    expect(free.length).toBeGreaterThan(0);
-    expect(paid.length).toBeGreaterThan(0);
-    expect(CHAT_MODELS.slice(0, free.length)).toEqual(free);
+  test("only free models, without the retired free Ling, and no retries", () => {
+    expect(CHAT_MODELS.length).toBeGreaterThan(1);
+    expect(CHAT_MODELS.every(isFreeModel)).toBe(true);
     expect(CHAT_MODELS).not.toContain("inclusionai/ling-3.2-flash:free");
+    expect(MODEL_RETRIES).toBe(0);
+  });
+
+  test("once the daily free cap is hit, no further requests are spent", async () => {
+    const tried: string[] = [];
+    const result = await runChain(chainOf([...CHAT_MODELS]), async (id) => {
+      tried.push(id);
+      throw CAP;
+    });
+    expect(result).toEqual({ ok: false, reason: "MODEL_UNAVAILABLE" });
+    expect(tried).toEqual([CHAT_MODELS[0]]);
   });
 
   test("the daily free cap skips the other free models and reaches a paid one", async () => {

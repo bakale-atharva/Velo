@@ -4,17 +4,16 @@ import { env } from "../_generated/server";
 // Models and why they were chosen: docs/ai-models.md.
 
 /**
- * Chat models in the order they are tried. Free ones first, from two
- * providers (a rate limit upstream at Google would hit a second Gemma too);
- * then cheap paid ones, so the assistant keeps working when OpenRouter's
- * daily free-model cap is used up. Paid models need OpenRouter credits.
+ * Chat models in the order they are tried: free only, from two providers (a
+ * rate limit upstream at Google would hit a second Gemma too). No paid models.
  */
-export const CHAT_MODELS = [
-  "google/gemma-4-31b-it:free",
-  "baidu/ernie-5.5-flash-preview:free",
-  "google/gemma-4-31b-it",
-  "inclusionai/ling-3.2-flash",
-] as const;
+export const CHAT_MODELS = ["google/gemma-4-31b-it:free", "baidu/ernie-5.5-flash-preview:free"] as const;
+
+/**
+ * Retries per model call. Zero: the chain already moves to the next model,
+ * and every retry of a rate-limited request spends more of the free allowance.
+ */
+export const MODEL_RETRIES = 0;
 export const CHAT_MODEL = CHAT_MODELS[0];
 
 /** Free OpenRouter models carry the `:free` suffix. */
