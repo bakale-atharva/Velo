@@ -30,6 +30,9 @@ export type Feature = (typeof PLAN_FEATURES)[PlanSlug][number];
 
 export const FREE_PLAN: PlanSlug = "free_org";
 
+/** What a priority org gets: the top plan (every feature, highest limits). */
+export const PRIORITY_PLAN: PlanSlug = "enterprise";
+
 export function isPlanSlug(slug: string): slug is PlanSlug {
   return Object.hasOwn(PLAN_FEATURES, slug);
 }

@@ -13,6 +13,9 @@ const app = defineApp({
     // The private key as a JWK (secret), and the public key set as a data URI.
     AGENT_JWT_PRIVATE_KEY: v.optional(v.string()),
     AGENT_JWT_JWKS: v.optional(v.string()),
+    // Priority workspaces: Clerk org ids, comma-separated, that get the top
+    // plan whatever their subscription says (convex/lib/entitlements.ts).
+    PRIORITY_ORG_IDS: v.optional(v.string()),
   },
 });
 
