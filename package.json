@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.96",
     "@base-ui/react": "^1.9.0",
     "@clerk/backend": "3.27.0",
     "@clerk/nextjs": "7.9.25",

@@ -1,6 +1,6 @@
 # AI models
 
-Velo's assistant runs on free OpenRouter models only (no paid models, by choice). Chosen on 2026-11-18 from
+Velo's assistant runs on free models only (no paid models, by choice): OpenRouter's `:free` models first, then NVIDIA's hosted NIM API. OpenRouter models chosen on 2026-11-18 from
 `GET https://openrouter.ai/api/v1/models` and
 `GET https://openrouter.ai/api/v1/embeddings/models`, with each endpoint's data
 policy from OpenRouter's endpoint stats. Models marked "Going away" on
@@ -10,6 +10,8 @@ OpenRouter (an `expiration_date` in the API) were left out.
 |---|---|---|
 | Primary chat | `google/gemma-4-31b-it:free` | Free, supports tool calling, 256K context. Served by Google AI Studio, which does **not** train on inputs (keeps them 55 days). No expiry date. |
 | Fallback chat | `baidu/ernie-5.5-flash-preview:free` | A second provider (Baidu), so a rate limit at Google doesn't take out both. Supports tools. Doesn't train on prompts (does retain them). No expiry date. |
+| NIM chat 1 | `nvidia/nemotron-3.5-super-vl-120b-a12b` | NVIDIA NIM (`https://integrate.api.nvidia.com/v1`, key `NVIDIA_API_KEY`). Free, limited per minute, **no daily cap**, so it answers once OpenRouter's daily free allowance is gone. Tool calling checked end to end on 2026-11-28 (about 1.8s). |
+| NIM chat 2 | `nvidia/nemotron-3.5-lightning-30b-a3b` | Smaller NIM model, same checks (about 1.5s). |
 | Embeddings | `nvidia/nemotron-3-embed-1b:free` | The only free embedding model that was healthy (100% uptime over the last day). **2048-dimensional** vectors (same embedding space as Nemotron 3.5 Embed 1B, documented as 2048-dim). |
 
 `inclusionai/ling-3.2-flash:free` was dropped on 2026-11-28: OpenRouter stopped offering it for free.
@@ -22,6 +24,13 @@ OpenRouter caps free-model requests **per account per day**; the cap is much hig
 - **Stop on the cap:** once `free-models-per-day` comes back, `withFallback` (`convex/ai/agent.ts`) skips the remaining free models instead of asking each of them.
 - **No automatic suggestions for agent-created issues** (`convex/issues.ts`): agents set their own labels and priority and create issues in bulk.
 - Embeddings still run for every new or retitled issue (one request each), so duplicate detection covers agents' issues too.
+- **NVIDIA NIM after OpenRouter:** once the cap is hit, the chain goes straight to the NIM models, which have their own per-minute limits and no daily cap. Without `NVIDIA_API_KEY` the NIM models are left out of the chain.
+
+## NVIDIA NIM
+
+- Endpoint `https://integrate.api.nvidia.com/v1` (OpenAI-compatible, `@ai-sdk/openai-compatible`); key from build.nvidia.com, set with `npx convex env set NVIDIA_API_KEY nvapi-…`.
+- **NVIDIA's terms say the free hosted API is for development and testing, not production.** Running Velo for a real team on it goes beyond that.
+- NIM retires models regularly (Llama 3.3 70B, Nemotron Super 49B and Qwen3 Next were gone by 2026-11-28). To pick replacements, list what the key can use with `GET https://integrate.api.nvidia.com/v1/models` and check tool calling before swapping the ids in `CHAT_MODELS`.
 
 ## Data use
 
