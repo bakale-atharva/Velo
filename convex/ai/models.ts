@@ -1,13 +1,33 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { env } from "../_generated/server";
 
-// Models and why they were chosen: docs/ai-models.md. All free on OpenRouter.
+// Models and why they were chosen: docs/ai-models.md.
 
-export const CHAT_MODEL = "google/gemma-4-31b-it:free";
-// Fallbacks come from other providers: a rate limit upstream at Google
-// would hit a second Gemma model too.
-export const FALLBACK_CHAT_MODEL = "inclusionai/ling-3.2-flash:free";
-export const LAST_RESORT_CHAT_MODEL = "baidu/ernie-5.5-flash-preview:free";
+/**
+ * Chat models in the order they are tried. Free ones first, from two
+ * providers (a rate limit upstream at Google would hit a second Gemma too);
+ * then cheap paid ones, so the assistant keeps working when OpenRouter's
+ * daily free-model cap is used up. Paid models need OpenRouter credits.
+ */
+export const CHAT_MODELS = [
+  "google/gemma-4-31b-it:free",
+  "baidu/ernie-5.5-flash-preview:free",
+  "google/gemma-4-31b-it",
+  "inclusionai/ling-3.2-flash",
+] as const;
+export const CHAT_MODEL = CHAT_MODELS[0];
+
+/** Free OpenRouter models carry the `:free` suffix. */
+export function isFreeModel(id: string): boolean {
+  return id.endsWith(":free");
+}
+
+/** OpenRouter's account-wide daily cap on free models; every free model then fails. */
+export function isFreeDailyCap(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("free-models-per-day");
+}
+
 export const EMBEDDING_MODEL = "nvidia/nemotron-3-embed-1b:free";
 /** Length of every vector EMBEDDING_MODEL returns; the vector index is fixed to it. */
 export { EMBEDDING_DIMENSIONS } from "./embeddingConfig";
@@ -31,9 +51,7 @@ function provider() {
 }
 
 // Built per call so a key set after deploy is picked up without a redeploy.
-export const chatModel = () => provider().chat(CHAT_MODEL);
-export const fallbackChatModel = () => provider().chat(FALLBACK_CHAT_MODEL);
-export const lastResortChatModel = () => provider().chat(LAST_RESORT_CHAT_MODEL);
+export const chatModel = (id: string = CHAT_MODEL) => provider().chat(id);
 
 /** Tried in order until one answers. */
-export const CHAT_CHAIN = [chatModel, fallbackChatModel, lastResortChatModel];
+export const CHAT_CHAIN = CHAT_MODELS.map((id) => ({ id, model: () => chatModel(id) }));
