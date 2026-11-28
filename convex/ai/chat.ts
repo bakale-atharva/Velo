@@ -21,6 +21,7 @@ import type { MemberInfo } from "../lib/auth";
 import { appError } from "../lib/errors";
 import schema from "../schema";
 import { buildAgent, withFallback } from "./agent";
+import { MODEL_RETRIES } from "./models";
 import { requireAiAccess } from "./guard";
 import { readTools, writeTools } from "./tools";
 
@@ -150,7 +151,10 @@ export const sendMessage = action({
     });
     const tools = { ...readTools(member), ...writeTools(member, thread._id) };
     const result = await withFallback((model) =>
-      buildAgent(model, tools).generateText(ctx, threadOpts, { promptMessageId: messageId }),
+      buildAgent(model, tools).generateText(ctx, threadOpts, {
+        promptMessageId: messageId,
+        maxRetries: MODEL_RETRIES,
+      }),
     );
     return result.ok ? { ok: true } : result;
   },

@@ -18,6 +18,7 @@ import { loadIssue, updateIssue } from "../lib/issueOps";
 import { canAccessTeam, filterVisibleIssues } from "../lib/teamAccess";
 import schema from "../schema";
 import { withFallback } from "./agent";
+import { MODEL_RETRIES } from "./models";
 import { vCaller } from "./data";
 import { requireAiAccess } from "./guard";
 
@@ -117,6 +118,7 @@ export const summarizeIssue = action({
       (
         await generateText({
           model,
+          maxRetries: MODEL_RETRIES,
           system: "Summarize this issue for a teammate in 2–4 short sentences: what is wrong or wanted, and what is decided or still open. Plain text.",
           prompt: issueText(issue),
         })
@@ -149,6 +151,7 @@ export const suggestForIssue = internalAction({
     const result = await withFallback(async (model) => {
       const { output } = await generateText({
         model,
+        maxRetries: MODEL_RETRIES,
         output: Output.object({
           schema: z.object({
             labels: z.array(z.string()).describe("Names from the allowed list only"),
@@ -280,6 +283,7 @@ export const generateReport = action({
       (
         await generateText({
           model,
+          maxRetries: MODEL_RETRIES,
           system: `${REPORT_PROMPTS[args.kind]} Use only the issues listed; if there are none, say so in one line.`,
           prompt: `${facts.heading}\n\n${facts.lines.join("\n") || "(no issues)"}`,
         })

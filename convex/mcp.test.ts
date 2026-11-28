@@ -344,6 +344,20 @@ describe("MCP tools", () => {
     expect(agents.find((a) => a.userId === theirs.userId)?.canManage).toBe(false);
   });
 
+  test("issues agents create don't spend the AI allowance on suggestions", async () => {
+    const { t, adminA, lead } = await setup();
+    await setPlan(t, ORG_A, "pro");
+    const scheduled = async () =>
+      (await t.run((ctx) => ctx.db.system.query("_scheduled_functions").take(50))).map((job) => job.name);
+
+    await ok(lead, "create_issue", { team: "ENG", title: "From an agent" });
+    expect(await scheduled()).not.toContain("ai/suggestions:suggestForIssue");
+
+    const teamId = (await adminA.query(api.teams.get, { key: "ENG" }))._id;
+    await adminA.mutation(api.issues.create, { teamId, title: "From a person" });
+    expect(await scheduled()).toContain("ai/suggestions:suggestForIssue");
+  });
+
   test("private teams stay hidden from agents outside them", async () => {
     const { t, adminA, lead } = await setup();
     await setPlan(t, ORG_A, "business");
